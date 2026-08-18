@@ -16,7 +16,16 @@ const lowerWarmup=[
  ['Bodyweight Split Squat','10 per leg','Weak leg first']
 ];
 function workoutType(name){return /lower|legs/i.test(name)?'lower':'upper'}
-function warmupHTML(type){const data=type==='lower'?lowerWarmup:upperWarmup;return `<div class="warmup"><div class="eyebrow">${type==='lower'?'Lower':'Upper'} warm-up · 1 round</div><h3>Warm-up</h3>${data.map(x=>`<div class="warm-row"><b>${x[0]}</b><small>${x[1]}${x[2]?` · ${x[2]}`:''}</small></div>`).join('')}</div>`}
+function warmupHTML(type){
+ const data=type==='lower'?lowerWarmup:upperWarmup;
+ return `<div class="warmup">
+   <div class="warmup-title">${type==='lower'?'Lower':'Upper'} Warm-up</div>
+   ${data.map((x,i)=>`<div class="warm-row">
+     <div class="warm-copy"><b>${x[0]}</b><small>${x[1]}${x[2]?` · ${x[2]}`:''}</small></div>
+     <button class="warm-check" type="button" aria-label="Mark ${x[0]} complete">✓</button>
+   </div>`).join('')}
+ </div>`
+}
 const total=program.reduce((s,p)=>s+p.workouts.length*p.rounds,0);
 let state=JSON.parse(localStorage.getItem('mwState')||'{"phase":0,"round":0,"workout":0,"completed":0,"streak":0,"history":[]}');
 let timerInterval=null,timerLeft=0;
@@ -24,7 +33,7 @@ function save(){localStorage.setItem('mwState',JSON.stringify(state))}
 function current(){return program[state.phase].workouts[state.workout]}
 function phase(){return program[state.phase]}
 function renderHome(){const p=phase(),w=current();document.getElementById('phaseLabel').textContent=`${p.name} · Round ${state.round+1} of ${p.rounds}`;document.getElementById('nextWorkout').textContent=w.name;document.getElementById('sessionLabel').textContent=`Workout ${Math.min(state.completed+1,total)} of ${total}`;document.getElementById('completedStat').textContent=state.completed;document.getElementById('phaseStat').textContent=`${state.phase+1} / 3`;document.getElementById('overallProgress').style.width=`${state.completed/total*100}%`;document.getElementById('progressText').textContent=`${state.completed} of ${total} workouts completed`;document.getElementById('todayLabel').textContent=new Date().toLocaleDateString(undefined,{month:'short',day:'numeric'});document.getElementById('startBtn').textContent=state.completed>=total?'Program complete':'Start workout'}
-function renderWorkout(){const p=phase(),w=current();document.getElementById('workoutPhase').textContent=`${p.name} · R${state.round+1}`;document.getElementById('workoutTitle').textContent=w.name;document.getElementById('workoutMeta').textContent=`${w.ex.length} exercises · ${p.on} days on / 1 off`;const el=document.getElementById('exerciseList');el.innerHTML=warmupHTML(workoutType(w.name));w.ex.forEach((x,i)=>{const [name,sets,rest,last]=x;let rows=sets.map((target,j)=>`<div class="setrow"><div class="setnum">${j+1}</div><input inputmode="decimal" placeholder="weight"><input inputmode="numeric" placeholder="reps · ${target}"><button class="check" data-rest="${rest}">✓</button></div>`).join('');el.insertAdjacentHTML('beforeend',`<div class="exercise"><div class="ex-head"><div><h3>${name}</h3><div class="rx">${sets.length} set${sets.length>1?'s':''} · ${sets.join(' / ')}${rest?` · ${rest} rest`:''}</div></div></div><div class="last">Last: ${last||'—'}</div>${rows}</div>`)});document.querySelectorAll('.check').forEach(b=>b.onclick=()=>{b.classList.toggle('done');if(b.classList.contains('done')&&b.dataset.rest) startTimer(b.dataset.rest)});}
+function renderWorkout(){const p=phase(),w=current();document.getElementById('workoutPhase').textContent=`${p.name} · R${state.round+1}`;document.getElementById('workoutTitle').textContent=w.name;document.getElementById('workoutMeta').textContent=`${w.ex.length} exercises · ${p.on} days on / 1 off`;const el=document.getElementById('exerciseList');el.innerHTML=warmupHTML(workoutType(w.name));w.ex.forEach((x,i)=>{const [name,sets,rest,last]=x;let rows=sets.map((target,j)=>`<div class="setrow"><div class="setnum">${j+1}</div><input inputmode="decimal" placeholder="weight"><input inputmode="numeric" placeholder="reps · ${target}"><button class="check" data-rest="${rest}">✓</button></div>`).join('');el.insertAdjacentHTML('beforeend',`<div class="exercise"><div class="ex-head"><div><h3>${name}</h3><div class="rx">${sets.length} set${sets.length>1?'s':''} · ${sets.join(' / ')}${rest?` · ${rest} rest`:''}</div></div></div><div class="last">Last: ${last||'—'}</div>${rows}</div>`)});document.querySelectorAll('.warm-check').forEach(b=>b.onclick=()=>{b.classList.toggle('done');b.closest('.warm-row').classList.toggle('done',b.classList.contains('done'))});document.querySelectorAll('.check').forEach(b=>b.onclick=()=>{b.classList.toggle('done');if(b.classList.contains('done')&&b.dataset.rest) startTimer(b.dataset.rest)});}
 function parseRest(s){if(!s)return 0;let [m,sec]=s.split(':').map(Number);return m*60+sec}
 function startTimer(rest){stopTimer();timerLeft=parseRest(rest);if(!timerLeft)return;document.getElementById('timer').classList.add('show');tick();timerInterval=setInterval(()=>{timerLeft--;tick();if(timerLeft<=0)stopTimer()},1000)}
 function tick(){let m=Math.floor(timerLeft/60),s=timerLeft%60;document.getElementById('timerText').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`}
