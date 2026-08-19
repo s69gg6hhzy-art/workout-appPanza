@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 <div class="app">
@@ -154,6 +154,18 @@
       <p class="tiny chart-note">This fills automatically from new Jog and Run entries.</p>
     </div>
 
+
+    <div class="card">
+      <div class="photo-due-head"><div><div class="eyebrow">Progress photos</div><h3>Visual check-ins</h3></div><label class="weekly-toggle"><input type="checkbox" id="weeklyPhotosToggle"> Weekly</label></div>
+      <p class="muted">A check-in is prompted at the beginning of every phase. Weekly check-ins are optional.</p>
+      <button class="secondary compact" id="progressPhotoBtn">New photo check-in</button>
+      <div id="photoGallery" class="photo-gallery"><p class="notice">No photo check-ins yet.</p></div>
+      <div id="photoCompareControls" class="compare-controls" style="display:none">
+        <select id="compareA"></select><span>vs</span><select id="compareB"></select>
+        <button class="secondary compact" id="comparePhotosBtn">Compare</button>
+      </div>
+      <div id="photoCompare" class="photo-compare"></div>
+    </div>
     <div class="card">
       <div class="eyebrow">Body composition checkpoints</div>
       <div class="checkpoint"><div><b>Jan 17, 2025 · DEXA</b><small>191.1 lb · 21.9% body fat · 41.8 lb fat · 141.7 lb lean tissue</small></div><span class="badge measured">Measured</span></div>
@@ -193,7 +205,19 @@
   <button data-screen="history">History</button>
   <button data-screen="progress">Progress</button>
 </nav>
-<script src="data.js?v=11"></script>
-<script src="app.js?v=11"></script>
+<script src="data.js?v=12"></script>
+<script src="app.js?v=12"></script>
+
+<div class="modal" id="photoModal"><div class="modal-card setup-card">
+  <div class="modal-head"><div><div class="eyebrow" id="photoModalEyebrow">Progress check-in</div><h2 id="photoModalTitle">Progress photos</h2></div><button class="icon-btn" id="closePhotoBtn">×</button></div>
+  <p class="notice">For useful comparisons, use similar lighting, distance, clothes and time of day.</p>
+  <div class="photo-input-grid">
+    <label>Front<input type="file" id="photoFront" accept="image/*" capture="environment"><span id="frontStatus">Choose photo</span></label>
+    <label>Side<input type="file" id="photoSide" accept="image/*" capture="environment"><span id="sideStatus">Choose photo</span></label>
+    <label>Back<input type="file" id="photoBack" accept="image/*" capture="environment"><span id="backStatus">Choose photo</span></label>
+    <label>Flex / pose <small>optional</small><input type="file" id="photoFlex" accept="image/*" capture="environment"><span id="flexStatus">Choose photo</span></label>
+  </div>
+  <button class="primary" id="savePhotoCheckinBtn">Save photo check-in</button>
+</div></div>
 <div class="modal" id="newUserModal"><div class="modal-card setup-card"><div class="modal-head"><div><div class="eyebrow">Fresh profile</div><h2>New User</h2></div><button class="icon-btn" id="closeNewUserBtn">×</button></div><p class="notice">This clears this browser's personal tracking data. The workout program stays unchanged. Export a backup first if needed.</p><div class="setup-grid"><label>Name<input id="newName"></label><label>Starting weight (lb)<input id="newStartWeight" inputmode="decimal"></label><label>Calorie goal<input id="newCalGoal" inputmode="numeric" value="2500"></label><label>Protein goal (g)<input id="newProteinGoal" inputmode="numeric" value="180"></label><label>Carb goal (g)<input id="newCarbGoal" inputmode="numeric" value="250"></label><label>Fat goal (g)<input id="newFatGoal" inputmode="numeric" value="85"></label><label>BMR<input id="newBmr" inputmode="numeric" value="1891"></label><label>TDEE<input id="newTdee" inputmode="numeric" value="2741"></label><label>Water goal (oz)<input id="newWaterGoal" inputmode="numeric" value="96"></label></div><label class="reset-label">Type <b>RESET</b> to confirm<input id="resetConfirm" placeholder="RESET"></label><button class="danger" id="confirmNewUserBtn">Erase data & create new user</button></div></div></body>
 </html>

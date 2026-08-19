@@ -38,7 +38,7 @@ const historicalCalories=[
 const isoDate=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)};
 const todayISO=()=>isoDate(new Date());
 const old=JSON.parse(localStorage.getItem('mwState')||'null');
-const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},drafts:{},water:{},waterGoal:96,checklistItems:[],checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'Matt'},historicalEnabled:true};
+const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},drafts:{},water:{},waterGoal:96,checklistItems:[],checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'Matt'},historicalEnabled:true,photoSettings:{weekly:false},photoCheckins:[]};
 let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
@@ -155,7 +155,7 @@ function renderToday(){
   document.getElementById('amWeight').value=wt.am||'';
   document.getElementById('pmWeight').value=wt.pm||'';
   document.getElementById('weightHint').textContent=wt.post?`Post-workout today: ${wt.post} lb`:'';
-  renderTodayMacros();renderWater();renderActivities();renderEnergyBalance();
+  renderTodayMacros();renderWater();renderActivities();renderEnergyBalance();renderPhotoDue();
 }
 function renderTodayMacros(){const n=state.nutrition[todayISO()]||{foods:[]};const t=totals(n.foods||[]),g=state.goals;document.getElementById('todayMacros').innerHTML=macroBoxes(t,g);if(document.getElementById('energyBalance'))renderEnergyBalance();}
 function macroBoxes(t,g){return [['Calories',t.cal,g.cal],['Protein',t.p,g.p],['Carbs',t.c,g.c],['Fat',t.f,g.f]].map(([k,v,goal])=>`<div class="macro-box"><strong>${Math.round(v)}</strong><span>${k}${k==='Calories'?'':' g'}</span><small>/ ${goal}</small></div>`).join('')}
@@ -539,6 +539,41 @@ function currentCardioSeries(){
   });
   return out;
 }
+
+const photoDBName='MattFitnessPhotos';
+function photoDB(){return new Promise((resolve,reject)=>{const q=indexedDB.open(photoDBName,1);q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains('photos'))q.result.createObjectStore('photos')};q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
+async function photoPut(key,blob){const db=await photoDB();return new Promise((resolve,reject)=>{const tx=db.transaction('photos','readwrite');tx.objectStore('photos').put(blob,key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+async function photoGet(key){const db=await photoDB();return new Promise((resolve,reject)=>{const q=db.transaction('photos').objectStore('photos').get(key);q.onsuccess=()=>resolve(q.result||null);q.onerror=()=>reject(q.error)})}
+async function photoDeleteAll(){const db=await photoDB();return new Promise((resolve,reject)=>{const tx=db.transaction('photos','readwrite');tx.objectStore('photos').clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+function daysBetween(a,b){return Math.floor((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000)}
+function phasePhotoDone(){return (state.photoCheckins||[]).some(x=>x.type==='phase'&&x.phaseIndex===state.phase)}
+function photoDueInfo(){
+  if(!phasePhotoDone())return{due:true,type:'phase',title:`Phase ${state.phase+1} starting photos`,text:'Take a baseline photo set for the beginning of this phase.'};
+  if(state.photoSettings?.weekly){const last=[...(state.photoCheckins||[])].sort((a,b)=>b.date.localeCompare(a.date))[0];if(!last||daysBetween(last.date,todayISO())>=7)return{due:true,type:'weekly',title:'Weekly progress photos',text:'Your optional weekly visual check-in is due.'}}
+  return{due:false};
+}
+function renderPhotoDue(){const el=document.getElementById('photoDueCard');if(!el)return;const d=photoDueInfo();el.style.display=d.due?'block':'none';if(d.due){document.getElementById('photoDueTitle').textContent=d.title;document.getElementById('photoDueText').textContent=d.text;el.dataset.photoType=d.type}}
+let photoCheckinType='manual';
+function openPhotoModal(type){const due=photoDueInfo();photoCheckinType=type||due.type||'manual';document.getElementById('photoModal').classList.add('open');document.getElementById('photoModalEyebrow').textContent=photoCheckinType==='phase'?`Phase ${state.phase+1}`:photoCheckinType==='weekly'?'Weekly check-in':'Progress check-in';['Front','Side','Back','Flex'].forEach(a=>{const input=document.getElementById('photo'+a);input.value='';document.getElementById(a.toLowerCase()+'Status').textContent='Choose photo'})}
+function closePhotoModal(){document.getElementById('photoModal').classList.remove('open')}
+async function compressPhoto(file){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const max=1000,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(url);b?resolve(b):reject(new Error('Photo compression failed'))},'image/jpeg',.78)};img.onerror=reject;img.src=url})}
+async function savePhotoCheckin(){
+  const files={front:document.getElementById('photoFront').files[0],side:document.getElementById('photoSide').files[0],back:document.getElementById('photoBack').files[0],flex:document.getElementById('photoFlex').files[0]};
+  if(!files.front||!files.side||!files.back){alert('Add Front, Side and Back photos first.');return}
+  const btn=document.getElementById('savePhotoCheckinBtn');btn.disabled=true;btn.textContent='Saving…';
+  try{const id=`${todayISO()}-${Date.now()}`,angles=[];for(const [angle,file] of Object.entries(files)){if(!file)continue;const blob=await compressPhoto(file);await photoPut(`${id}:${angle}`,blob);angles.push(angle)}state.photoCheckins=state.photoCheckins||[];state.photoCheckins.push({id,date:todayISO(),type:photoCheckinType,phaseIndex:state.phase,angles});save();closePhotoModal();renderAll();await renderPhotoGallery()}catch(e){alert('The photos could not be saved.')}finally{btn.disabled=false;btn.textContent='Save photo check-in'}
+}
+function photoLabel(x){const d=new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});return x.type==='phase'?`${d} · Phase ${x.phaseIndex+1}`:x.type==='weekly'?`${d} · Weekly`:d}
+async function photoURL(checkin,angle){const b=await photoGet(`${checkin.id}:${angle}`);return b?URL.createObjectURL(b):''}
+async function renderPhotoGallery(){
+ const gallery=document.getElementById('photoGallery');if(!gallery)return;const list=[...(state.photoCheckins||[])].sort((a,b)=>b.date.localeCompare(a.date));document.getElementById('weeklyPhotosToggle').checked=!!state.photoSettings?.weekly;
+ if(!list.length){gallery.innerHTML='<p class="notice">No photo check-ins yet.</p>';document.getElementById('photoCompareControls').style.display='none';document.getElementById('photoCompare').innerHTML='';return}
+ gallery.innerHTML='';for(const x of list.slice(0,8)){const card=document.createElement('div');card.className='photo-checkin';let thumb='';for(const a of ['front','side','back','flex']){if(x.angles.includes(a)){thumb=await photoURL(x,a);if(thumb)break}}card.innerHTML=`${thumb?`<img src="${thumb}" alt="${a} progress photo">`:''}<div><b>${esc(photoLabel(x))}</b><small>${x.angles.map(a=>a[0].toUpperCase()+a.slice(1)).join(' · ')}</small></div>`;gallery.appendChild(card)}
+ const controls=document.getElementById('photoCompareControls');controls.style.display=list.length>=2?'flex':'none';if(list.length>=2){const opts=list.map(x=>`<option value="${x.id}">${esc(photoLabel(x))}</option>`).join('');document.getElementById('compareA').innerHTML=opts;document.getElementById('compareB').innerHTML=opts;document.getElementById('compareB').selectedIndex=1}
+}
+async function comparePhotos(){const list=state.photoCheckins||[],a=list.find(x=>x.id===document.getElementById('compareA').value),b=list.find(x=>x.id===document.getElementById('compareB').value);if(!a||!b)return;const wrap=document.getElementById('photoCompare');wrap.innerHTML='';for(const angle of ['front','side','back','flex']){if(!a.angles.includes(angle)||!b.angles.includes(angle))continue;const ua=await photoURL(a,angle),ub=await photoURL(b,angle);const row=document.createElement('div');row.className='compare-row';row.innerHTML=`<div class="compare-angle">${angle[0].toUpperCase()+angle.slice(1)}</div><div class="compare-pair"><figure><img src="${ua}"><figcaption>${esc(photoLabel(a))}</figcaption></figure><figure><img src="${ub}"><figcaption>${esc(photoLabel(b))}</figcaption></figure></div>`;wrap.appendChild(row)}}
+function toggleWeeklyPhotos(){state.photoSettings=state.photoSettings||{};state.photoSettings.weekly=document.getElementById('weeklyPhotosToggle').checked;save();renderPhotoDue()}
+
 function renderProgress(){
   const entries=Object.entries(state.weights).filter(([,v])=>v.am||v.pm).sort((a,b)=>a[0].localeCompare(b[0]));
   const ams=entries.filter(([,v])=>v.am).map(([d,v])=>({d,v:+v.am}));
@@ -557,11 +592,12 @@ function renderProgress(){
   const cardio=currentCardioSeries();
   document.getElementById('cardioChart').innerHTML=cardio.length?svgLineChart(cardio,{valueKey:'pace',suffix:'',minPad:.5,maxPad:.5}):'<p class="notice">Your jog/run pace graph will appear here after you log cardio sessions.</p>';
 
+  renderPhotoGallery();
   document.getElementById('weightHistory').innerHTML=entries.length?entries.slice(-10).reverse().map(([d,v])=>`<div class="weight-line"><span>${new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><b>${v.am?`AM ${v.am}`:'—'}</b><b>${v.pm?`PM ${v.pm}`:(v.post?`Post ${v.post}`:'—')}</b></div>`).join(''):'<p class="notice">Start entering morning and evening weights to build your current trend.</p>';
 }
 
 function downloadBackup(){
- const payload={app:'Workout App Panza',version:11,exportedAt:new Date().toISOString(),state};
+ const payload={app:'Workout App Panza',version:12,exportedAt:new Date().toISOString(),state};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download=`workout-app-backup-${todayISO()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
@@ -571,10 +607,10 @@ function restoreBackupFile(file){
 }
 function openNewUser(){document.getElementById('newUserModal').classList.add('open')}
 function closeNewUser(){document.getElementById('newUserModal').classList.remove('open')}
-function createNewUser(){
+async function createNewUser(){
  if(document.getElementById('resetConfirm').value.trim().toUpperCase()!=='RESET'){alert('Type RESET to confirm.');return}
  const name=document.getElementById('newName').value.trim()||'User',cal=+document.getElementById('newCalGoal').value||2500,p=+document.getElementById('newProteinGoal').value||180,c=+document.getElementById('newCarbGoal').value||250,f=+document.getElementById('newFatGoal').value||85,bmr=+document.getElementById('newBmr').value||1891,tdee=+document.getElementById('newTdee').value||2741,waterGoal=+document.getElementById('newWaterGoal').value||96,startWeight=+document.getElementById('newStartWeight').value||0;
- state=JSON.parse(JSON.stringify(base));state.profile={name};state.goals={cal,p,c,f};state.bmr=bmr;state.tdee=tdee;state.waterGoal=waterGoal;state.historicalEnabled=false;state.scheduleDate=todayISO();state.nextEventType='workout';if(startWeight)state.weights[todayISO()]={am:startWeight};
+ await photoDeleteAll();state=JSON.parse(JSON.stringify(base));state.profile={name};state.goals={cal,p,c,f};state.bmr=bmr;state.tdee=tdee;state.waterGoal=waterGoal;state.historicalEnabled=false;state.scheduleDate=todayISO();state.nextEventType='workout';if(startWeight)state.weights[todayISO()]={am:startWeight};
  save();closeNewUser();renderAll();showScreen('today');
 }
 function editActivity(i){
@@ -600,4 +636,12 @@ document.getElementById('restoreInput').addEventListener('change',e=>{restoreBac
 document.getElementById('newUserBtn').addEventListener('click',openNewUser);
 document.getElementById('closeNewUserBtn').addEventListener('click',closeNewUser);
 document.getElementById('confirmNewUserBtn').addEventListener('click',createNewUser);
+document.getElementById('openPhotoBtn').addEventListener('click',()=>openPhotoModal(document.getElementById('photoDueCard').dataset.photoType));
+document.getElementById('progressPhotoBtn').addEventListener('click',()=>openPhotoModal('manual'));
+document.getElementById('closePhotoBtn').addEventListener('click',closePhotoModal);
+document.getElementById('savePhotoCheckinBtn').addEventListener('click',savePhotoCheckin);
+document.getElementById('weeklyPhotosToggle').addEventListener('change',toggleWeeklyPhotos);
+document.getElementById('comparePhotosBtn').addEventListener('click',comparePhotos);
+['Front','Side','Back','Flex'].forEach(a=>document.getElementById('photo'+a).addEventListener('change',e=>document.getElementById(a.toLowerCase()+'Status').textContent=e.target.files[0]?.name?'Photo selected':'Choose photo'));
+
 document.getElementById('nutritionDate').value=todayISO();setHrDefaultsForType();renderAll();save();
