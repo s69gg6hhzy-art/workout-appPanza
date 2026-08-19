@@ -42,7 +42,7 @@ const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weig
 let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
-let timerInterval=null,timerLeft=0,calendarCursor=new Date();calendarCursor.setDate(1);
+let timerInterval=null,timerLeft=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false;
 function save(){localStorage.setItem('mfState',JSON.stringify(state))}
 function phase(){return program[state.phase]}
 function current(){return phase().workouts[state.workout]}
@@ -185,6 +185,12 @@ function checklistDay(){
   state.checklistDays[d]=state.checklistDays[d]||{};
   return state.checklistDays[d];
 }
+function toggleChecklistReorder(){
+  checklistReorderMode=!checklistReorderMode;
+  const b=document.getElementById('reorderChecklistBtn');
+  if(b)b.textContent=checklistReorderMode?'Done':'Reorder';
+  renderChecklist();
+}
 function moveChecklistItem(id,dir){
   const i=state.checklistItems.findIndex(x=>x.id===id);
   const j=i+dir;if(i<0||j<0||j>=state.checklistItems.length)return;
@@ -198,15 +204,20 @@ function renderChecklist(){
   const done=items.filter(x=>day[x.id]).length;
   document.getElementById('checklistDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
   document.getElementById('checklistCount').textContent=`${done} of ${items.length} complete`;
-  list.innerHTML=items.length?items.map(item=>`<div class="checklist-row ${day[item.id]?'done':''}" draggable="true" data-item="${item.id}">
-    <button class="drag-handle" type="button" aria-label="Drag ${esc(item.text)} to reorder">☰</button>
-    <button class="checklist-check ${day[item.id]?'done':''}" data-check="${item.id}" aria-label="Mark ${esc(item.text)} complete">✓</button>
+  const reorderBtn=document.getElementById('reorderChecklistBtn');if(reorderBtn)reorderBtn.textContent=checklistReorderMode?'Done':'Reorder';
+  list.innerHTML=items.length?items.map(item=>`<div class="checklist-row ${day[item.id]?'done':''} ${checklistReorderMode?'reorder-mode':''}" data-item="${item.id}">
+    ${checklistReorderMode?'':`<button class="checklist-check ${day[item.id]?'done':''}" data-check="${item.id}" aria-label="Mark ${esc(item.text)} complete">✓</button>`}
     <span class="checklist-text" data-text="${item.id}">${esc(item.text)}</span>
     <input class="checklist-edit" data-edit-input="${item.id}" value="${esc(item.text)}" aria-label="Edit ${esc(item.text)}">
-    <button class="check-move" data-check-up="${item.id}" aria-label="Move ${esc(item.text)} up">↑</button>
-    <button class="check-move" data-check-down="${item.id}" aria-label="Move ${esc(item.text)} down">↓</button>
-    <button class="checklist-edit-btn" data-edit="${item.id}" aria-label="Edit ${esc(item.text)}">Edit</button>
-    <button class="checklist-delete" data-delete="${item.id}" aria-label="Delete ${esc(item.text)}">×</button>
+    ${checklistReorderMode?`
+      <div class="reorder-controls">
+        <button class="check-move" data-check-up="${item.id}" aria-label="Move ${esc(item.text)} up">↑</button>
+        <button class="check-move" data-check-down="${item.id}" aria-label="Move ${esc(item.text)} down">↓</button>
+      </div>`:`
+      <div class="checklist-actions">
+        <button class="checklist-edit-btn" data-edit="${item.id}" aria-label="Edit ${esc(item.text)}">Edit</button>
+        <button class="checklist-delete" data-delete="${item.id}" aria-label="Delete ${esc(item.text)}">×</button>
+      </div>`}
   </div>`).join(''):'<p class="notice">No checklist items yet. Add your first daily item below.</p>';
 
   document.querySelectorAll('[data-check]').forEach(b=>b.addEventListener('click',()=>{
@@ -645,6 +656,7 @@ document.getElementById('waterMinusBtn').addEventListener('click',()=>changeWate
 document.getElementById('waterPlusBtn').addEventListener('click',()=>changeWater(8));
 document.getElementById('saveWaterGoalBtn').addEventListener('click',saveWaterGoal);
 document.getElementById('addChecklistBtn').addEventListener('click',addChecklistItem);
+document.getElementById('reorderChecklistBtn').addEventListener('click',toggleChecklistReorder);
 document.getElementById('newChecklistItem').addEventListener('keydown',e=>{if(e.key==='Enter')addChecklistItem()});
 document.getElementById('backupBtn').addEventListener('click',downloadBackup);
 document.getElementById('restoreInput').addEventListener('change',e=>{restoreBackupFile(e.target.files[0]);e.target.value=''});
@@ -653,6 +665,7 @@ document.getElementById('closeNewUserBtn').addEventListener('click',closeNewUser
 document.getElementById('confirmNewUserBtn').addEventListener('click',createNewUser);
 document.getElementById('openPhotoBtn').addEventListener('click',()=>openPhotoModal(document.getElementById('photoDueCard').dataset.photoType));
 document.getElementById('progressPhotoBtn').addEventListener('click',()=>openPhotoModal('manual'));
+document.getElementById('takePhotoAnytimeBtn').addEventListener('click',()=>openPhotoModal('manual'));
 document.getElementById('closePhotoBtn').addEventListener('click',closePhotoModal);
 document.getElementById('savePhotoCheckinBtn').addEventListener('click',savePhotoCheckin);
 document.getElementById('weeklyPhotosToggle').addEventListener('change',toggleWeeklyPhotos);

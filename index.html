@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 <div class="app">
@@ -18,6 +18,12 @@
       <div class="progress"><div id="overallProgress"></div></div>
       <div class="tiny" id="progressText"></div>
       <button class="primary" id="startBtn">Start workout</button><button class="primary rest-ack" id="ackRestBtn" style="display:none">Acknowledge rest day</button>
+    </div>
+
+    <div class="section-title">Progress photo</div>
+    <div class="card photo-anytime-card">
+      <div><div class="eyebrow">Visual check-in</div><p class="muted">Take a progress photo set anytime.</p></div>
+      <button class="secondary compact" id="takePhotoAnytimeBtn">Take progress photos</button>
     </div>
 
     <div class="section-title">Weight</div>
@@ -107,7 +113,7 @@
   <section id="checklist" class="screen">
     <div class="top"><div class="title">Checklist</div><div class="pill" id="checklistDate"></div></div>
     <div class="card">
-      <div class="checklist-head"><div><div class="eyebrow">Daily checklist</div><h3 id="checklistCount">0 of 0 complete</h3></div></div>
+      <div class="checklist-head"><div><div class="eyebrow">Daily checklist</div><h3 id="checklistCount">0 of 0 complete</h3></div><button class="secondary compact" id="reorderChecklistBtn">Reorder</button></div>
       <div id="checklistList"></div>
     </div>
     <div class="card checklist-add">
@@ -205,8 +211,8 @@
   <button data-screen="history">History</button>
   <button data-screen="progress">Progress</button>
 </nav>
-<script src="data.js?v=14"></script>
-<script src="app.js?v=14"></script>
+<script src="data.js?v=15"></script>
+<script src="app.js?v=15"></script>
 
 <div class="modal" id="photoModal"><div class="modal-card setup-card">
   <div class="modal-head"><div><div class="eyebrow" id="photoModalEyebrow">Progress check-in</div><h2 id="photoModalTitle">Progress photos</h2></div><button class="icon-btn" id="closePhotoBtn">×</button></div>
