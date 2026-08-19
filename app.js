@@ -38,7 +38,7 @@ const historicalCalories=[
 const isoDate=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)};
 const todayISO=()=>isoDate(new Date());
 const old=JSON.parse(localStorage.getItem('mwState')||'null');
-const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},drafts:{},water:{},waterGoal:96,checklistItems:[],checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout'};
+const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},drafts:{},water:{},waterGoal:96,checklistItems:[],checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'Matt'},historicalEnabled:true};
 let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
@@ -325,9 +325,10 @@ function renderActivities(){
     const zoneLine=zones.length?[1,2,3,4,5].map(z=>a[`z${z}`]?`Z${z} ${a[`z${z}`]}`:'').filter(Boolean).join(' · '):'';
     return `<div class="activity-row">
       <div><b>${esc(a.type)}</b><small>${bits.join(' · ')}</small>${zoneLine?`<small class="zone-line">${zoneLine}</small>`:''}</div>
-      <button data-activity-delete="${i}" aria-label="Delete ${esc(a.type)}">×</button>
+      <div class="activity-actions"><button data-activity-edit="${i}" aria-label="Edit ${esc(a.type)}">Edit</button><button data-activity-delete="${i}" aria-label="Delete ${esc(a.type)}">×</button></div>
     </div>`;
   }).join(''):'<p class="notice">No walks or jogs logged today.</p>';
+  document.querySelectorAll('[data-activity-edit]').forEach(b=>b.addEventListener('click',()=>editActivity(+b.dataset.activityEdit)));
   document.querySelectorAll('[data-activity-delete]').forEach(b=>b.addEventListener('click',()=>{
     state.activities[today].splice(+b.dataset.activityDelete,1);
     save();renderActivities();renderEnergyBalance();
@@ -547,9 +548,9 @@ function renderProgress(){
   const swings=entries.filter(([,v])=>v.am&&v.pm).map(([,v])=>+v.pm-+v.am);
   document.getElementById('dailySwing').textContent=swings.length?`${(swings.reduce((a,b)=>a+b,0)/swings.length).toFixed(1)} lb`:'—';
 
-  const allWeights=[...historicalWeight,...currentWeightSeries()].sort((a,b)=>a.date.localeCompare(b.date));
+  const allWeights=[...(state.historicalEnabled===false?[]:historicalWeight),...currentWeightSeries()].sort((a,b)=>a.date.localeCompare(b.date));
   document.getElementById('weightChart').innerHTML=svgLineChart(allWeights,{valueKey:'weight',suffix:'',minPad:2,maxPad:2});
-  const histNut=[...historicalCalories,...currentWeeklyNutrition()].sort((a,b)=>a.date.localeCompare(b.date));
+  const histNut=[...(state.historicalEnabled===false?[]:historicalCalories),...currentWeeklyNutrition()].sort((a,b)=>a.date.localeCompare(b.date));
   document.getElementById('calorieChart').innerHTML=svgLineChart(histNut,{valueKey:'cal',minPad:150,maxPad:150});
   document.getElementById('proteinChart').innerHTML=svgLineChart(histNut,{valueKey:'protein',suffix:'g',minPad:10,maxPad:10});
 
@@ -558,6 +559,30 @@ function renderProgress(){
 
   document.getElementById('weightHistory').innerHTML=entries.length?entries.slice(-10).reverse().map(([d,v])=>`<div class="weight-line"><span>${new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><b>${v.am?`AM ${v.am}`:'—'}</b><b>${v.pm?`PM ${v.pm}`:(v.post?`Post ${v.post}`:'—')}</b></div>`).join(''):'<p class="notice">Start entering morning and evening weights to build your current trend.</p>';
 }
+
+function downloadBackup(){
+ const payload={app:'Workout App Panza',version:11,exportedAt:new Date().toISOString(),state};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=`workout-app-backup-${todayISO()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function restoreBackupFile(file){
+ if(!file)return;const r=new FileReader();
+ r.onload=()=>{try{const p=JSON.parse(r.result),incoming=p.state||p;if(!incoming||typeof incoming!=='object')throw 0;state={...base,...incoming};save();renderAll();alert('Backup restored.')}catch(e){alert('That backup file could not be restored.')}};r.readAsText(file);
+}
+function openNewUser(){document.getElementById('newUserModal').classList.add('open')}
+function closeNewUser(){document.getElementById('newUserModal').classList.remove('open')}
+function createNewUser(){
+ if(document.getElementById('resetConfirm').value.trim().toUpperCase()!=='RESET'){alert('Type RESET to confirm.');return}
+ const name=document.getElementById('newName').value.trim()||'User',cal=+document.getElementById('newCalGoal').value||2500,p=+document.getElementById('newProteinGoal').value||180,c=+document.getElementById('newCarbGoal').value||250,f=+document.getElementById('newFatGoal').value||85,bmr=+document.getElementById('newBmr').value||1891,tdee=+document.getElementById('newTdee').value||2741,waterGoal=+document.getElementById('newWaterGoal').value||96,startWeight=+document.getElementById('newStartWeight').value||0;
+ state=JSON.parse(JSON.stringify(base));state.profile={name};state.goals={cal,p,c,f};state.bmr=bmr;state.tdee=tdee;state.waterGoal=waterGoal;state.historicalEnabled=false;state.scheduleDate=todayISO();state.nextEventType='workout';if(startWeight)state.weights[todayISO()]={am:startWeight};
+ save();closeNewUser();renderAll();showScreen('today');
+}
+function editActivity(i){
+ const today=todayISO(),a=(state.activities[today]||[])[i];if(!a)return;
+ document.getElementById('activityType').value=a.type||'Walk';setHrDefaultsForType();document.getElementById('activityDistance').value=a.distance||'';document.getElementById('activityMinutes').value=a.minutes||'';document.getElementById('activitySeconds').value=a.seconds||'';document.getElementById('activityCalories').value=a.calories||'';document.getElementById('activityAvgHr').value=a.avgHr||'';[1,2,3,4,5].forEach(z=>document.getElementById(`activityZ${z}`).value=a[`z${z}`]||'');
+ state.activities[today].splice(i,1);save();renderActivities();renderEnergyBalance();
+}
+
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.screen===id));if(id==='workout')renderWorkout();if(id==='nutrition')renderNutrition();if(id==='history')renderHistory();if(id==='progress')renderProgress();if(id==='checklist')renderChecklist();if(id==='today')renderToday();window.scrollTo(0,0)}
 function renderAll(){renderToday();renderWorkout();renderNutrition();renderChecklist();renderHistory();renderProgress()}
 function num(id){return parseFloat(document.getElementById(id).value)||0}
@@ -570,4 +595,9 @@ document.getElementById('waterPlusBtn').addEventListener('click',()=>changeWater
 document.getElementById('saveWaterGoalBtn').addEventListener('click',saveWaterGoal);
 document.getElementById('addChecklistBtn').addEventListener('click',addChecklistItem);
 document.getElementById('newChecklistItem').addEventListener('keydown',e=>{if(e.key==='Enter')addChecklistItem()});
+document.getElementById('backupBtn').addEventListener('click',downloadBackup);
+document.getElementById('restoreInput').addEventListener('change',e=>{restoreBackupFile(e.target.files[0]);e.target.value=''});
+document.getElementById('newUserBtn').addEventListener('click',openNewUser);
+document.getElementById('closeNewUserBtn').addEventListener('click',closeNewUser);
+document.getElementById('confirmNewUserBtn').addEventListener('click',createNewUser);
 document.getElementById('nutritionDate').value=todayISO();setHrDefaultsForType();renderAll();save();
