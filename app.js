@@ -575,6 +575,7 @@ function photoDueInfo(){
 }
 function renderPhotoDue(){const el=document.getElementById('photoDueCard');if(!el)return;const d=photoDueInfo();el.style.display=d.due?'block':'none';if(d.due){document.getElementById('photoDueTitle').textContent=d.title;document.getElementById('photoDueText').textContent=d.text;el.dataset.photoType=d.type}}
 let photoCheckinType='manual';
+function openManualPhotos(){openPhotoModal('manual')}
 function openPhotoModal(type){const due=photoDueInfo();photoCheckinType=type||due.type||'manual';document.getElementById('photoModal').classList.add('open');setTimeout(bindPhotoInputs,0);document.getElementById('photoModalEyebrow').textContent=photoCheckinType==='phase'?`Phase ${state.phase+1}`:photoCheckinType==='weekly'?'Weekly check-in':'Progress check-in';['Front','Side','Back','Flex'].forEach(a=>{['Camera','Library'].forEach(src=>{const input=document.getElementById('photo'+a+src);if(input)input.value=''});document.getElementById(a.toLowerCase()+'Status').textContent='No photo selected'})}
 function closePhotoModal(){document.getElementById('photoModal').classList.remove('open')}
 async function compressPhoto(file){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const max=1000,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(url);b?resolve(b):reject(new Error('Photo compression failed'))},'image/jpeg',.78)};img.onerror=reject;img.src=url})}
@@ -647,19 +648,17 @@ function editActivity(i){
 }
 
 function bindPhotoInputs(){
-  document.querySelectorAll('[data-photo-trigger]').forEach(b=>{
-    b.onclick=()=>{const input=document.getElementById(b.dataset.photoTrigger);if(input)input.click();};
-  });
   ['Front','Side','Back','Flex'].forEach(a=>{
     ['Camera','Library'].forEach(src=>{
-      const input=document.getElementById('photo'+a+src);if(!input)return;
+      const input=document.getElementById('photo'+a+src);
+      if(!input)return;
       input.onchange=()=>{
         const file=input.files&&input.files[0];
         if(file){
           const other=document.getElementById('photo'+a+(src==='Camera'?'Library':'Camera'));
           if(other)other.value='';
           const status=document.getElementById(a.toLowerCase()+'Status');
-          if(status)status.textContent=src==='Camera'?'Photo taken':'Existing photo selected';
+          if(status)status.textContent=src==='Camera'?'Photo taken ✓':'Existing photo selected ✓';
         }
       };
     });
@@ -684,14 +683,11 @@ document.getElementById('newUserBtn').addEventListener('click',openNewUser);
 document.getElementById('closeNewUserBtn').addEventListener('click',closeNewUser);
 document.getElementById('confirmNewUserBtn').addEventListener('click',createNewUser);
 document.getElementById('openPhotoBtn').addEventListener('click',()=>openPhotoModal(document.getElementById('photoDueCard').dataset.photoType));
-document.getElementById('progressPhotoBtn').addEventListener('click',()=>openPhotoModal('manual'));
-document.getElementById('takePhotoAnytimeBtn').addEventListener('click',()=>openPhotoModal('manual'));
 document.getElementById('closePhotoBtn').addEventListener('click',closePhotoModal);
 document.getElementById('savePhotoCheckinBtn').addEventListener('click',savePhotoCheckin);
 document.getElementById('weeklyPhotosToggle').addEventListener('change',toggleWeeklyPhotos);
 document.getElementById('comparePhotosBtn').addEventListener('click',comparePhotos);
-['Front','Side','Back','Flex'].forEach(a=>document.getElementById('photo'+a).addEventListener('change',e=>document.getElementById(a.toLowerCase()+'Status').textContent=e.target.files[0]?.name?'Photo selected':'Choose photo'));
 
-document.getElementById('nutritionDate').value=todayISO();setHrDefaultsForType();renderAll();save();
+document.getElementById('nutritionDate').value=todayISO();setHrDefaultsForType();renderAll();bindPhotoInputs();save();
 
 setTimeout(bindPhotoInputs,0);
