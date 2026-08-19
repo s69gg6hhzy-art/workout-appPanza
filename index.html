@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=22">
+  <link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
 <div class="app">
@@ -67,10 +67,17 @@
       <div id="activityList"></div>
     </div>
 
-    <div class="section-title">Progress photo</div>
-    <div class="card photo-anytime-card">
-      <div><div class="eyebrow">Visual check-in</div><p class="muted">Take a progress photo set anytime.</p></div>
-      <button class="secondary compact" id="takePhotoAnytimeBtn" onclick="openManualPhotos()">Take progress photos</button>
+    <div class="section-title">Progress photos</div>
+    <div class="card photo-tracker-card">
+      <div class="eyebrow">Progress photos taken today</div>
+      <p class="muted">Mark the angles you took.</p>
+      <div class="photo-check-grid">
+        <label><input type="checkbox" id="photoDoneFront"><span>Front</span></label>
+        <label><input type="checkbox" id="photoDoneSide"><span>Side</span></label>
+        <label><input type="checkbox" id="photoDoneBack"><span>Back</span></label>
+        <label><input type="checkbox" id="photoDoneFlex"><span>Flex</span></label>
+      </div>
+      <div class="tiny" id="photoTakenStatus"></div>
     </div>
 
     <div class="grid">
@@ -162,15 +169,9 @@
 
 
     <div class="card">
-      <div class="photo-due-head"><div><div class="eyebrow">Progress photos</div><h3>Visual check-ins</h3></div><label class="weekly-toggle"><input type="checkbox" id="weeklyPhotosToggle"> Weekly</label></div>
-      <p class="muted">A check-in is prompted at the beginning of every phase. Weekly check-ins are optional.</p>
-      <button class="secondary compact" id="progressPhotoBtn" onclick="openManualPhotos()">New photo check-in</button>
-      <div id="photoGallery" class="photo-gallery"><p class="notice">No photo check-ins yet.</p></div>
-      <div id="photoCompareControls" class="compare-controls" style="display:none">
-        <select id="compareA"></select><span>vs</span><select id="compareB"></select>
-        <button class="secondary compact" id="comparePhotosBtn">Compare</button>
-      </div>
-      <div id="photoCompare" class="photo-compare"></div>
+      <div class="eyebrow">Progress photos</div>
+      <h3>Photo tracking</h3>
+      <p class="muted">Use the checkmarks on Today to record Front, Side, Back and Flex. Any checked angle adds a 📷 to that date in History.</p>
     </div>
     <div class="card">
       <div class="eyebrow">Body composition checkpoints</div>
@@ -212,18 +213,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<div class="modal" id="photoModal"><div class="modal-card setup-card">
-  <div class="modal-head"><div><div class="eyebrow" id="photoModalEyebrow">Progress check-in</div><h2 id="photoModalTitle">Progress photos</h2></div><button class="icon-btn" id="closePhotoBtn" onclick="closePhotoModal()">×</button></div>
-  <p class="notice">For useful comparisons, use similar lighting, distance, clothes and time of day.</p>
-  <div class="photo-input-grid">
-    <label>Front<input type="file" id="photoFrontCamera" accept="image/*" capture="environment" class="photo-file-input"><input type="file" id="photoFrontLibrary" accept="image/*" class="photo-file-input"><div class="photo-button-pair"><label for="photoFrontCamera" class="primary compact photo-native-button">Take Front photo</label><label for="photoFrontLibrary" class="secondary compact photo-native-button">Choose existing</label></div><span id="frontStatus">No photo selected</span></label>
-    <label>Side<input type="file" id="photoSideCamera" accept="image/*" capture="environment" class="photo-file-input"><input type="file" id="photoSideLibrary" accept="image/*" class="photo-file-input"><div class="photo-button-pair"><label for="photoSideCamera" class="primary compact photo-native-button">Take Side photo</label><label for="photoSideLibrary" class="secondary compact photo-native-button">Choose existing</label></div><span id="sideStatus">No photo selected</span></label>
-    <label>Back<input type="file" id="photoBackCamera" accept="image/*" capture="environment" class="photo-file-input"><input type="file" id="photoBackLibrary" accept="image/*" class="photo-file-input"><div class="photo-button-pair"><label for="photoBackCamera" class="primary compact photo-native-button">Take Back photo</label><label for="photoBackLibrary" class="secondary compact photo-native-button">Choose existing</label></div><span id="backStatus">No photo selected</span></label>
-    <label>Flex / pose <small>optional</small><input type="file" id="photoFlexCamera" accept="image/*" capture="environment" class="photo-file-input"><input type="file" id="photoFlexLibrary" accept="image/*" class="photo-file-input"><div class="photo-button-pair"><label for="photoFlexCamera" class="primary compact photo-native-button">Take Flex / Pose photo</label><label for="photoFlexLibrary" class="secondary compact photo-native-button">Choose existing</label></div><span id="flexStatus">No photo selected</span></label>
-  </div>
-  <button class="primary" id="savePhotoCheckinBtn" onclick="savePhotoCheckin()">Save photo check-in</button>
-</div></div>
-<div class="modal" id="newUserModal"><div class="modal-card setup-card"><div class="modal-head"><div><div class="eyebrow">Fresh profile</div><h2>New User</h2></div><button class="icon-btn" id="closeNewUserBtn">×</button></div><p class="notice">This clears this browser's personal tracking data. The workout program stays unchanged. Export a backup first if needed.</p><div class="setup-grid"><label>Name<input id="newName"></label><label>Starting weight (lb)<input id="newStartWeight" inputmode="decimal"></label><label>Calorie goal<input id="newCalGoal" inputmode="numeric" value="2500"></label><label>Protein goal (g)<input id="newProteinGoal" inputmode="numeric" value="180"></label><label>Carb goal (g)<input id="newCarbGoal" inputmode="numeric" value="250"></label><label>Fat goal (g)<input id="newFatGoal" inputmode="numeric" value="85"></label><label>BMR<input id="newBmr" inputmode="numeric" value="1891"></label><label>TDEE<input id="newTdee" inputmode="numeric" value="2741"></label><label>Water goal (oz)<input id="newWaterGoal" inputmode="numeric" value="96"></label></div><label class="reset-label">Type <b>RESET</b> to confirm<input id="resetConfirm" placeholder="RESET"></label><button class="danger" id="confirmNewUserBtn">Erase data & create new user</button></div></div><script src="data.js?v=22"></script>
-<script src="app.js?v=22"></script>
+<script src="data.js?v=23"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>
