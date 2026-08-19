@@ -53,19 +53,86 @@ function renderChecklist(){
   const done=items.filter(x=>day[x.id]).length;
   document.getElementById('checklistDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
   document.getElementById('checklistCount').textContent=`${done} of ${items.length} complete`;
-  list.innerHTML=items.length?items.map(item=>`<div class="checklist-row ${day[item.id]?'done':''}">
+  list.innerHTML=items.length?items.map(item=>`<div class="checklist-row ${day[item.id]?'done':''}" draggable="true" data-item="${item.id}">
+    <button class="drag-handle" type="button" aria-label="Drag ${esc(item.text)} to reorder">☰</button>
     <button class="checklist-check ${day[item.id]?'done':''}" data-check="${item.id}" aria-label="Mark ${esc(item.text)} complete">✓</button>
-    <span>${esc(item.text)}</span>
+    <span class="checklist-text" data-text="${item.id}">${esc(item.text)}</span>
+    <input class="checklist-edit" data-edit-input="${item.id}" value="${esc(item.text)}" aria-label="Edit ${esc(item.text)}">
+    <button class="checklist-edit-btn" data-edit="${item.id}" aria-label="Edit ${esc(item.text)}">Edit</button>
     <button class="checklist-delete" data-delete="${item.id}" aria-label="Delete ${esc(item.text)}">×</button>
   </div>`).join(''):'<p class="notice">No checklist items yet. Add your first daily item below.</p>';
+
   document.querySelectorAll('[data-check]').forEach(b=>b.addEventListener('click',()=>{
     const id=b.dataset.check;day[id]=!day[id];save();renderChecklist();
   }));
+
   document.querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click',()=>{
     const id=b.dataset.delete;state.checklistItems=state.checklistItems.filter(x=>x.id!==id);
     Object.values(state.checklistDays||{}).forEach(x=>delete x[id]);
     save();renderChecklist();
   }));
+
+  document.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>{
+    const row=b.closest('.checklist-row');
+    const id=b.dataset.edit;
+    const input=row.querySelector(`[data-edit-input="${id}"]`);
+    if(row.classList.contains('editing')){
+      const value=input.value.trim();
+      if(value){
+        const item=state.checklistItems.find(x=>x.id===id);
+        if(item)item.text=value;
+        save();
+      }
+      renderChecklist();
+    }else{
+      row.classList.add('editing');
+      b.textContent='Done';
+      input.focus();
+      input.select();
+    }
+  }));
+
+  document.querySelectorAll('.checklist-edit').forEach(inp=>inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter') e.target.closest('.checklist-row').querySelector('.checklist-edit-btn').click();
+  }));
+
+  let draggedId=null;
+  list.querySelectorAll('.checklist-row').forEach(row=>{
+    row.addEventListener('dragstart',e=>{
+      draggedId=row.dataset.item;
+      row.classList.add('dragging');
+      if(e.dataTransfer)e.dataTransfer.effectAllowed='move';
+    });
+    row.addEventListener('dragend',()=>{
+      draggedId=null;
+      row.classList.remove('dragging');
+      list.querySelectorAll('.checklist-row').forEach(r=>r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(draggedId&&draggedId!==row.dataset.item)row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+    row.addEventListener('drop',e=>{
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if(!draggedId||draggedId===row.dataset.item)return;
+      const from=state.checklistItems.findIndex(x=>x.id===draggedId);
+      const to=state.checklistItems.findIndex(x=>x.id===row.dataset.item);
+      if(from<0||to<0)return;
+      const [moved]=state.checklistItems.splice(from,1);
+      state.checklistItems.splice(to,0,moved);
+      save();renderChecklist();
+    });
+
+    const handle=row.querySelector('.drag-handle');
+    handle.addEventListener('touchstart',()=>{
+      row.classList.add('touch-drag-ready');
+    },{passive:true});
+    handle.addEventListener('touchend',()=>{
+      row.classList.remove('touch-drag-ready');
+    },{passive:true});
+  });
 }
 function addChecklistItem(){
   const input=document.getElementById('newChecklistItem');
