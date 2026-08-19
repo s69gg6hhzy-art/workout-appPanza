@@ -577,7 +577,10 @@ function renderPhotoDue(){const el=document.getElementById('photoDueCard');if(!e
 let photoCheckinType='manual';
 function openManualPhotos(){openPhotoModal('manual')}
 function openPhotoModal(type){const due=photoDueInfo();photoCheckinType=type||due.type||'manual';document.getElementById('photoModal').classList.add('show');setTimeout(bindPhotoInputs,0);document.getElementById('photoModalEyebrow').textContent=photoCheckinType==='phase'?`Phase ${state.phase+1}`:photoCheckinType==='weekly'?'Weekly check-in':'Progress check-in';['Front','Side','Back','Flex'].forEach(a=>{['Camera','Library'].forEach(src=>{const input=document.getElementById('photo'+a+src);if(input)input.value=''});document.getElementById(a.toLowerCase()+'Status').textContent='No photo selected'})}
-function closePhotoModal(){document.getElementById('photoModal').classList.remove('show')}
+function closePhotoModal(){
+  const modal=document.getElementById('photoModal');
+  if(modal)modal.classList.remove('show');
+}
 async function compressPhoto(file){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const max=1000,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(url);b?resolve(b):reject(new Error('Photo compression failed'))},'image/jpeg',.78)};img.onerror=reject;img.src=url})}
 function selectedPhoto(angle){
   const cap=angle[0].toUpperCase()+angle.slice(1);
@@ -587,7 +590,7 @@ function selectedPhoto(angle){
 }
 async function savePhotoCheckin(){
   const files={front:selectedPhoto('front'),side:selectedPhoto('side'),back:selectedPhoto('back'),flex:selectedPhoto('flex')};
-  if(!files.front||!files.side||!files.back){alert('Add Front, Side and Back photos first.');return}
+  if(!Object.values(files).some(Boolean)){alert('Take or choose at least one photo first.');return}
   const btn=document.getElementById('savePhotoCheckinBtn');btn.disabled=true;btn.textContent='Saving…';
   try{const id=`${todayISO()}-${Date.now()}`,angles=[];for(const [angle,file] of Object.entries(files)){if(!file)continue;const blob=await compressPhoto(file);await photoPut(`${id}:${angle}`,blob);angles.push(angle)}state.photoCheckins=state.photoCheckins||[];state.photoCheckins.push({id,date:todayISO(),type:photoCheckinType,phaseIndex:state.phase,angles});save();closePhotoModal();renderAll();await renderPhotoGallery()}catch(e){alert('The photos could not be saved.')}finally{btn.disabled=false;btn.textContent='Save photo check-in'}
 }
