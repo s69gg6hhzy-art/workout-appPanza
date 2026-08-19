@@ -33,3 +33,5 @@
 .hr-form input{width:100%;margin-top:5px;background:#0f1115;color:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 8px;font-size:16px}
 .zone-line{margin-top:4px!important;font-size:10px!important}
 @media(max-width:600px){.activity-form{grid-template-columns:1fr 1fr}.activity-form label:first-child{grid-column:1/-1}.hr-form{grid-template-columns:1fr 1fr}}
+
+.hr-hint{margin-top:7px}

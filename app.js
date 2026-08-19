@@ -240,6 +240,36 @@ function renderActivities(){
   const summary=document.getElementById('activitySummary');
   if(summary)summary.textContent=`${Math.round(t.minutes)} min exercise · ${Math.round(t.calories)} active exercise kcal`;
 }
+
+function setHrDefaultsForType(){
+  const type=document.getElementById('activityType').value;
+  const details=document.getElementById('hrDetails');
+  const avg=document.getElementById('activityAvgHr');
+  const z=[1,2,3,4,5].map(i=>document.getElementById(`activityZ${i}`));
+
+  if(type==='Walk'){
+    details.style.display='none';
+    details.open=false;
+    avg.value='';
+    z.forEach(x=>x.value='');
+    return;
+  }
+
+  details.style.display='block';
+
+  if(type==='Jog'){
+    avg.value='154';
+    const vals=['1:43','4:14','5:23','6:55','0:00'];
+    z.forEach((x,i)=>x.value=vals[i]);
+  }else if(type==='Run'){
+    avg.value='0';
+    z.forEach(x=>x.value='0:00');
+  }else{
+    avg.value='';
+    z.forEach(x=>x.value='');
+  }
+}
+
 function addActivity(){
   const type=document.getElementById('activityType').value;
   const minutes=num('activityMinutes');
@@ -253,7 +283,7 @@ function addActivity(){
   const today=todayISO();
   state.activities[today]=state.activities[today]||[];
   state.activities[today].push({type,minutes,seconds,distance,calories,avgHr,...zones});
-  ['activityMinutes','activitySeconds','activityDistance','activityCalories','activityAvgHr','activityZ1','activityZ2','activityZ3','activityZ4','activityZ5'].forEach(id=>document.getElementById(id).value='');
+  ['activityMinutes','activitySeconds','activityDistance','activityCalories'].forEach(id=>document.getElementById(id).value='');setHrDefaultsForType();
   save();renderActivities();renderEnergyBalance();
 }
 function renderEnergyBalance(){
@@ -310,10 +340,11 @@ function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classL
 function renderAll(){renderToday();renderWorkout();renderNutrition();renderChecklist();renderHistory();renderProgress()}
 function num(id){return parseFloat(document.getElementById(id).value)||0}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.go)));document.getElementById('startBtn').addEventListener('click',()=>showScreen('workout'));document.getElementById('finishBtn').addEventListener('click',openFinish);document.getElementById('closeFinish').addEventListener('click',closeFinish);document.getElementById('saveWorkoutBtn').addEventListener('click',saveWorkout);document.getElementById('skipTimer').addEventListener('click',stopTimer);document.getElementById('saveWeightBtn').addEventListener('click',saveWeights);document.getElementById('nutritionDate').addEventListener('change',renderNutrition);document.getElementById('addFoodBtn').addEventListener('click',addFood);document.getElementById('saveGoalsBtn').addEventListener('click',saveGoals);document.getElementById('prevMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderHistory()});document.getElementById('nextMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderHistory()});document.getElementById('addActivityBtn').addEventListener('click',addActivity);
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.go)));document.getElementById('startBtn').addEventListener('click',()=>showScreen('workout'));document.getElementById('finishBtn').addEventListener('click',openFinish);document.getElementById('closeFinish').addEventListener('click',closeFinish);document.getElementById('saveWorkoutBtn').addEventListener('click',saveWorkout);document.getElementById('skipTimer').addEventListener('click',stopTimer);document.getElementById('saveWeightBtn').addEventListener('click',saveWeights);document.getElementById('nutritionDate').addEventListener('change',renderNutrition);document.getElementById('addFoodBtn').addEventListener('click',addFood);document.getElementById('saveGoalsBtn').addEventListener('click',saveGoals);document.getElementById('prevMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderHistory()});document.getElementById('nextMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderHistory()});document.getElementById('activityType').addEventListener('change',setHrDefaultsForType);
+document.getElementById('addActivityBtn').addEventListener('click',addActivity);
 document.getElementById('waterMinusBtn').addEventListener('click',()=>changeWater(-8));
 document.getElementById('waterPlusBtn').addEventListener('click',()=>changeWater(8));
 document.getElementById('saveWaterGoalBtn').addEventListener('click',saveWaterGoal);
 document.getElementById('addChecklistBtn').addEventListener('click',addChecklistItem);
 document.getElementById('newChecklistItem').addEventListener('keydown',e=>{if(e.key==='Enter')addChecklistItem()});
-document.getElementById('nutritionDate').value=todayISO();renderAll();save();
+document.getElementById('nutritionDate').value=todayISO();setHrDefaultsForType();renderAll();save();
