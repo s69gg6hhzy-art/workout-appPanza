@@ -185,6 +185,12 @@ function checklistDay(){
   state.checklistDays[d]=state.checklistDays[d]||{};
   return state.checklistDays[d];
 }
+function moveChecklistItem(id,dir){
+  const i=state.checklistItems.findIndex(x=>x.id===id);
+  const j=i+dir;if(i<0||j<0||j>=state.checklistItems.length)return;
+  [state.checklistItems[i],state.checklistItems[j]]=[state.checklistItems[j],state.checklistItems[i]];
+  save();renderChecklist();
+}
 function renderChecklist(){
   const list=document.getElementById('checklistList');
   const day=checklistDay();
@@ -554,7 +560,7 @@ function photoDueInfo(){
 }
 function renderPhotoDue(){const el=document.getElementById('photoDueCard');if(!el)return;const d=photoDueInfo();el.style.display=d.due?'block':'none';if(d.due){document.getElementById('photoDueTitle').textContent=d.title;document.getElementById('photoDueText').textContent=d.text;el.dataset.photoType=d.type}}
 let photoCheckinType='manual';
-function openPhotoModal(type){const due=photoDueInfo();photoCheckinType=type||due.type||'manual';document.getElementById('photoModal').classList.add('open');document.getElementById('photoModalEyebrow').textContent=photoCheckinType==='phase'?`Phase ${state.phase+1}`:photoCheckinType==='weekly'?'Weekly check-in':'Progress check-in';['Front','Side','Back','Flex'].forEach(a=>{const input=document.getElementById('photo'+a);input.value='';document.getElementById(a.toLowerCase()+'Status').textContent='Choose photo'})}
+function openPhotoModal(type){const due=photoDueInfo();photoCheckinType=type||due.type||'manual';document.getElementById('photoModal').classList.add('open');setTimeout(bindPhotoInputs,0);document.getElementById('photoModalEyebrow').textContent=photoCheckinType==='phase'?`Phase ${state.phase+1}`:photoCheckinType==='weekly'?'Weekly check-in':'Progress check-in';['Front','Side','Back','Flex'].forEach(a=>{const input=document.getElementById('photo'+a);input.value='';document.getElementById(a.toLowerCase()+'Status').textContent='Choose photo'})}
 function closePhotoModal(){document.getElementById('photoModal').classList.remove('open')}
 async function compressPhoto(file){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const max=1000,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(url);b?resolve(b):reject(new Error('Photo compression failed'))},'image/jpeg',.78)};img.onerror=reject;img.src=url})}
 async function savePhotoCheckin(){
@@ -619,6 +625,11 @@ function editActivity(i){
  state.activities[today].splice(i,1);save();renderActivities();renderEnergyBalance();
 }
 
+function bindPhotoInputs(){
+  document.querySelectorAll('[data-photo-trigger]').forEach(b=>{
+    b.onclick=()=>{const input=document.getElementById(b.dataset.photoTrigger);if(input)input.click();};
+  });
+}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.screen===id));if(id==='workout')renderWorkout();if(id==='nutrition')renderNutrition();if(id==='history')renderHistory();if(id==='progress')renderProgress();if(id==='checklist')renderChecklist();if(id==='today')renderToday();window.scrollTo(0,0)}
 function renderAll(){renderToday();renderWorkout();renderNutrition();renderChecklist();renderHistory();renderProgress()}
 function num(id){return parseFloat(document.getElementById(id).value)||0}
@@ -645,3 +656,5 @@ document.getElementById('comparePhotosBtn').addEventListener('click',comparePhot
 ['Front','Side','Back','Flex'].forEach(a=>document.getElementById('photo'+a).addEventListener('change',e=>document.getElementById(a.toLowerCase()+'Status').textContent=e.target.files[0]?.name?'Photo selected':'Choose photo'));
 
 document.getElementById('nutritionDate').value=todayISO();setHrDefaultsForType();renderAll();save();
+
+setTimeout(bindPhotoInputs,0);

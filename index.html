@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 <div class="app">
@@ -205,17 +205,17 @@
   <button data-screen="history">History</button>
   <button data-screen="progress">Progress</button>
 </nav>
-<script src="data.js?v=12"></script>
-<script src="app.js?v=12"></script>
+<script src="data.js?v=13"></script>
+<script src="app.js?v=13"></script>
 
 <div class="modal" id="photoModal"><div class="modal-card setup-card">
   <div class="modal-head"><div><div class="eyebrow" id="photoModalEyebrow">Progress check-in</div><h2 id="photoModalTitle">Progress photos</h2></div><button class="icon-btn" id="closePhotoBtn">×</button></div>
   <p class="notice">For useful comparisons, use similar lighting, distance, clothes and time of day.</p>
   <div class="photo-input-grid">
-    <label>Front<input type="file" id="photoFront" accept="image/*" capture="environment"><span id="frontStatus">Choose photo</span></label>
-    <label>Side<input type="file" id="photoSide" accept="image/*" capture="environment"><span id="sideStatus">Choose photo</span></label>
-    <label>Back<input type="file" id="photoBack" accept="image/*" capture="environment"><span id="backStatus">Choose photo</span></label>
-    <label>Flex / pose <small>optional</small><input type="file" id="photoFlex" accept="image/*" capture="environment"><span id="flexStatus">Choose photo</span></label>
+    <label>Front<input type="file" id="photoFront" accept="image/*" class="photo-file-input"><button type="button" class="secondary photo-trigger" data-photo-trigger="photoFront">Take / choose Front</button><span id="frontStatus">Choose photo</span></label>
+    <label>Side<input type="file" id="photoSide" accept="image/*" class="photo-file-input"><button type="button" class="secondary photo-trigger" data-photo-trigger="photoSide">Take / choose Side</button><span id="sideStatus">Choose photo</span></label>
+    <label>Back<input type="file" id="photoBack" accept="image/*" class="photo-file-input"><button type="button" class="secondary photo-trigger" data-photo-trigger="photoBack">Take / choose Back</button><span id="backStatus">Choose photo</span></label>
+    <label>Flex / pose <small>optional</small><input type="file" id="photoFlex" accept="image/*" class="photo-file-input"><button type="button" class="secondary photo-trigger" data-photo-trigger="photoFlex">Take / choose Flex / Pose</button><span id="flexStatus">Choose photo</span></label>
   </div>
   <button class="primary" id="savePhotoCheckinBtn">Save photo check-in</button>
 </div></div>
