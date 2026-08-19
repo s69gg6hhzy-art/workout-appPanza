@@ -592,14 +592,34 @@ async function savePhotoCheckin(){
   const files={front:selectedPhoto('front'),side:selectedPhoto('side'),back:selectedPhoto('back'),flex:selectedPhoto('flex')};
   if(!Object.values(files).some(Boolean)){alert('Take or choose at least one photo first.');return}
   const btn=document.getElementById('savePhotoCheckinBtn');btn.disabled=true;btn.textContent='Saving…';
-  try{const id=`${todayISO()}-${Date.now()}`,angles=[];for(const [angle,file] of Object.entries(files)){if(!file)continue;const blob=await compressPhoto(file);await photoPut(`${id}:${angle}`,blob);angles.push(angle)}state.photoCheckins=state.photoCheckins||[];state.photoCheckins.push({id,date:todayISO(),type:photoCheckinType,phaseIndex:state.phase,angles});save();closePhotoModal();renderAll();await renderPhotoGallery()}catch(e){console.error('Photo save failed',e);alert('The photo could not be saved on this device. Please try again.')}finally{btn.disabled=false;btn.textContent='Save photo check-in'}
+  try{
+    const id=`${todayISO()}-${Date.now()}`,angles=[];
+    for(const [angle,file] of Object.entries(files)){
+      if(!file)continue;
+      const blob=await compressPhoto(file);
+      await photoPut(`${id}:${angle}`,blob);
+      angles.push(angle);
+    }
+    state.photoCheckins=state.photoCheckins||[];
+    state.photoCheckins.push({id,date:todayISO(),type:photoCheckinType,phaseIndex:state.phase,angles});
+    save();
+    closePhotoModal();
+    renderAll();
+    try{await renderPhotoGallery()}catch(galleryError){console.error('Photo gallery refresh failed',galleryError)}
+  }catch(e){
+    console.error('Photo save failed',e);
+    alert('The photo could not be saved on this device. Please try again.');
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Save photo check-in';
+  }
 }
 function photoLabel(x){const d=new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});return x.type==='phase'?`${d} · Phase ${x.phaseIndex+1}`:x.type==='weekly'?`${d} · Weekly`:d}
 async function photoURL(checkin,angle){const b=await photoGet(`${checkin.id}:${angle}`);return b?URL.createObjectURL(b):''}
 async function renderPhotoGallery(){
  const gallery=document.getElementById('photoGallery');if(!gallery)return;const list=[...(state.photoCheckins||[])].sort((a,b)=>b.date.localeCompare(a.date));document.getElementById('weeklyPhotosToggle').checked=!!state.photoSettings?.weekly;
  if(!list.length){gallery.innerHTML='<p class="notice">No photo check-ins yet.</p>';document.getElementById('photoCompareControls').style.display='none';document.getElementById('photoCompare').innerHTML='';return}
- gallery.innerHTML='';for(const x of list.slice(0,8)){const card=document.createElement('div');card.className='photo-checkin';let thumb='';for(const a of ['front','side','back','flex']){if(x.angles.includes(a)){thumb=await photoURL(x,a);if(thumb)break}}card.innerHTML=`${thumb?`<img src="${thumb}" alt="${a} progress photo">`:''}<div><b>${esc(photoLabel(x))}</b><small>${x.angles.map(a=>a[0].toUpperCase()+a.slice(1)).join(' · ')}</small></div>`;gallery.appendChild(card)}
+ gallery.innerHTML='';for(const x of list.slice(0,8)){const card=document.createElement('div');card.className='photo-checkin';let thumb='',thumbAngle='progress';for(const a of ['front','side','back','flex']){if(x.angles.includes(a)){thumb=await photoURL(x,a);if(thumb){thumbAngle=a;break}}}card.innerHTML=`${thumb?`<img src="${thumb}" alt="${thumbAngle} progress photo">`:''}<div><b>${esc(photoLabel(x))}</b><small>${x.angles.map(a=>a[0].toUpperCase()+a.slice(1)).join(' · ')}</small></div>`;gallery.appendChild(card)}
  const controls=document.getElementById('photoCompareControls');controls.style.display=list.length>=2?'flex':'none';if(list.length>=2){const opts=list.map(x=>`<option value="${x.id}">${esc(photoLabel(x))}</option>`).join('');document.getElementById('compareA').innerHTML=opts;document.getElementById('compareB').innerHTML=opts;document.getElementById('compareB').selectedIndex=1}
 }
 async function comparePhotos(){const list=state.photoCheckins||[],a=list.find(x=>x.id===document.getElementById('compareA').value),b=list.find(x=>x.id===document.getElementById('compareB').value);if(!a||!b)return;const wrap=document.getElementById('photoCompare');wrap.innerHTML='';for(const angle of ['front','side','back','flex']){if(!a.angles.includes(angle)||!b.angles.includes(angle))continue;const ua=await photoURL(a,angle),ub=await photoURL(b,angle);const row=document.createElement('div');row.className='compare-row';row.innerHTML=`<div class="compare-angle">${angle[0].toUpperCase()+angle.slice(1)}</div><div class="compare-pair"><figure><img src="${ua}"><figcaption>${esc(photoLabel(a))}</figcaption></figure><figure><img src="${ub}"><figcaption>${esc(photoLabel(b))}</figcaption></figure></div>`;wrap.appendChild(row)}}
