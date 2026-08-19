@@ -575,11 +575,17 @@ function photoDueInfo(){
 }
 function renderPhotoDue(){const el=document.getElementById('photoDueCard');if(!el)return;const d=photoDueInfo();el.style.display=d.due?'block':'none';if(d.due){document.getElementById('photoDueTitle').textContent=d.title;document.getElementById('photoDueText').textContent=d.text;el.dataset.photoType=d.type}}
 let photoCheckinType='manual';
-function openPhotoModal(type){const due=photoDueInfo();photoCheckinType=type||due.type||'manual';document.getElementById('photoModal').classList.add('open');setTimeout(bindPhotoInputs,0);document.getElementById('photoModalEyebrow').textContent=photoCheckinType==='phase'?`Phase ${state.phase+1}`:photoCheckinType==='weekly'?'Weekly check-in':'Progress check-in';['Front','Side','Back','Flex'].forEach(a=>{const input=document.getElementById('photo'+a);input.value='';document.getElementById(a.toLowerCase()+'Status').textContent='Choose photo'})}
+function openPhotoModal(type){const due=photoDueInfo();photoCheckinType=type||due.type||'manual';document.getElementById('photoModal').classList.add('open');setTimeout(bindPhotoInputs,0);document.getElementById('photoModalEyebrow').textContent=photoCheckinType==='phase'?`Phase ${state.phase+1}`:photoCheckinType==='weekly'?'Weekly check-in':'Progress check-in';['Front','Side','Back','Flex'].forEach(a=>{['Camera','Library'].forEach(src=>{const input=document.getElementById('photo'+a+src);if(input)input.value=''});document.getElementById(a.toLowerCase()+'Status').textContent='No photo selected'})}
 function closePhotoModal(){document.getElementById('photoModal').classList.remove('open')}
 async function compressPhoto(file){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const max=1000,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(url);b?resolve(b):reject(new Error('Photo compression failed'))},'image/jpeg',.78)};img.onerror=reject;img.src=url})}
+function selectedPhoto(angle){
+  const cap=angle[0].toUpperCase()+angle.slice(1);
+  const camera=document.getElementById('photo'+cap+'Camera');
+  const library=document.getElementById('photo'+cap+'Library');
+  return (camera&&camera.files&&camera.files[0])||(library&&library.files&&library.files[0])||null;
+}
 async function savePhotoCheckin(){
-  const files={front:document.getElementById('photoFront').files[0],side:document.getElementById('photoSide').files[0],back:document.getElementById('photoBack').files[0],flex:document.getElementById('photoFlex').files[0]};
+  const files={front:selectedPhoto('front'),side:selectedPhoto('side'),back:selectedPhoto('back'),flex:selectedPhoto('flex')};
   if(!files.front||!files.side||!files.back){alert('Add Front, Side and Back photos first.');return}
   const btn=document.getElementById('savePhotoCheckinBtn');btn.disabled=true;btn.textContent='Saving…';
   try{const id=`${todayISO()}-${Date.now()}`,angles=[];for(const [angle,file] of Object.entries(files)){if(!file)continue;const blob=await compressPhoto(file);await photoPut(`${id}:${angle}`,blob);angles.push(angle)}state.photoCheckins=state.photoCheckins||[];state.photoCheckins.push({id,date:todayISO(),type:photoCheckinType,phaseIndex:state.phase,angles});save();closePhotoModal();renderAll();await renderPhotoGallery()}catch(e){alert('The photos could not be saved.')}finally{btn.disabled=false;btn.textContent='Save photo check-in'}
@@ -643,6 +649,20 @@ function editActivity(i){
 function bindPhotoInputs(){
   document.querySelectorAll('[data-photo-trigger]').forEach(b=>{
     b.onclick=()=>{const input=document.getElementById(b.dataset.photoTrigger);if(input)input.click();};
+  });
+  ['Front','Side','Back','Flex'].forEach(a=>{
+    ['Camera','Library'].forEach(src=>{
+      const input=document.getElementById('photo'+a+src);if(!input)return;
+      input.onchange=()=>{
+        const file=input.files&&input.files[0];
+        if(file){
+          const other=document.getElementById('photo'+a+(src==='Camera'?'Library':'Camera'));
+          if(other)other.value='';
+          const status=document.getElementById(a.toLowerCase()+'Status');
+          if(status)status.textContent=src==='Camera'?'Photo taken':'Existing photo selected';
+        }
+      };
+    });
   });
 }
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.screen===id));if(id==='workout')renderWorkout();if(id==='nutrition')renderNutrition();if(id==='history')renderHistory();if(id==='progress')renderProgress();if(id==='checklist')renderChecklist();if(id==='today')renderToday();window.scrollTo(0,0)}
