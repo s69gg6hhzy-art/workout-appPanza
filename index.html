@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <div class="app">
@@ -134,6 +134,26 @@
       <div class="metric-row"><div><strong id="latestWeight">—</strong><span>latest AM</span></div><div><strong id="avg7Weight">—</strong><span>7-day AM avg</span></div><div><strong id="dailySwing">—</strong><span>avg AM→PM</span></div></div>
       <div id="weightHistory" class="weight-history"></div>
     </div>
+    <div class="card chart-card">
+      <div class="chart-head"><div><div class="eyebrow">Historical weight</div><h3>Weight over time</h3></div><span class="badge measured">2025 → now</span></div>
+      <div id="weightChart" class="chart-wrap"></div>
+      <p class="tiny chart-note">Historical weekly AM averages + DEXA checkpoint + new AM weights logged in the app.</p>
+    </div>
+    <div class="card chart-card">
+      <div class="chart-head"><div><div class="eyebrow">Nutrition history</div><h3>Average daily calories by week</h3></div></div>
+      <div id="calorieChart" class="chart-wrap"></div>
+      <p class="tiny chart-note">Session 1 selected weekly averages, Brazil weeks 1–10, and future weekly averages from your app.</p>
+    </div>
+    <div class="card chart-card">
+      <div class="chart-head"><div><div class="eyebrow">Protein history</div><h3>Average protein by week</h3></div></div>
+      <div id="proteinChart" class="chart-wrap"></div>
+    </div>
+    <div class="card chart-card">
+      <div class="chart-head"><div><div class="eyebrow">Cardio progress</div><h3>Jog / run pace</h3></div></div>
+      <div id="cardioChart" class="chart-wrap"></div>
+      <p class="tiny chart-note">This fills automatically from new Jog and Run entries.</p>
+    </div>
+
     <div class="card">
       <div class="eyebrow">Body composition checkpoints</div>
       <div class="checkpoint"><div><b>Jan 17, 2025 · DEXA</b><small>191.1 lb · 21.9% body fat · 41.8 lb fat · 141.7 lb lean tissue</small></div><span class="badge measured">Measured</span></div>
@@ -173,7 +193,7 @@
   <button data-screen="history">History</button>
   <button data-screen="progress">Progress</button>
 </nav>
-<script src="data.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="data.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>

@@ -1,6 +1,40 @@
 const upperWarmup=[['Bar Hang','As long as possible','Wrap thumbs around bar'],['Scapular Pushups','10 reps',''],['DB Pause Bench Press','Light set of 10','Maximize stretch; inhale maximally as you lower the dumbbells'],['Suspension I Delt Fly','5 reps',''],['Suspension Y Deltoid Fly','5 reps',''],['Suspension T Delt Fly','5 reps','']];
 const lowerWarmup=[['Cardio of Choice','5 min',''],['Bench Thoracic Mobility','30 sec',''],['Supine Piriformis Stretch','15 sec each leg',''],['Superband Good Morning','30 sec',''],['Dynamic Side Lunge Stretch','30 sec',''],['Deep Squat Mobility','At least 30 sec','As long as needed'],['Bodyweight Split Squat','10 per leg','Weak leg first']];
 const total=program.reduce((s,p)=>s+p.workouts.length*p.rounds,0);
+const historicalWeight=[
+  {date:'2025-01-08',label:'S1 W1',weight:188.6,session:'Session 1'},
+  {date:'2025-01-17',label:'DEXA',weight:191.1,session:'Session 1'},
+  {date:'2025-01-29',label:'S1 W4',weight:189.7,session:'Session 1'},
+  {date:'2025-02-26',label:'S1 W8',weight:186.1,session:'Session 1'},
+  {date:'2025-03-12',label:'S1 W10',weight:182.7,session:'Session 1'},
+  {date:'2025-03-26',label:'S1 W12',weight:179.9,session:'Session 1'},
+  {date:'2025-04-09',label:'S1 W14',weight:179.9,session:'Session 1'},
+  {date:'2025-04-16',label:'S1 W15',weight:177.3,session:'Session 1'},
+  {date:'2025-04-23',label:'S1 W16',weight:178.7,session:'Session 1'},
+  {date:'2025-09-01',label:'S2 W1',weight:191.6,session:'Session 2'},
+  {date:'2025-11-03',label:'S2 W10',weight:182.4,session:'Session 2'}
+];
+const historicalCalories=[
+  {date:'2025-01-08',label:'S1 W1',cal:2432,protein:155,session:'Session 1'},
+  {date:'2025-01-29',label:'S1 W4',cal:2809,protein:217,session:'Session 1'},
+  {date:'2025-02-26',label:'S1 W8',cal:2618,protein:196,session:'Session 1'},
+  {date:'2025-03-12',label:'S1 W10',cal:2110,protein:191,session:'Session 1'},
+  {date:'2025-03-26',label:'S1 W12',cal:2473,protein:192,session:'Session 1'},
+  {date:'2025-04-09',label:'S1 W14',cal:2382,protein:191,session:'Session 1'},
+  {date:'2025-04-16',label:'S1 W15',cal:2625,protein:174,session:'Session 1'},
+  {date:'2025-04-23',label:'S1 W16',cal:2893,protein:200,session:'Session 1'},
+  {date:'2026-05-04',label:'Brazil W1',cal:2639,protein:155,session:'Brazil'},
+  {date:'2026-05-11',label:'Brazil W2',cal:3525,protein:177,session:'Brazil'},
+  {date:'2026-05-18',label:'Brazil W3',cal:3126,protein:184,session:'Brazil'},
+  {date:'2026-05-25',label:'Brazil W4',cal:3295,protein:188,session:'Brazil'},
+  {date:'2026-06-01',label:'Brazil W5',cal:2920,protein:208,session:'Brazil'},
+  {date:'2026-06-08',label:'Brazil W6',cal:3214,protein:174,session:'Brazil'},
+  {date:'2026-06-15',label:'Brazil W7',cal:2559,protein:174,session:'Brazil'},
+  {date:'2026-06-22',label:'Brazil W8',cal:3109,protein:203,session:'Brazil'},
+  {date:'2026-06-29',label:'Brazil W9',cal:2789,protein:175,session:'Brazil'},
+  {date:'2026-07-06',label:'Brazil W10',cal:2774,protein:147,session:'Brazil'}
+];
+
 const isoDate=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)};
 const todayISO=()=>isoDate(new Date());
 const old=JSON.parse(localStorage.getItem('mwState')||'null');
@@ -454,7 +488,76 @@ function renderHistory(){
   }
 }
 function renderDayDetail(date){const hs=state.history.filter(h=>isoDate(h.date)===date),wt=state.weights[date],nut=state.nutrition[date];let parts=`<div class="eyebrow">${new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</div>`;if(state.restDays[date])parts+=`<div class="day-detail-row"><b>Rest day complete</b><small>Acknowledged</small></div>`;if(hs.length)hs.forEach(h=>{const s=h.summary||{};parts+=`<div class="day-detail-row"><b>${h.workout}</b><small>${h.phase} · Round ${h.round}${s.duration?` · ${s.duration} min`:''}${s.activeCalories?` · ${s.activeCalories} active kcal`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}</small></div>`});if(wt)parts+=`<div class="day-detail-row"><b>Weight</b><small>${wt.am?`AM ${wt.am} lb · `:''}${wt.post?`Post ${wt.post} lb · `:''}${wt.pm?`PM ${wt.pm} lb`:''}</small></div>`;if(nut){const t=totals(nut.foods||[]);parts+=`<div class="day-detail-row"><b>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`}const acts=state.activities[date]||[];if(acts.length){const mins=acts.reduce((s,a)=>s+(+a.minutes||0),0),cals=acts.reduce((s,a)=>s+(+a.calories||0),0);parts+=`<div class="day-detail-row"><b>Walks / jogs</b><small>${Math.round(mins)} min · ${Math.round(cals)} kcal</small></div>`}const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b>Water</b><small>${water} oz</small></div>`;const cd=state.checklistDays[date];if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b>Checklist</b><small>${done} of ${items.length} complete</small></div>`}if(!hs.length&&!state.restDays[date]&&!wt&&!nut&&!acts.length&&!water&&!cd)parts+='<p class="notice">No saved data for this day.</p>';document.getElementById('dayDetail').innerHTML=parts;}
-function renderProgress(){const entries=Object.entries(state.weights).filter(([,v])=>v.am||v.pm).sort((a,b)=>a[0].localeCompare(b[0]));const ams=entries.filter(([,v])=>v.am).map(([d,v])=>({d,v:+v.am}));const latest=ams.at(-1);const last7=ams.slice(-7);document.getElementById('latestWeight').textContent=latest?`${latest.v.toFixed(1)} lb`:'—';document.getElementById('avg7Weight').textContent=last7.length?`${(last7.reduce((s,x)=>s+x.v,0)/last7.length).toFixed(1)} lb`:'—';const swings=entries.filter(([,v])=>v.am&&v.pm).map(([,v])=>+v.pm-+v.am);document.getElementById('dailySwing').textContent=swings.length?`${(swings.reduce((a,b)=>a+b,0)/swings.length).toFixed(1)} lb`:'—';document.getElementById('weightHistory').innerHTML=entries.length?entries.slice(-10).reverse().map(([d,v])=>`<div class="weight-line"><span>${new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><b>${v.am?`AM ${v.am}`:'—'}</b><b>${v.pm?`PM ${v.pm}`:(v.post?`Post ${v.post}`:'—')}</b></div>`).join(''):'<p class="notice">Start entering morning and evening weights to build your trend.</p>';}
+
+function svgLineChart(points,{valueKey,labelKey='label',suffix='',minPad=2,maxPad=2,height=220}={}){
+  if(!points.length)return '<p class="notice">No data yet.</p>';
+  const width=760,padL=42,padR=18,padT=18,padB=38,plotW=width-padL-padR,plotH=height-padT-padB;
+  const vals=points.map(x=>+x[valueKey]).filter(Number.isFinite);
+  let min=Math.min(...vals),max=Math.max(...vals);
+  if(min===max){min-=1;max+=1}
+  min-=minPad;max+=maxPad;
+  const x=i=>padL+(points.length===1?plotW/2:(i/(points.length-1))*plotW);
+  const y=v=>padT+((max-v)/(max-min))*plotH;
+  const path=points.map((p,i)=>`${i?'L':'M'} ${x(i).toFixed(1)} ${y(+p[valueKey]).toFixed(1)}`).join(' ');
+  const grid=[0,.25,.5,.75,1].map(f=>{
+    const yy=padT+f*plotH, val=max-f*(max-min);
+    return `<line x1="${padL}" y1="${yy}" x2="${width-padR}" y2="${yy}" class="chart-grid"/><text x="${padL-8}" y="${yy+4}" text-anchor="end" class="chart-axis">${Math.round(val)}${suffix}</text>`;
+  }).join('');
+  const labels=points.map((p,i)=>{
+    const show=points.length<=10 || i===0 || i===points.length-1 || i%Math.ceil(points.length/6)===0;
+    return show?`<text x="${x(i)}" y="${height-10}" text-anchor="middle" class="chart-axis">${esc(p[labelKey])}</text>`:'';
+  }).join('');
+  const dots=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(+p[valueKey])}" r="5" class="chart-dot"><title>${esc(p[labelKey])}: ${p[valueKey]}${suffix}${p.session?` · ${esc(p.session)}`:''}</title></circle>`).join('');
+  return `<svg class="trend-svg" viewBox="0 0 ${width} ${height}" role="img">${grid}<path d="${path}" class="chart-line"/>${dots}${labels}</svg>`;
+}
+function currentWeightSeries(){
+  return Object.entries(state.weights).filter(([,v])=>v.am).map(([date,v])=>({date,label:new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}),weight:+v.am,session:'Current'})).sort((a,b)=>a.date.localeCompare(b.date));
+}
+function currentWeeklyNutrition(){
+  const rows=Object.entries(state.nutrition).map(([date,n])=>({date,...totals(n.foods||[])})).filter(x=>x.cal>0).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!rows.length)return[];
+  const weeks={};
+  rows.forEach(r=>{
+    const d=new Date(r.date+'T12:00:00'),day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);
+    const key=isoDate(d);weeks[key]=weeks[key]||[];
+    weeks[key].push(r);
+  });
+  return Object.entries(weeks).map(([date,arr])=>({
+    date,label:new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}),
+    cal:arr.reduce((s,x)=>s+x.cal,0)/arr.length,
+    protein:arr.reduce((s,x)=>s+x.p,0)/arr.length,
+    session:'Current'
+  })).sort((a,b)=>a.date.localeCompare(b.date));
+}
+function currentCardioSeries(){
+  const out=[];
+  Object.entries(state.activities).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,acts])=>{
+    acts.filter(a=>['Jog','Run'].includes(a.type)&&+a.distance&&activitySeconds(a)).forEach(a=>{
+      out.push({date,label:new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}),pace:activitySeconds(a)/(+a.distance)/60,avgHr:+a.avgHr||0,distance:+a.distance,type:a.type});
+    });
+  });
+  return out;
+}
+function renderProgress(){
+  const entries=Object.entries(state.weights).filter(([,v])=>v.am||v.pm).sort((a,b)=>a[0].localeCompare(b[0]));
+  const ams=entries.filter(([,v])=>v.am).map(([d,v])=>({d,v:+v.am}));
+  const latest=ams.at(-1),last7=ams.slice(-7);
+  document.getElementById('latestWeight').textContent=latest?`${latest.v.toFixed(1)} lb`:'—';
+  document.getElementById('avg7Weight').textContent=last7.length?`${(last7.reduce((s,x)=>s+x.v,0)/last7.length).toFixed(1)} lb`:'—';
+  const swings=entries.filter(([,v])=>v.am&&v.pm).map(([,v])=>+v.pm-+v.am);
+  document.getElementById('dailySwing').textContent=swings.length?`${(swings.reduce((a,b)=>a+b,0)/swings.length).toFixed(1)} lb`:'—';
+
+  const allWeights=[...historicalWeight,...currentWeightSeries()].sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById('weightChart').innerHTML=svgLineChart(allWeights,{valueKey:'weight',suffix:'',minPad:2,maxPad:2});
+  const histNut=[...historicalCalories,...currentWeeklyNutrition()].sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById('calorieChart').innerHTML=svgLineChart(histNut,{valueKey:'cal',minPad:150,maxPad:150});
+  document.getElementById('proteinChart').innerHTML=svgLineChart(histNut,{valueKey:'protein',suffix:'g',minPad:10,maxPad:10});
+
+  const cardio=currentCardioSeries();
+  document.getElementById('cardioChart').innerHTML=cardio.length?svgLineChart(cardio,{valueKey:'pace',suffix:'',minPad:.5,maxPad:.5}):'<p class="notice">Your jog/run pace graph will appear here after you log cardio sessions.</p>';
+
+  document.getElementById('weightHistory').innerHTML=entries.length?entries.slice(-10).reverse().map(([d,v])=>`<div class="weight-line"><span>${new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><b>${v.am?`AM ${v.am}`:'—'}</b><b>${v.pm?`PM ${v.pm}`:(v.post?`Post ${v.post}`:'—')}</b></div>`).join(''):'<p class="notice">Start entering morning and evening weights to build your current trend.</p>';
+}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.screen===id));if(id==='workout')renderWorkout();if(id==='nutrition')renderNutrition();if(id==='history')renderHistory();if(id==='progress')renderProgress();if(id==='checklist')renderChecklist();if(id==='today')renderToday();window.scrollTo(0,0)}
 function renderAll(){renderToday();renderWorkout();renderNutrition();renderChecklist();renderHistory();renderProgress()}
 function num(id){return parseFloat(document.getElementById(id).value)||0}
