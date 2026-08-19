@@ -1,39 +1,129 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0d0f12"><title>Matt Workout</title><link rel="stylesheet" href="style.css"></head><body><div class="app">
-  <section id="home" class="screen active">
-    <div class="top"><div class="title">Workout</div><div class="pill" id="todayLabel"></div></div>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0c0d10">
+  <title>Matt Fitness</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <section id="today" class="screen active">
+    <div class="top"><div class="title">Today</div><div class="pill" id="todayLabel"></div></div>
     <div class="card hero">
-      <div class="eyebrow" id="phaseLabel">Phase 1 · Round 1 of 3</div>
-      <h2 id="nextWorkout">Upper 1</h2>
-      <p class="muted" id="sessionLabel">Workout 1 of 58</p>
-      <div class="progress"><div id="overallProgress" style="width:0%"></div></div>
-      <div class="tiny" id="progressText">0 of 58 workouts completed</div>
+      <div class="eyebrow" id="phaseLabel"></div>
+      <h2 id="nextWorkout"></h2>
+      <p class="muted" id="sessionLabel"></p>
+      <div class="progress"><div id="overallProgress"></div></div>
+      <div class="tiny" id="progressText"></div>
       <button class="primary" id="startBtn">Start workout</button>
     </div>
-    <div class="grid">
-      <div class="stat"><strong id="completedStat">0</strong><span>completed</span></div>
-      <div class="stat"><strong id="phaseStat">1 / 3</strong><span>current phase</span></div>
+
+    <div class="section-title">Weight</div>
+    <div class="card weight-card">
+      <label>Morning <span>lb</span><input id="amWeight" inputmode="decimal" placeholder="185.0"></label>
+      <label>Evening <span>lb</span><input id="pmWeight" inputmode="decimal" placeholder="188.0"></label>
+      <button class="secondary compact" id="saveWeightBtn">Save today's weights</button>
+      <div class="tiny" id="weightHint"></div>
     </div>
-    <div class="card" style="margin-top:14px">
-      <div class="eyebrow">Program</div>
-      <div class="phase"><div><b>Phase 1</b><br><span>4 workouts · 3 rounds</span></div><span>2 on / 1 off</span></div>
-      <div class="phase"><div><b>Phase 2</b><br><span>4 workouts · 4 rounds</span></div><span>2 on / 1 off</span></div>
-      <div class="phase"><div><b>Phase 3</b><br><span>6 workouts · 5 rounds</span></div><span>3 on / 1 off</span></div>
+
+    <div class="section-title">Nutrition today</div>
+    <div class="card macro-snapshot" id="todayMacros"></div>
+
+    <div class="grid">
+      <div class="stat"><strong id="completedStat">0</strong><span>workouts completed</span></div>
+      <div class="stat"><strong id="phaseStat">1 / 3</strong><span>current phase</span></div>
     </div>
   </section>
 
   <section id="workout" class="screen">
-    <div class="top"><button class="ghost" onclick="showScreen('home')">← Back</button><div class="pill" id="workoutPhase"></div></div>
-    <div class="timer" id="timer"><span>Rest <span id="timerText">02:00</span></span><button onclick="stopTimer()">Skip</button></div>
-    <div class="card"><div class="eyebrow">Today's workout</div><h2 id="workoutTitle"></h2><p class="muted" id="workoutMeta"></p></div>
+    <div class="top"><button class="ghost" data-go="today">← Back</button><div class="pill" id="workoutPhase"></div></div>
+    <div class="timer" id="timer"><span>Rest <span id="timerText">02:00</span></span><button id="skipTimer">Skip</button></div>
+    <div class="card"><div class="eyebrow">Current workout</div><h2 id="workoutTitle"></h2><p class="muted" id="workoutMeta"></p></div>
     <div class="card" id="exerciseList"></div>
     <button class="primary" id="finishBtn">Finish workout</button>
   </section>
 
+  <section id="nutrition" class="screen">
+    <div class="top"><div class="title">Nutrition</div><input class="date-control" id="nutritionDate" type="date"></div>
+    <div class="card">
+      <div class="eyebrow">Daily targets</div>
+      <div class="target-grid">
+        <label>Calories<input id="goalCal" inputmode="numeric"></label>
+        <label>Protein<input id="goalP" inputmode="numeric"></label>
+        <label>Carbs<input id="goalC" inputmode="numeric"></label>
+        <label>Fat<input id="goalF" inputmode="numeric"></label>
+      </div>
+      <button class="secondary compact" id="saveGoalsBtn">Save targets</button>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Daily totals</div>
+      <div class="macro-grid" id="macroTotals"></div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Food log</div>
+      <div id="foodList"></div>
+      <button class="secondary compact" id="addFoodBtn">+ Add food</button>
+    </div>
+  </section>
+
   <section id="history" class="screen">
-    <div class="top"><div class="title">History</div><div class="pill">local</div></div>
-    <div class="card"><div class="eyebrow">Completed sessions</div><div id="historyList"><p class="notice">New workouts you complete in this prototype will show here. Your pasted 2026 history is represented in exercise “Last” references and can be expanded into full imported history next.</p></div></div>
-    <button class="secondary" id="resetBtn">Reset prototype progress</button>
+    <div class="top"><div class="title">History</div><div class="calendar-controls"><button class="ghost" id="prevMonth">‹</button><span id="monthLabel"></span><button class="ghost" id="nextMonth">›</button></div></div>
+    <div class="card calendar-card">
+      <div class="weekday-row"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+      <div class="calendar" id="calendar"></div>
+      <div class="legend"><span><i class="done-dot"></i>Workout</span><span><i class="next-dot"></i>Next</span><span><i class="rest-dot"></i>Rest</span></div>
+    </div>
+    <div class="card" id="nextScheduleCard"></div>
+    <div class="card" id="dayDetail"><p class="notice">Tap a completed workout day to see its details.</p></div>
+  </section>
+
+  <section id="progress" class="screen">
+    <div class="top"><div class="title">Progress</div><div class="pill">2025 → now</div></div>
+    <div class="card">
+      <div class="eyebrow">Weight trend</div>
+      <div class="metric-row"><div><strong id="latestWeight">—</strong><span>latest AM</span></div><div><strong id="avg7Weight">—</strong><span>7-day AM avg</span></div><div><strong id="dailySwing">—</strong><span>avg AM→PM</span></div></div>
+      <div id="weightHistory" class="weight-history"></div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Body composition checkpoints</div>
+      <div class="checkpoint"><div><b>Jan 17, 2025 · DEXA</b><small>191.1 lb · 21.9% body fat · 41.8 lb fat · 141.7 lb lean tissue</small></div><span class="badge measured">Measured</span></div>
+      <div class="checkpoint"><div><b>April 2025 · Lean checkpoint</b><small>~178 lb · progress photos</small></div><span class="badge approx">Approx.</span></div>
+      <div class="checkpoint"><div><b>Aug 2026 · Current</b><small>~185 lb · current visual checkpoint</small></div><span class="badge approx">Current</span></div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Historical tracking sessions</div>
+      <div class="history-session"><b>Session 1 · Jan–Apr 2025</b><span>~188.6 → ~178.7 lb weekly AM average</span></div>
+      <div class="history-session"><b>Session 2 · Sep–Nov 2025</b><span>191.6 → 182.4 lb weekly AM average</span></div>
+      <div class="history-session"><b>Brazil · May 4–Jul 12, 2026</b><span>10-week avg: 2,995 kcal · 179 P · 247 C · 100 F</span></div>
+    </div>
   </section>
 </div>
 
-<nav class="nav"><button data-screen="home" class="on">Today</button><button data-screen="workout">Workout</button><button data-screen="history">History</button></nav><script src="data.js"></script><script src="app.js"></script></body></html>
+<div class="modal" id="finishModal" aria-hidden="true">
+  <div class="modal-sheet">
+    <div class="modal-head"><div><div class="eyebrow">Workout complete</div><h2 id="finishWorkoutName"></h2></div><button class="ghost" id="closeFinish">✕</button></div>
+    <div class="summary-grid">
+      <label>Duration <span>min</span><input id="sumDuration" inputmode="numeric"></label>
+      <label>Active calories <span>kcal</span><input id="sumActiveCal" inputmode="numeric"></label>
+      <label>Total calories <span>kcal</span><input id="sumTotalCal" inputmode="numeric"></label>
+      <label>Avg heart rate <span>bpm</span><input id="sumAvgHr" inputmode="numeric"></label>
+      <label>Max heart rate <span>bpm</span><input id="sumMaxHr" inputmode="numeric"></label>
+      <label>Post-workout weight <span>lb</span><input id="sumWeight" inputmode="decimal"></label>
+    </div>
+    <label class="notes-label">Notes<textarea id="sumNotes" rows="3" placeholder="Optional notes"></textarea></label>
+    <button class="primary" id="saveWorkoutBtn">Save workout</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <button data-screen="today" class="on">Today</button>
+  <button data-screen="workout">Workout</button>
+  <button data-screen="nutrition">Nutrition</button>
+  <button data-screen="history">History</button>
+  <button data-screen="progress">Progress</button>
+</nav>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body></html>
