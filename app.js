@@ -4,7 +4,7 @@ const total=program.reduce((s,p)=>s+p.workouts.length*p.rounds,0);
 const isoDate=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)};
 const todayISO=()=>isoDate(new Date());
 const old=JSON.parse(localStorage.getItem('mwState')||'null');
-const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},drafts:{},water:{},waterGoal:96,checklistItems:[],checklistDays:{},activities:{},bmr:1891,tdee:2741};
+const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},drafts:{},water:{},waterGoal:96,checklistItems:[],checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout'};
 let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
@@ -13,15 +13,80 @@ function save(){localStorage.setItem('mfState',JSON.stringify(state))}
 function phase(){return program[state.phase]}
 function current(){return phase().workouts[state.workout]}
 function workoutType(n){return /lower|legs/i.test(n)?'lower':'upper'}
-function nextDateInfo(){if(!state.history.length)return{next:todayISO(),rest:null};const last=state.history[0];const d=new Date(last.date);const on=program[last.phaseIndex??state.phase]?.on||phase().on;const countInPhase=(state.history.filter(h=>(h.phaseIndex??-1)===(last.phaseIndex??-2)).length)||state.completed;const restAfter=countInPhase%on===0;const rest=new Date(d);rest.setDate(rest.getDate()+1);const next=new Date(d);next.setDate(next.getDate()+(restAfter?2:1));return{next:isoDate(next),rest:restAfter?isoDate(rest):null};}
+
+function phaseWorkoutCount(phaseIndex){
+  return state.history.filter(h=>(h.phaseIndex??-1)===phaseIndex).length;
+}
+function plusDays(dateStr,n){
+  const d=new Date(dateStr+'T12:00:00');d.setDate(d.getDate()+n);return isoDate(d);
+}
+function ensureScheduleState(){
+  const today=todayISO();
+  if(!state.scheduleDate){
+    if(state.history.length){
+      const last=state.history[0];
+      const phaseIndex=last.phaseIndex??state.phase;
+      const on=program[phaseIndex]?.on||phase().on;
+      const count=state.history.filter(h=>(h.phaseIndex??-1)===phaseIndex).length;
+      state.scheduleDate=plusDays(isoDate(last.date),1);
+      state.nextEventType=(count%on===0)?'rest':'workout';
+    }else{
+      state.scheduleDate=today;
+      state.nextEventType='workout';
+    }
+  }
+  if(state.scheduleDate<today) state.scheduleDate=today;
+}
+function nextDateInfo(){
+  ensureScheduleState();
+  return {
+    next:state.nextEventType==='workout'?state.scheduleDate:plusDays(state.scheduleDate,1),
+    rest:state.nextEventType==='rest'?state.scheduleDate:null,
+    eventDate:state.scheduleDate,
+    eventType:state.nextEventType
+  };
+}
+function projectSchedule(startDate,endDate){
+  ensureScheduleState();
+  const items=[];
+  let date=state.scheduleDate,type=state.nextEventType;
+  let pIndex=state.phase,r=state.round,wIndex=state.workout;
+  let phaseCount=phaseWorkoutCount(pIndex);
+
+  while(date<=endDate){
+    if(date>=startDate)items.push({date,type,phaseIndex:pIndex,round:r,workoutIndex:wIndex});
+    if(type==='rest'){
+      type='workout';
+      date=plusDays(date,1);
+      continue;
+    }
+    phaseCount++;
+    wIndex++;
+    if(wIndex>=program[pIndex].workouts.length){
+      wIndex=0;r++;
+      if(r>=program[pIndex].rounds){
+        r=0;pIndex++;
+        if(pIndex>=program.length){
+          pIndex=program.length-1;r=program[pIndex].rounds-1;wIndex=program[pIndex].workouts.length-1;
+        }
+        phaseCount=0;
+      }
+    }
+    type=(phaseCount%(program[pIndex]?.on||1)===0)?'rest':'workout';
+    date=plusDays(date,1);
+  }
+  return items;
+}
+
 function warmupHTML(type){const data=type==='lower'?lowerWarmup:upperWarmup;return `<div class="warmup"><div class="warmup-title">${type==='lower'?'Lower':'Upper'} Warm-up</div>${data.map(x=>`<div class="warm-row"><div class="warm-copy"><b>${x[0]}</b><small>${x[1]}${x[2]?` · ${x[2]}`:''}</small></div><button class="warm-check" type="button">✓</button></div>`).join('')}</div>`}
 function getDraftKey(){return `${state.phase}-${state.round}-${state.workout}`}
 function getDraft(){return state.drafts[getDraftKey()]||{sets:{},warm:{}}}
 function renderToday(){
-  const p=phase(),w=current(),sched=nextDateInfo(),today=todayISO();
+  ensureScheduleState();
+  const p=phase(),w=current(),today=todayISO();
   const todaysWorkout=state.history.find(h=>isoDate(h.date)===today);
-  const isRest=sched.rest===today && !todaysWorkout;
-  const isComplete=!!todaysWorkout;
+  const restDone=!!state.restDays[today];
+  const isRest=state.scheduleDate===today&&state.nextEventType==='rest'&&!restDone&&!todaysWorkout;
 
   document.getElementById('todayLabel').textContent=new Date().toLocaleDateString(undefined,{month:'short',day:'numeric'});
   document.getElementById('overallProgress').style.width=`${state.completed/total*100}%`;
@@ -30,36 +95,33 @@ function renderToday(){
   document.getElementById('phaseStat').textContent=`${state.phase+1} / 3`;
 
   const startBtn=document.getElementById('startBtn');
-  startBtn.disabled=false;
-  startBtn.style.display='block';
+  const restBtn=document.getElementById('ackRestBtn');
+  startBtn.style.display='none';restBtn.style.display='none';
 
-  if(isComplete){
+  if(todaysWorkout){
     document.getElementById('phaseLabel').textContent=`${todaysWorkout.phase} · Round ${todaysWorkout.round}`;
     document.getElementById('nextWorkout').textContent="Today's workout complete";
-    const nextLabel=new Date(sched.next+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
-    document.getElementById('sessionLabel').textContent=`${todaysWorkout.workout} completed · Next: ${w.name} · ${nextLabel}`;
-    startBtn.style.display='none';
+    document.getElementById('sessionLabel').textContent=`${todaysWorkout.workout} completed`;
+  }else if(restDone){
+    document.getElementById('phaseLabel').textContent=`${p.name} · Round ${state.round+1} of ${p.rounds}`;
+    document.getElementById('nextWorkout').textContent='Rest day complete';
+    document.getElementById('sessionLabel').textContent='Rest day acknowledged';
   }else if(isRest){
     document.getElementById('phaseLabel').textContent=`${p.name} · Round ${state.round+1} of ${p.rounds}`;
     document.getElementById('nextWorkout').textContent='Rest day';
-    const nextLabel=new Date(sched.next+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
-    document.getElementById('sessionLabel').textContent=`No workout planned today · Next: ${w.name} · ${nextLabel}`;
-    startBtn.style.display='none';
+    document.getElementById('sessionLabel').textContent='No workout planned today';
+    restBtn.style.display='block';
   }else{
     document.getElementById('phaseLabel').textContent=`${p.name} · Round ${state.round+1} of ${p.rounds}`;
     document.getElementById('nextWorkout').textContent=w.name;
-    const due=sched.next<=today;
-    document.getElementById('sessionLabel').textContent=`Workout ${Math.min(state.completed+1,total)} of ${total} · ${due?'scheduled today':'next '+new Date(sched.next+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}`;
+    document.getElementById('sessionLabel').textContent=`Workout ${Math.min(state.completed+1,total)} of ${total} · scheduled today`;
+    startBtn.style.display='block';
   }
-
   const wt=state.weights[today]||{};
   document.getElementById('amWeight').value=wt.am||'';
   document.getElementById('pmWeight').value=wt.pm||'';
   document.getElementById('weightHint').textContent=wt.post?`Post-workout today: ${wt.post} lb`:'';
-  renderTodayMacros();
-  renderWater();
-  renderActivities();
-  renderEnergyBalance();
+  renderTodayMacros();renderWater();renderActivities();renderEnergyBalance();
 }
 function renderTodayMacros(){const n=state.nutrition[todayISO()]||{foods:[]};const t=totals(n.foods||[]),g=state.goals;document.getElementById('todayMacros').innerHTML=macroBoxes(t,g);if(document.getElementById('energyBalance'))renderEnergyBalance();}
 function macroBoxes(t,g){return [['Calories',t.cal,g.cal],['Protein',t.p,g.p],['Carbs',t.c,g.c],['Fat',t.f,g.f]].map(([k,v,goal])=>`<div class="macro-box"><strong>${Math.round(v)}</strong><span>${k}${k==='Calories'?'':' g'}</span><small>/ ${goal}</small></div>`).join('')}
@@ -314,6 +376,17 @@ function renderEnergyBalance(){
     <p class="tiny balance-note">${Math.round(ex.minutes)} exercise min + ${Math.round(nonExerciseMinutes)} non-exercise min. Non-exercise burn uses BMR ${bmr} kcal/day. Measured TDEE: ${tdee} kcal/day (reference).</p>`;
 }
 
+
+function acknowledgeRest(){
+  ensureScheduleState();
+  const today=todayISO();
+  if(state.nextEventType!=='rest'||state.scheduleDate!==today)return;
+  state.restDays[today]=true;
+  state.scheduleDate=plusDays(today,1);
+  state.nextEventType='workout';
+  save();renderAll();showScreen('today');
+}
+
 function renderWorkout(){const p=phase(),w=current(),draft=getDraft();document.getElementById('workoutPhase').textContent=`${p.name} · R${state.round+1}`;document.getElementById('workoutTitle').textContent=w.name;document.getElementById('workoutMeta').textContent=`${w.ex.length} exercises · ${p.on} days on / 1 off`;const el=document.getElementById('exerciseList');el.innerHTML=warmupHTML(workoutType(w.name));w.ex.forEach((x,i)=>{const [name,sets,rest,last]=x;const previous=latestExercise(name)||last||'—';let rows=sets.map((target,j)=>{const v=(draft.sets[i]||[])[j]||{};return `<div class="setrow"><div class="setnum">${j+1}</div><input data-e="${i}" data-s="${j}" data-k="weight" inputmode="decimal" placeholder="weight" value="${v.weight??''}"><input data-e="${i}" data-s="${j}" data-k="reps" inputmode="numeric" placeholder="reps · ${target}" value="${v.reps??''}"><button class="check ${v.done?'done':''}" data-e="${i}" data-s="${j}" data-rest="${rest}">✓</button></div>`}).join('');el.insertAdjacentHTML('beforeend',`<div class="exercise"><h3>${name}</h3><div class="rx">${sets.length} set${sets.length>1?'s':''} · ${sets.join(' / ')}${rest?` · ${rest} rest`:''}</div><div class="last">Last: ${previous}</div>${rows}</div>`)});document.querySelectorAll('.warm-check').forEach((b,i)=>{if(draft.warm[i]){b.classList.add('done');b.closest('.warm-row').classList.add('done')}b.addEventListener('click',()=>{draft.warm[i]=!draft.warm[i];b.classList.toggle('done');b.closest('.warm-row').classList.toggle('done');storeDraft(draft)})});document.querySelectorAll('.setrow input').forEach(inp=>inp.addEventListener('input',()=>{const e=+inp.dataset.e,s=+inp.dataset.s;draft.sets[e]=draft.sets[e]||[];draft.sets[e][s]=draft.sets[e][s]||{};draft.sets[e][s][inp.dataset.k]=inp.value;storeDraft(draft)}));document.querySelectorAll('.check').forEach(b=>b.addEventListener('click',()=>{const e=+b.dataset.e,s=+b.dataset.s;draft.sets[e]=draft.sets[e]||[];draft.sets[e][s]=draft.sets[e][s]||{};draft.sets[e][s].done=!draft.sets[e][s].done;b.classList.toggle('done');storeDraft(draft);if(draft.sets[e][s].done&&b.dataset.rest)startTimer(b.dataset.rest)}));}
 function storeDraft(d){state.drafts[getDraftKey()]=d;save()}
 function latestExercise(name){for(const h of state.history){if(h.sets&&h.sets[name]){const vals=h.sets[name].filter(x=>x.weight||x.reps).map(x=>`${x.weight?x.weight+'×':''}${x.reps||''}`);if(vals.length)return vals.join(', ')}}return null}
@@ -323,7 +396,23 @@ function tick(){document.getElementById('timerText').textContent=`${String(Math.
 function stopTimer(){clearInterval(timerInterval);document.getElementById('timer').classList.remove('show')}
 function openFinish(){document.getElementById('finishWorkoutName').textContent=current().name;document.getElementById('finishModal').classList.add('show');document.getElementById('finishModal').setAttribute('aria-hidden','false')}
 function closeFinish(){document.getElementById('finishModal').classList.remove('show');document.getElementById('finishModal').setAttribute('aria-hidden','true')}
-function saveWorkout(){const w=current(),p=phase(),draft=getDraft(),sets={};w.ex.forEach((x,i)=>sets[x[0]]=(draft.sets[i]||[]).map(v=>({weight:v.weight||'',reps:v.reps||'',done:!!v.done})));const summary={duration:num('sumDuration'),activeCalories:num('sumActiveCal'),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),maxHr:num('sumMaxHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};const date=new Date().toISOString();state.history.unshift({date,phase:p.name,phaseIndex:state.phase,round:state.round+1,workout:w.name,sets,summary});if(summary.postWeight)state.weights[todayISO()]={...(state.weights[todayISO()]||{}),post:summary.postWeight};delete state.drafts[getDraftKey()];state.completed++;advanceProgram();save();clearSummary();closeFinish();renderAll();showScreen('today')}
+function saveWorkout(){
+  ensureScheduleState();
+  const w=current(),p=phase(),draft=getDraft(),sets={};
+  w.ex.forEach((x,i)=>sets[x[0]]=(draft.sets[i]||[]).map(v=>({weight:v.weight||'',reps:v.reps||'',done:!!v.done})));
+  const summary={duration:num('sumDuration'),activeCalories:num('sumActiveCal'),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),maxHr:num('sumMaxHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
+  const date=new Date().toISOString(),completedPhaseIndex=state.phase;
+  state.history.unshift({date,phase:p.name,phaseIndex:state.phase,round:state.round+1,workout:w.name,sets,summary});
+  if(summary.postWeight)state.weights[todayISO()]={...(state.weights[todayISO()]||{}),post:summary.postWeight};
+  delete state.drafts[getDraftKey()];
+  state.completed++;
+  const completedCount=state.history.filter(h=>(h.phaseIndex??-1)===completedPhaseIndex).length;
+  const restNext=completedCount%(program[completedPhaseIndex]?.on||1)===0;
+  advanceProgram();
+  state.scheduleDate=plusDays(todayISO(),1);
+  state.nextEventType=restNext?'rest':'workout';
+  save();clearSummary();closeFinish();renderAll();showScreen('today');
+}
 function advanceProgram(){state.workout++;if(state.workout>=phase().workouts.length){state.workout=0;state.round++;if(state.round>=phase().rounds){state.round=0;state.phase++;if(state.phase>=program.length){state.phase=program.length-1;state.round=phase().rounds-1;state.workout=phase().workouts.length-1}}}}
 function clearSummary(){['sumDuration','sumActiveCal','sumTotalCal','sumAvgHr','sumMaxHr','sumWeight','sumNotes'].forEach(id=>document.getElementById(id).value='')}
 function renderNutrition(){const d=document.getElementById('nutritionDate').value||todayISO();document.getElementById('nutritionDate').value=d;const g=state.goals;[['goalCal','cal'],['goalP','p'],['goalC','c'],['goalF','f']].forEach(([id,k])=>document.getElementById(id).value=g[k]);state.nutrition[d]=state.nutrition[d]||{foods:[]};const foods=state.nutrition[d].foods;document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);document.getElementById('foodList').innerHTML=foods.length?foods.map((f,i)=>foodRow(f,i)).join(''):'<p class="notice">No foods logged yet.</p>';document.querySelectorAll('.food-row input').forEach(inp=>inp.addEventListener('blur',foodChanged));document.querySelectorAll('.food-row button').forEach(b=>b.addEventListener('click',()=>{foods.splice(+b.dataset.i,1);save();renderNutrition();renderTodayMacros()}));}
@@ -333,14 +422,45 @@ function foodChanged(e){const d=document.getElementById('nutritionDate').value,f
 function addFood(){const d=document.getElementById('nutritionDate').value||todayISO();state.nutrition[d]=state.nutrition[d]||{foods:[]};state.nutrition[d].foods.push({name:'',cal:0,p:0,c:0,f:0});save();renderNutrition();setTimeout(()=>document.querySelectorAll('.food-name input')[document.querySelectorAll('.food-name input').length-1]?.focus(),0)}
 function totals(foods){return foods.reduce((a,f)=>({cal:a.cal+(+f.cal||0),p:a.p+(+f.p||0),c:a.c+(+f.c||0),f:a.f+(+f.f||0)}),{cal:0,p:0,c:0,f:0})}
 function saveGoals(){state.goals={cal:num('goalCal'),p:num('goalP'),c:num('goalC'),f:num('goalF')};save();renderNutrition();renderTodayMacros()}
-function renderHistory(){const y=calendarCursor.getFullYear(),m=calendarCursor.getMonth();document.getElementById('monthLabel').textContent=calendarCursor.toLocaleDateString(undefined,{month:'short',year:'numeric'});const first=new Date(y,m,1),days=new Date(y,m+1,0).getDate(),offset=first.getDay(),sched=nextDateInfo(),byDate={};state.history.forEach(h=>{const d=isoDate(h.date);(byDate[d]=byDate[d]||[]).push(h)});let html='';for(let i=0;i<offset;i++)html+='<div class="day blank"></div>';for(let d=1;d<=days;d++){const key=isoDate(new Date(y,m,d)),classes=['day'];if(key===todayISO())classes.push('today');if(byDate[key])classes.push('workout-day');if(key===sched.next)classes.push('next-day');if(key===sched.rest)classes.push('rest-day');const mark=(byDate[key]||key===sched.next||key===sched.rest)?'<span class="mark"></span>':'';html+=`<button class="${classes.join(' ')}" data-date="${key}">${d}${mark}</button>`}document.getElementById('calendar').innerHTML=html;document.querySelectorAll('.day[data-date]').forEach(b=>b.addEventListener('click',()=>renderDayDetail(b.dataset.date)));const w=current();document.getElementById('nextScheduleCard').innerHTML=`<div class="eyebrow">Next scheduled workout</div><h3>${w.name}</h3><p class="muted">${new Date(sched.next+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})} · ${phase().name} · Round ${state.round+1}</p>${sched.rest?`<p class="tiny" style="margin-top:8px">Scheduled rest: ${new Date(sched.rest+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</p>`:''}`;}
-function renderDayDetail(date){const hs=state.history.filter(h=>isoDate(h.date)===date),wt=state.weights[date],nut=state.nutrition[date];let parts=`<div class="eyebrow">${new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</div>`;if(hs.length)hs.forEach(h=>{const s=h.summary||{};parts+=`<div class="day-detail-row"><b>${h.workout}</b><small>${h.phase} · Round ${h.round}${s.duration?` · ${s.duration} min`:''}${s.activeCalories?` · ${s.activeCalories} active kcal`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}</small></div>`});if(wt)parts+=`<div class="day-detail-row"><b>Weight</b><small>${wt.am?`AM ${wt.am} lb · `:''}${wt.post?`Post ${wt.post} lb · `:''}${wt.pm?`PM ${wt.pm} lb`:''}</small></div>`;if(nut){const t=totals(nut.foods||[]);parts+=`<div class="day-detail-row"><b>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`}const acts=state.activities[date]||[];if(acts.length){const mins=acts.reduce((s,a)=>s+(+a.minutes||0),0),cals=acts.reduce((s,a)=>s+(+a.calories||0),0);parts+=`<div class="day-detail-row"><b>Walks / jogs</b><small>${Math.round(mins)} min · ${Math.round(cals)} kcal</small></div>`}const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b>Water</b><small>${water} oz</small></div>`;const cd=state.checklistDays[date];if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b>Checklist</b><small>${done} of ${items.length} complete</small></div>`}if(!hs.length&&!wt&&!nut&&!acts.length&&!water&&!cd)parts+='<p class="notice">No saved data for this day.</p>';document.getElementById('dayDetail').innerHTML=parts;}
+function renderHistory(){
+  ensureScheduleState();
+  const y=calendarCursor.getFullYear(),m=calendarCursor.getMonth();
+  document.getElementById('monthLabel').textContent=calendarCursor.toLocaleDateString(undefined,{month:'short',year:'numeric'});
+  const first=new Date(y,m,1),days=new Date(y,m+1,0).getDate(),offset=first.getDay();
+  const monthStart=isoDate(first),monthEnd=isoDate(new Date(y,m,days));
+  const projected=projectSchedule(monthStart,monthEnd),plan={};
+  projected.forEach(x=>plan[x.date]=x);
+  const byDate={};
+  state.history.forEach(h=>{const d=isoDate(h.date);(byDate[d]=byDate[d]||[]).push(h)});
+  let html='';
+  for(let i=0;i<offset;i++)html+='<div class="day blank"></div>';
+  for(let d=1;d<=days;d++){
+    const key=isoDate(new Date(y,m,d)),classes=['day'];
+    const complete=!!byDate[key]||!!state.restDays[key],p=plan[key];
+    if(key===todayISO())classes.push('today');
+    if(complete)classes.push('completed-day');
+    if(p?.type==='workout')classes.push('scheduled-workout');
+    if(p?.type==='rest')classes.push('scheduled-rest');
+    const dot=p?`<span class="schedule-dot ${p.type}"></span>`:'';
+    html+=`<button class="${classes.join(' ')}" data-date="${key}">${d}${dot}</button>`;
+  }
+  document.getElementById('calendar').innerHTML=html;
+  document.querySelectorAll('.day[data-date]').forEach(b=>b.addEventListener('click',()=>renderDayDetail(b.dataset.date)));
+
+  const next=projectSchedule(todayISO(),plusDays(todayISO(),60))[0];
+  if(next){
+    const pp=program[next.phaseIndex],ww=pp.workouts[next.workoutIndex];
+    document.getElementById('nextScheduleCard').innerHTML=`<div class="eyebrow">Next scheduled ${next.type==='rest'?'rest day':'workout'}</div><h3>${next.type==='rest'?'Rest Day':ww.name}</h3><p class="muted">${new Date(next.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})} · ${pp.name} · Round ${next.round+1}</p>`;
+  }
+}
+function renderDayDetail(date){const hs=state.history.filter(h=>isoDate(h.date)===date),wt=state.weights[date],nut=state.nutrition[date];let parts=`<div class="eyebrow">${new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</div>`;if(state.restDays[date])parts+=`<div class="day-detail-row"><b>Rest day complete</b><small>Acknowledged</small></div>`;if(hs.length)hs.forEach(h=>{const s=h.summary||{};parts+=`<div class="day-detail-row"><b>${h.workout}</b><small>${h.phase} · Round ${h.round}${s.duration?` · ${s.duration} min`:''}${s.activeCalories?` · ${s.activeCalories} active kcal`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}</small></div>`});if(wt)parts+=`<div class="day-detail-row"><b>Weight</b><small>${wt.am?`AM ${wt.am} lb · `:''}${wt.post?`Post ${wt.post} lb · `:''}${wt.pm?`PM ${wt.pm} lb`:''}</small></div>`;if(nut){const t=totals(nut.foods||[]);parts+=`<div class="day-detail-row"><b>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`}const acts=state.activities[date]||[];if(acts.length){const mins=acts.reduce((s,a)=>s+(+a.minutes||0),0),cals=acts.reduce((s,a)=>s+(+a.calories||0),0);parts+=`<div class="day-detail-row"><b>Walks / jogs</b><small>${Math.round(mins)} min · ${Math.round(cals)} kcal</small></div>`}const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b>Water</b><small>${water} oz</small></div>`;const cd=state.checklistDays[date];if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b>Checklist</b><small>${done} of ${items.length} complete</small></div>`}if(!hs.length&&!state.restDays[date]&&!wt&&!nut&&!acts.length&&!water&&!cd)parts+='<p class="notice">No saved data for this day.</p>';document.getElementById('dayDetail').innerHTML=parts;}
 function renderProgress(){const entries=Object.entries(state.weights).filter(([,v])=>v.am||v.pm).sort((a,b)=>a[0].localeCompare(b[0]));const ams=entries.filter(([,v])=>v.am).map(([d,v])=>({d,v:+v.am}));const latest=ams.at(-1);const last7=ams.slice(-7);document.getElementById('latestWeight').textContent=latest?`${latest.v.toFixed(1)} lb`:'—';document.getElementById('avg7Weight').textContent=last7.length?`${(last7.reduce((s,x)=>s+x.v,0)/last7.length).toFixed(1)} lb`:'—';const swings=entries.filter(([,v])=>v.am&&v.pm).map(([,v])=>+v.pm-+v.am);document.getElementById('dailySwing').textContent=swings.length?`${(swings.reduce((a,b)=>a+b,0)/swings.length).toFixed(1)} lb`:'—';document.getElementById('weightHistory').innerHTML=entries.length?entries.slice(-10).reverse().map(([d,v])=>`<div class="weight-line"><span>${new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><b>${v.am?`AM ${v.am}`:'—'}</b><b>${v.pm?`PM ${v.pm}`:(v.post?`Post ${v.post}`:'—')}</b></div>`).join(''):'<p class="notice">Start entering morning and evening weights to build your trend.</p>';}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.screen===id));if(id==='workout')renderWorkout();if(id==='nutrition')renderNutrition();if(id==='history')renderHistory();if(id==='progress')renderProgress();if(id==='checklist')renderChecklist();if(id==='today')renderToday();window.scrollTo(0,0)}
 function renderAll(){renderToday();renderWorkout();renderNutrition();renderChecklist();renderHistory();renderProgress()}
 function num(id){return parseFloat(document.getElementById(id).value)||0}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.go)));document.getElementById('startBtn').addEventListener('click',()=>showScreen('workout'));document.getElementById('finishBtn').addEventListener('click',openFinish);document.getElementById('closeFinish').addEventListener('click',closeFinish);document.getElementById('saveWorkoutBtn').addEventListener('click',saveWorkout);document.getElementById('skipTimer').addEventListener('click',stopTimer);document.getElementById('saveWeightBtn').addEventListener('click',saveWeights);document.getElementById('nutritionDate').addEventListener('change',renderNutrition);document.getElementById('addFoodBtn').addEventListener('click',addFood);document.getElementById('saveGoalsBtn').addEventListener('click',saveGoals);document.getElementById('prevMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderHistory()});document.getElementById('nextMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderHistory()});document.getElementById('activityType').addEventListener('change',setHrDefaultsForType);
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.go)));document.getElementById('startBtn').addEventListener('click',()=>showScreen('workout'));
+document.getElementById('ackRestBtn').addEventListener('click',acknowledgeRest);document.getElementById('finishBtn').addEventListener('click',openFinish);document.getElementById('closeFinish').addEventListener('click',closeFinish);document.getElementById('saveWorkoutBtn').addEventListener('click',saveWorkout);document.getElementById('skipTimer').addEventListener('click',stopTimer);document.getElementById('saveWeightBtn').addEventListener('click',saveWeights);document.getElementById('nutritionDate').addEventListener('change',renderNutrition);document.getElementById('addFoodBtn').addEventListener('click',addFood);document.getElementById('saveGoalsBtn').addEventListener('click',saveGoals);document.getElementById('prevMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderHistory()});document.getElementById('nextMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderHistory()});document.getElementById('activityType').addEventListener('change',setHrDefaultsForType);
 document.getElementById('addActivityBtn').addEventListener('click',addActivity);
 document.getElementById('waterMinusBtn').addEventListener('click',()=>changeWater(-8));
 document.getElementById('waterPlusBtn').addEventListener('click',()=>changeWater(8));

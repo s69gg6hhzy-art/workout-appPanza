@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <div class="app">
@@ -17,7 +17,7 @@
       <p class="muted" id="sessionLabel"></p>
       <div class="progress"><div id="overallProgress"></div></div>
       <div class="tiny" id="progressText"></div>
-      <button class="primary" id="startBtn">Start workout</button>
+      <button class="primary" id="startBtn">Start workout</button><button class="primary rest-ack" id="ackRestBtn" style="display:none">Acknowledge rest day</button>
     </div>
 
     <div class="section-title">Weight</div>
@@ -121,7 +121,7 @@
     <div class="card calendar-card">
       <div class="weekday-row"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
       <div class="calendar" id="calendar"></div>
-      <div class="legend"><span><i class="done-dot"></i>Workout</span><span><i class="next-dot"></i>Next</span><span><i class="rest-dot"></i>Rest</span></div>
+      <div class="legend"><span><i class="workout-dot"></i>Workout</span><span><i class="rest-dot"></i>Rest</span><span><i class="complete-swatch"></i>Complete</span></div>
     </div>
     <div class="card" id="nextScheduleCard"></div>
     <div class="card" id="dayDetail"><p class="notice">Tap a completed workout day to see its details.</p></div>
@@ -173,7 +173,7 @@
   <button data-screen="history">History</button>
   <button data-screen="progress">Progress</button>
 </nav>
-<script src="data.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="data.js?v=9"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

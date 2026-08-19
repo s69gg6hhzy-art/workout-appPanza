@@ -35,3 +35,15 @@
 @media(max-width:600px){.activity-form{grid-template-columns:1fr 1fr}.activity-form label:first-child{grid-column:1/-1}.hr-form{grid-template-columns:1fr 1fr}}
 
 .hr-hint{margin-top:7px}
+
+.rest-ack{margin-top:10px}
+.day{position:relative}
+.schedule-dot{position:absolute;width:8px;height:8px;border-radius:50%;left:50%;transform:translateX(-50%);bottom:9px}
+.schedule-dot.workout{background:#39d98a}
+.schedule-dot.rest{background:#ff5b5b}
+.day.completed-day{background:#f3d65c!important;color:#111!important;border-color:#f3d65c!important}
+.day.completed-day .schedule-dot{box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.legend .workout-dot,.legend .rest-dot,.legend .complete-swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.legend .workout-dot{background:#39d98a}
+.legend .rest-dot{background:#ff5b5b}
+.legend .complete-swatch{background:#f3d65c;border-radius:3px}
