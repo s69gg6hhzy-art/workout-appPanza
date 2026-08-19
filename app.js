@@ -203,6 +203,8 @@ function renderChecklist(){
     <button class="checklist-check ${day[item.id]?'done':''}" data-check="${item.id}" aria-label="Mark ${esc(item.text)} complete">✓</button>
     <span class="checklist-text" data-text="${item.id}">${esc(item.text)}</span>
     <input class="checklist-edit" data-edit-input="${item.id}" value="${esc(item.text)}" aria-label="Edit ${esc(item.text)}">
+    <button class="check-move" data-check-up="${item.id}" aria-label="Move ${esc(item.text)} up">↑</button>
+    <button class="check-move" data-check-down="${item.id}" aria-label="Move ${esc(item.text)} down">↓</button>
     <button class="checklist-edit-btn" data-edit="${item.id}" aria-label="Edit ${esc(item.text)}">Edit</button>
     <button class="checklist-delete" data-delete="${item.id}" aria-label="Delete ${esc(item.text)}">×</button>
   </div>`).join(''):'<p class="notice">No checklist items yet. Add your first daily item below.</p>';
@@ -211,6 +213,8 @@ function renderChecklist(){
     const id=b.dataset.check;day[id]=!day[id];save();renderChecklist();
   }));
 
+  document.querySelectorAll('[data-check-up]').forEach(b=>b.addEventListener('click',()=>moveChecklistItem(b.dataset.checkUp,-1)));
+  document.querySelectorAll('[data-check-down]').forEach(b=>b.addEventListener('click',()=>moveChecklistItem(b.dataset.checkDown,1)));
   document.querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click',()=>{
     const id=b.dataset.delete;state.checklistItems=state.checklistItems.filter(x=>x.id!==id);
     Object.values(state.checklistDays||{}).forEach(x=>delete x[id]);
