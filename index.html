@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 <div class="app">
@@ -72,10 +72,10 @@
       <div class="eyebrow">Progress photos taken today</div>
       <p class="muted">Mark the angles you took.</p>
       <div class="photo-check-grid">
-        <label><input type="checkbox" id="photoDoneFront"><span>Front</span></label>
-        <label><input type="checkbox" id="photoDoneSide"><span>Side</span></label>
-        <label><input type="checkbox" id="photoDoneBack"><span>Back</span></label>
-        <label><input type="checkbox" id="photoDoneFlex"><span>Flex</span></label>
+        <label><input type="checkbox" id="photoDoneFront" onchange="setPhotoDone('front', this.checked)"><span>Front</span></label>
+        <label><input type="checkbox" id="photoDoneSide" onchange="setPhotoDone('side', this.checked)"><span>Side</span></label>
+        <label><input type="checkbox" id="photoDoneBack" onchange="setPhotoDone('back', this.checked)"><span>Back</span></label>
+        <label><input type="checkbox" id="photoDoneFlex" onchange="setPhotoDone('flex', this.checked)"><span>Flex</span></label>
       </div>
       <div class="tiny" id="photoTakenStatus"></div>
     </div>
@@ -213,7 +213,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=23"></script>
-<script src="app.js?v=23"></script>
+<script src="data.js?v=24"></script>
+<script src="app.js?v=24"></script>
 </body>
 </html>

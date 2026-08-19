@@ -136,6 +136,14 @@ function renderPhotoTracker(){
   const s=document.getElementById('photoTakenStatus');
   if(s)s.textContent=n?`${n} of 4 angles marked complete`:'No progress photos marked today';
 }
+function setPhotoDone(angle,checked){
+  const p=photoDayState();
+  if(!['front','side','back','flex'].includes(angle))return;
+  p[angle]=!!checked;
+  save();
+  renderPhotoTracker();
+  renderHistory();
+}
 function savePhotoTracker(){
   const p=photoDayState();
   p.front=!!document.getElementById('photoDoneFront')?.checked;
@@ -742,7 +750,3 @@ document.getElementById('nutritionDate').value=todayISO();setHrDefaultsForType()
 
 setTimeout(bindPhotoInputs,0);
 
-['Front','Side','Back','Flex'].forEach(a=>{
-  const el=document.getElementById('photoDone'+a);
-  if(el)el.addEventListener('change',savePhotoTracker);
-});
