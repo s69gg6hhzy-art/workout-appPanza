@@ -194,7 +194,7 @@ function todaysExerciseTotals(){
   const workoutMinutes=workoutEntries.reduce((s,h)=>s+(+(h.summary?.duration)||0),0);
   const workoutCalories=workoutEntries.reduce((s,h)=>s+(+(h.summary?.activeCalories)||0),0);
   const acts=state.activities[today]||[];
-  const activityMinutes=acts.reduce((s,a)=>s+(+a.minutes||0),0);
+  const activityMinutes=acts.reduce((s,a)=>s+(+a.minutes||0)+((+a.seconds||0)/60),0);
   const activityCalories=acts.reduce((s,a)=>s+(+a.calories||0),0);
   return {
     workoutMinutes,workoutCalories,activityMinutes,activityCalories,
@@ -202,33 +202,58 @@ function todaysExerciseTotals(){
     calories:workoutCalories+activityCalories
   };
 }
+function fmtDuration(sec){
+  sec=Math.max(0,Math.round(+sec||0));
+  const m=Math.floor(sec/60),s=sec%60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+function activitySeconds(a){return (+a.minutes||0)*60+(+a.seconds||0)}
+function activityPace(a){
+  const d=+a.distance||0,sec=activitySeconds(a);
+  if(!d||!sec)return '';
+  return fmtDuration(sec/d)+'/mi';
+}
 function renderActivities(){
   const today=todayISO();
   const acts=state.activities[today]||[];
   const list=document.getElementById('activityList');
   if(!list)return;
-  list.innerHTML=acts.length?acts.map((a,i)=>`<div class="activity-row">
-    <div><b>${esc(a.type)}</b><small>${a.minutes} min · ${a.calories} kcal</small></div>
-    <button data-activity-delete="${i}" aria-label="Delete ${esc(a.type)}">×</button>
-  </div>`).join(''):'<p class="notice">No walks or jogs logged today.</p>';
+  list.innerHTML=acts.length?acts.map((a,i)=>{
+    const bits=[];
+    if(+a.distance)bits.push(`${(+a.distance).toFixed(2).replace(/\.00$/,'')} mi`);
+    if(activitySeconds(a))bits.push(fmtDuration(activitySeconds(a)));
+    if(activityPace(a))bits.push(`${activityPace(a)} pace`);
+    if(+a.calories)bits.push(`${a.calories} active kcal`);
+    if(+a.avgHr)bits.push(`${a.avgHr} avg bpm`);
+    const zones=[1,2,3,4,5].map(z=>a[`z${z}`]).filter(Boolean);
+    const zoneLine=zones.length?[1,2,3,4,5].map(z=>a[`z${z}`]?`Z${z} ${a[`z${z}`]}`:'').filter(Boolean).join(' · '):'';
+    return `<div class="activity-row">
+      <div><b>${esc(a.type)}</b><small>${bits.join(' · ')}</small>${zoneLine?`<small class="zone-line">${zoneLine}</small>`:''}</div>
+      <button data-activity-delete="${i}" aria-label="Delete ${esc(a.type)}">×</button>
+    </div>`;
+  }).join(''):'<p class="notice">No walks or jogs logged today.</p>';
   document.querySelectorAll('[data-activity-delete]').forEach(b=>b.addEventListener('click',()=>{
     state.activities[today].splice(+b.dataset.activityDelete,1);
     save();renderActivities();renderEnergyBalance();
   }));
   const t=todaysExerciseTotals();
   const summary=document.getElementById('activitySummary');
-  if(summary)summary.textContent=`${Math.round(t.minutes)} min exercise · ${Math.round(t.calories)} exercise kcal`;
+  if(summary)summary.textContent=`${Math.round(t.minutes)} min exercise · ${Math.round(t.calories)} active exercise kcal`;
 }
 function addActivity(){
   const type=document.getElementById('activityType').value;
   const minutes=num('activityMinutes');
+  const seconds=Math.min(59,num('activitySeconds'));
+  const distance=+document.getElementById('activityDistance').value||0;
   const calories=num('activityCalories');
-  if(!minutes && !calories)return;
+  const avgHr=num('activityAvgHr');
+  const zones={};
+  [1,2,3,4,5].forEach(z=>{const v=document.getElementById(`activityZ${z}`).value.trim();if(v)zones[`z${z}`]=v});
+  if(!minutes&&!seconds&&!distance&&!calories)return;
   const today=todayISO();
   state.activities[today]=state.activities[today]||[];
-  state.activities[today].push({type,minutes,calories});
-  document.getElementById('activityMinutes').value='';
-  document.getElementById('activityCalories').value='';
+  state.activities[today].push({type,minutes,seconds,distance,calories,avgHr,...zones});
+  ['activityMinutes','activitySeconds','activityDistance','activityCalories','activityAvgHr','activityZ1','activityZ2','activityZ3','activityZ4','activityZ5'].forEach(id=>document.getElementById(id).value='');
   save();renderActivities();renderEnergyBalance();
 }
 function renderEnergyBalance(){

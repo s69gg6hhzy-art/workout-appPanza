@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <div class="app">
@@ -38,9 +38,22 @@
     <div class="card activity-card">
       <div class="activity-form">
         <label>Type<select id="activityType"><option>Walk</option><option>Jog</option><option>Run</option><option>Other cardio</option></select></label>
+        <label>Distance (mi)<input id="activityDistance" inputmode="decimal" placeholder="3.20"></label>
         <label>Minutes<input id="activityMinutes" inputmode="numeric" placeholder="30"></label>
-        <label>Calories<input id="activityCalories" inputmode="numeric" placeholder="180"></label>
+        <label>Seconds<input id="activitySeconds" inputmode="numeric" placeholder="17" max="59"></label>
+        <label>Active Calories<input id="activityCalories" inputmode="numeric" placeholder="342"></label>
       </div>
+      <details class="hr-details">
+        <summary>Heart Rate Details</summary>
+        <div class="hr-form">
+          <label>Avg HR (bpm)<input id="activityAvgHr" inputmode="numeric" placeholder="154"></label>
+          <label>Zone 1<input id="activityZ1" placeholder="1:43"></label>
+          <label>Zone 2<input id="activityZ2" placeholder="4:14"></label>
+          <label>Zone 3<input id="activityZ3" placeholder="5:23"></label>
+          <label>Zone 4<input id="activityZ4" placeholder="6:55"></label>
+          <label>Zone 5<input id="activityZ5" placeholder="0:00"></label>
+        </div>
+      </details>
       <button class="secondary compact" id="addActivityBtn">+ Add activity</button>
       <div class="tiny activity-summary" id="activitySummary"></div>
       <div id="activityList"></div>
@@ -160,7 +173,7 @@
   <button data-screen="history">History</button>
   <button data-screen="progress">Progress</button>
 </nav>
-<script src="data.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<script src="data.js?v=7"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
