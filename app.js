@@ -592,7 +592,7 @@ async function savePhotoCheckin(){
   const files={front:selectedPhoto('front'),side:selectedPhoto('side'),back:selectedPhoto('back'),flex:selectedPhoto('flex')};
   if(!Object.values(files).some(Boolean)){alert('Take or choose at least one photo first.');return}
   const btn=document.getElementById('savePhotoCheckinBtn');btn.disabled=true;btn.textContent='Saving…';
-  try{const id=`${todayISO()}-${Date.now()}`,angles=[];for(const [angle,file] of Object.entries(files)){if(!file)continue;const blob=await compressPhoto(file);await photoPut(`${id}:${angle}`,blob);angles.push(angle)}state.photoCheckins=state.photoCheckins||[];state.photoCheckins.push({id,date:todayISO(),type:photoCheckinType,phaseIndex:state.phase,angles});save();closePhotoModal();renderAll();await renderPhotoGallery()}catch(e){alert('The photos could not be saved.')}finally{btn.disabled=false;btn.textContent='Save photo check-in'}
+  try{const id=`${todayISO()}-${Date.now()}`,angles=[];for(const [angle,file] of Object.entries(files)){if(!file)continue;const blob=await compressPhoto(file);await photoPut(`${id}:${angle}`,blob);angles.push(angle)}state.photoCheckins=state.photoCheckins||[];state.photoCheckins.push({id,date:todayISO(),type:photoCheckinType,phaseIndex:state.phase,angles});save();closePhotoModal();renderAll();await renderPhotoGallery()}catch(e){console.error('Photo save failed',e);alert('The photo could not be saved on this device. Please try again.')}finally{btn.disabled=false;btn.textContent='Save photo check-in'}
 }
 function photoLabel(x){const d=new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});return x.type==='phase'?`${d} · Phase ${x.phaseIndex+1}`:x.type==='weekly'?`${d} · Weekly`:d}
 async function photoURL(checkin,angle){const b=await photoGet(`${checkin.id}:${angle}`);return b?URL.createObjectURL(b):''}
@@ -685,11 +685,14 @@ document.getElementById('restoreInput').addEventListener('change',e=>{restoreBac
 document.getElementById('newUserBtn').addEventListener('click',openNewUser);
 document.getElementById('closeNewUserBtn').addEventListener('click',closeNewUser);
 document.getElementById('confirmNewUserBtn').addEventListener('click',createNewUser);
-document.getElementById('openPhotoBtn').addEventListener('click',()=>openPhotoModal(document.getElementById('photoDueCard').dataset.photoType));
-document.getElementById('closePhotoBtn').addEventListener('click',closePhotoModal);
-document.getElementById('savePhotoCheckinBtn').addEventListener('click',savePhotoCheckin);
-document.getElementById('weeklyPhotosToggle').addEventListener('change',toggleWeeklyPhotos);
-document.getElementById('comparePhotosBtn').addEventListener('click',comparePhotos);
+const openPhotoBtn=document.getElementById('openPhotoBtn');
+if(openPhotoBtn)openPhotoBtn.addEventListener('click',()=>openPhotoModal(document.getElementById('photoDueCard')?.dataset.photoType||'manual'));
+const closePhotoBtn=document.getElementById('closePhotoBtn');
+const savePhotoCheckinBtn=document.getElementById('savePhotoCheckinBtn');
+const weeklyPhotosToggle=document.getElementById('weeklyPhotosToggle');
+if(weeklyPhotosToggle)weeklyPhotosToggle.addEventListener('change',toggleWeeklyPhotos);
+const comparePhotosBtn=document.getElementById('comparePhotosBtn');
+if(comparePhotosBtn)comparePhotosBtn.addEventListener('click',comparePhotos);
 
 document.getElementById('nutritionDate').value=todayISO();setHrDefaultsForType();renderAll();bindPhotoInputs();save();
 

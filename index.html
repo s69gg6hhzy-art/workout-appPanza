@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
 <div class="app">
@@ -213,7 +213,7 @@
 </nav>
 
 <div class="modal" id="photoModal"><div class="modal-card setup-card">
-  <div class="modal-head"><div><div class="eyebrow" id="photoModalEyebrow">Progress check-in</div><h2 id="photoModalTitle">Progress photos</h2></div><button class="icon-btn" id="closePhotoBtn">×</button></div>
+  <div class="modal-head"><div><div class="eyebrow" id="photoModalEyebrow">Progress check-in</div><h2 id="photoModalTitle">Progress photos</h2></div><button class="icon-btn" id="closePhotoBtn" onclick="closePhotoModal()">×</button></div>
   <p class="notice">For useful comparisons, use similar lighting, distance, clothes and time of day.</p>
   <div class="photo-input-grid">
     <label>Front<input type="file" id="photoFrontCamera" accept="image/*" capture="environment" class="photo-file-input"><input type="file" id="photoFrontLibrary" accept="image/*" class="photo-file-input"><div class="photo-button-pair"><label for="photoFrontCamera" class="primary compact photo-native-button">Take Front photo</label><label for="photoFrontLibrary" class="secondary compact photo-native-button">Choose existing</label></div><span id="frontStatus">No photo selected</span></label>
@@ -221,9 +221,9 @@
     <label>Back<input type="file" id="photoBackCamera" accept="image/*" capture="environment" class="photo-file-input"><input type="file" id="photoBackLibrary" accept="image/*" class="photo-file-input"><div class="photo-button-pair"><label for="photoBackCamera" class="primary compact photo-native-button">Take Back photo</label><label for="photoBackLibrary" class="secondary compact photo-native-button">Choose existing</label></div><span id="backStatus">No photo selected</span></label>
     <label>Flex / pose <small>optional</small><input type="file" id="photoFlexCamera" accept="image/*" capture="environment" class="photo-file-input"><input type="file" id="photoFlexLibrary" accept="image/*" class="photo-file-input"><div class="photo-button-pair"><label for="photoFlexCamera" class="primary compact photo-native-button">Take Flex / Pose photo</label><label for="photoFlexLibrary" class="secondary compact photo-native-button">Choose existing</label></div><span id="flexStatus">No photo selected</span></label>
   </div>
-  <button class="primary" id="savePhotoCheckinBtn">Save photo check-in</button>
+  <button class="primary" id="savePhotoCheckinBtn" onclick="savePhotoCheckin()">Save photo check-in</button>
 </div></div>
-<div class="modal" id="newUserModal"><div class="modal-card setup-card"><div class="modal-head"><div><div class="eyebrow">Fresh profile</div><h2>New User</h2></div><button class="icon-btn" id="closeNewUserBtn">×</button></div><p class="notice">This clears this browser's personal tracking data. The workout program stays unchanged. Export a backup first if needed.</p><div class="setup-grid"><label>Name<input id="newName"></label><label>Starting weight (lb)<input id="newStartWeight" inputmode="decimal"></label><label>Calorie goal<input id="newCalGoal" inputmode="numeric" value="2500"></label><label>Protein goal (g)<input id="newProteinGoal" inputmode="numeric" value="180"></label><label>Carb goal (g)<input id="newCarbGoal" inputmode="numeric" value="250"></label><label>Fat goal (g)<input id="newFatGoal" inputmode="numeric" value="85"></label><label>BMR<input id="newBmr" inputmode="numeric" value="1891"></label><label>TDEE<input id="newTdee" inputmode="numeric" value="2741"></label><label>Water goal (oz)<input id="newWaterGoal" inputmode="numeric" value="96"></label></div><label class="reset-label">Type <b>RESET</b> to confirm<input id="resetConfirm" placeholder="RESET"></label><button class="danger" id="confirmNewUserBtn">Erase data & create new user</button></div></div><script src="data.js?v=20"></script>
-<script src="app.js?v=20"></script>
+<div class="modal" id="newUserModal"><div class="modal-card setup-card"><div class="modal-head"><div><div class="eyebrow">Fresh profile</div><h2>New User</h2></div><button class="icon-btn" id="closeNewUserBtn">×</button></div><p class="notice">This clears this browser's personal tracking data. The workout program stays unchanged. Export a backup first if needed.</p><div class="setup-grid"><label>Name<input id="newName"></label><label>Starting weight (lb)<input id="newStartWeight" inputmode="decimal"></label><label>Calorie goal<input id="newCalGoal" inputmode="numeric" value="2500"></label><label>Protein goal (g)<input id="newProteinGoal" inputmode="numeric" value="180"></label><label>Carb goal (g)<input id="newCarbGoal" inputmode="numeric" value="250"></label><label>Fat goal (g)<input id="newFatGoal" inputmode="numeric" value="85"></label><label>BMR<input id="newBmr" inputmode="numeric" value="1891"></label><label>TDEE<input id="newTdee" inputmode="numeric" value="2741"></label><label>Water goal (oz)<input id="newWaterGoal" inputmode="numeric" value="96"></label></div><label class="reset-label">Type <b>RESET</b> to confirm<input id="resetConfirm" placeholder="RESET"></label><button class="danger" id="confirmNewUserBtn">Erase data & create new user</button></div></div><script src="data.js?v=21"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>
