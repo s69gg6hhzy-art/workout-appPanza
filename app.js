@@ -952,13 +952,10 @@ function renderDayDetail(date){
   if(nut){
     const t=totals(nut.foods||[]);
     parts+=`<div class="day-detail-row"><b>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`;
-    (nut.foods||[]).filter(x=>x.name||x.cal).forEach(x=>parts+=`<div class="day-detail-row history-subrow"><b>${x.time?formatTime12(x.time)+' · ':''}${esc(x.name||'Food')}</b><small>${x.weight?`${x.weight} g · `:''}${Math.round(+x.cal||0)} kcal</small></div>`);
   }
   const acts=state.activities[date]||[];
   if(acts.length){
-    const mins=acts.reduce((s,a)=>s+(+a.minutes||0)+((+a.seconds||0)/60),0),cals=acts.reduce((s,a)=>s+(+a.calories||0),0);
-    parts+=`<div class="day-detail-row"><b>Walks / jogs</b><small>${Math.round(mins)} min · ${Math.round(cals)} total kcal</small></div>`;
-    acts.forEach(a=>parts+=`<div class="day-detail-row history-subrow"><b>${a.time?formatTime12(a.time)+' · ':''}${esc(a.type||'Cardio')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
+    acts.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}${esc(a.type||'Cardio')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
   }
   if(totals((state.nutrition[date]?.foods)||[]).cal>0){
     const e=energyForDate(date);
