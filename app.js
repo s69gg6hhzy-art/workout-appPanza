@@ -79,6 +79,8 @@ function setLogDate(date){
   const today=todayISO();
   if(date>today)date=today;
   selectedLogDate=date;
+  const picker=document.getElementById('logDatePicker');
+  if(picker)picker.classList.remove('is-open');
   activityEditIndex=null;
   resetActivityEntryForm();
   renderDailyLogDate();
@@ -92,14 +94,12 @@ function changeLogDate(days){
 function openLogDatePicker(){
   const picker=document.getElementById('logDatePicker');
   if(!picker)return;
+  picker.value=logDate();
+  picker.max=todayISO();
   if(typeof picker.showPicker==='function'){
     try{picker.showPicker();return;}catch(e){}
   }
-  picker.style.position='static';
-  picker.style.opacity='1';
-  picker.style.pointerEvents='auto';
-  picker.style.width='100%';
-  picker.style.height='44px';
+  picker.classList.add('is-open');
   picker.focus();
 }
 function renderDailyLogDate(){
@@ -943,7 +943,7 @@ function saveWorkout(){
   ensureScheduleState();
   const w=current(),p=phase(),draft=getDraft(),sets={};
   w.ex.forEach((x,i)=>sets[x[0]]=(draft.sets[i]||[]).map(v=>({weight:v.weight||'',reps:v.reps||'',done:!!v.done})));
-  const summary={duration:durationPickerValue('sum'),time:document.getElementById('sumTime')?.value||currentTimeHHMM(),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),maxHr:num('sumMaxHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
+  const summary={duration:durationPickerValue('sum'),time:document.getElementById('sumTime')?.value||currentTimeHHMM(),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
   const date=new Date().toISOString(),completedPhaseIndex=state.phase;
   state.history.unshift({date,phase:p.name,phaseIndex:state.phase,round:state.round+1,workout:w.name,sets,summary});
   if(summary.postWeight)state.weights[todayISO()]={...(state.weights[todayISO()]||{}),post:summary.postWeight};
@@ -958,7 +958,7 @@ function saveWorkout(){
 }
 function advanceProgram(){state.workout++;if(state.workout>=phase().workouts.length){state.workout=0;state.round++;if(state.round>=phase().rounds){state.round=0;state.phase++;if(state.phase>=program.length){state.phase=program.length-1;state.round=phase().rounds-1;state.workout=phase().workouts.length-1}}}}
 function clearSummary(){
-  ['sumTime','sumTotalCal','sumAvgHr','sumMaxHr','sumWeight','sumNotes'].forEach(id=>{
+  ['sumTime','sumTotalCal','sumAvgHr','sumWeight','sumNotes'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   setDurationPicker('sum','00:00:00');

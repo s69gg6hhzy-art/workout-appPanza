@@ -457,3 +457,26 @@ input[type="time"]{color-scheme:dark}
     font-size:20px;
   }
 }
+
+/* V57 — daily log date calendar picker */
+.daily-date-card{position:relative}
+.daily-date-picker{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:78px;
+  width:min(92%,340px);
+  z-index:20;
+  opacity:0;
+  pointer-events:none;
+}
+.daily-date-picker.is-open{
+  position:static;
+  transform:none;
+  width:100%;
+  opacity:1;
+  pointer-events:auto;
+  margin-top:10px;
+}
+
+.daily-date-label{cursor:pointer}
