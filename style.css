@@ -334,3 +334,9 @@
 .activity-entry-label{
   margin-bottom:10px;
 }
+
+.section-date-inline{
+  font-size:.82em;
+  opacity:.65;
+  font-weight:600;
+}

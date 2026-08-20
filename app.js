@@ -74,6 +74,8 @@ function setLogDate(date){
   const today=todayISO();
   if(date>today)date=today;
   selectedLogDate=date;
+  activityEditIndex=null;
+  resetActivityEntryForm();
   renderDailyLogDate();
   renderDailyLogSections();
 }
@@ -602,10 +604,29 @@ function editActivity(index){
   if(addBtn)addBtn.textContent='Save changes';
 }
 
+
+function resetActivityEntryForm(){
+  activityEditIndex=null;
+  const addBtn=document.getElementById('addActivityBtn');
+  if(addBtn)addBtn.textContent='+ Add activity';
+  const type=document.getElementById('activityType');
+  if(type)type.value='Walk';
+  ['activityDistance','activityMinutes','activitySeconds','activityCalories','activityAvgHr','activityZ1','activityZ2','activityZ3','activityZ4','activityZ5']
+    .forEach(id=>{
+      const el=document.getElementById(id);
+      if(el)el.value='';
+    });
+  const time=document.getElementById('activityTime');
+  if(time)time.value=currentTimeHHMM();
+  const details=document.getElementById('hrDetails');
+  if(details){details.open=false;details.style.display='none';}
+}
 function renderActivities(){
   const date=logDate();
   const acts=state.activities[date]||[];
   const list=document.getElementById('activityList');
+  const dateLabel=document.getElementById('activityDateLabel');
+  if(dateLabel)dateLabel.textContent=`· ${formatLogDate(date)}`;
   if(!list)return;
   list.innerHTML=acts.length?acts.map((a,i)=>{
     const bits=[];
@@ -678,12 +699,7 @@ function addActivity(){
   }else{
     state.activities[date].push(entry);
   }
-  activityEditIndex=null;
-  const addBtn=document.getElementById('addActivityBtn');
-  if(addBtn)addBtn.textContent='Add activity';
-  ['activityMinutes','activitySeconds','activityDistance','activityCalories'].forEach(id=>document.getElementById(id).value='');
-  setHrDefaultsForType();
-  const t=document.getElementById('activityTime');if(t)t.value=currentTimeHHMM();
+  resetActivityEntryForm();
   save();renderActivities();renderEnergyBalance();
 }
 function renderEnergyBalance(){
