@@ -207,3 +207,13 @@
   .activity-form .activity-time-field{max-width:145px}
   .activity-form .activity-time-field input{max-width:145px}
 }
+
+.daily-date-card{display:flex;flex-direction:column;gap:10px}
+.daily-date-nav{display:grid;grid-template-columns:44px 1fr 44px;gap:8px;align-items:center}
+.daily-date-label{width:100%;justify-content:center;font-weight:800}
+.daily-date-picker{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.daily-date-card #logTodayBtn{align-self:center}
+.daily-date-nav button:disabled{opacity:.3}
+.history-edit-day-btn{margin-top:12px}
+.activity-form .activity-time-field{max-width:125px!important}
+.activity-form .activity-time-field input{max-width:125px!important}

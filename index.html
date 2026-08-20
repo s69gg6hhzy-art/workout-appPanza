@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=30">
+  <link rel="stylesheet" href="style.css?v=31">
 </head>
 <body>
 <div class="app">
@@ -18,6 +18,18 @@
       <div class="progress"><div id="overallProgress"></div></div>
       <div class="tiny" id="progressText"></div>
       <button class="primary" id="startBtn">Start workout</button><button class="primary rest-ack" id="ackRestBtn" style="display:none">Acknowledge rest day</button>
+    </div>
+
+    <div class="section-title">Daily log</div>
+    <div class="card daily-date-card">
+      <div class="daily-date-nav">
+        <button class="ghost compact" id="logPrevDay">‹</button>
+        <button class="secondary daily-date-label" id="logDateBtn"></button>
+        <button class="ghost compact" id="logNextDay">›</button>
+      </div>
+      <input id="logDatePicker" type="date" class="daily-date-picker">
+      <button class="ghost compact" id="logTodayBtn">Today</button>
+      <p class="tiny">Weight, nutrition, energy, water, cardio, checklist and progress-photo tracking use this date. Workout scheduling stays on today.</p>
     </div>
 
     <div class="section-title">Weight</div>
@@ -265,7 +277,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=30"></script>
-<script src="app.js?v=30"></script>
+<script src="data.js?v=31"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>

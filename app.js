@@ -44,7 +44,7 @@ let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
 if(!Array.isArray(state.checklistItems)||state.checklistItems.length===0)state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
-let timerInterval=null,timerLeft=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null;
+let timerInterval=null,timerLeft=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null,selectedLogDate=todayISO();
 function currentTimeHHMM(){
   const d=new Date();
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -63,6 +63,49 @@ function workoutTime(h){
     if(!Number.isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
   return '';
+}
+
+function logDate(){return selectedLogDate||todayISO();}
+function formatLogDate(date){
+  return new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+}
+function setLogDate(date){
+  if(!date)return;
+  const today=todayISO();
+  if(date>today)date=today;
+  selectedLogDate=date;
+  renderDailyLogDate();
+  renderDailyLogSections();
+}
+function changeLogDate(days){setLogDate(plusDays(logDate(),days));}
+function renderDailyLogDate(){
+  const d=logDate(),today=todayISO();
+  const label=document.getElementById('logDateBtn');
+  const picker=document.getElementById('logDatePicker');
+  const next=document.getElementById('logNextDay');
+  const todayBtn=document.getElementById('logTodayBtn');
+  if(label)label.textContent=d===today?'Today · '+formatLogDate(d):formatLogDate(d);
+  if(picker){picker.value=d;picker.max=today;}
+  if(next)next.disabled=d>=today;
+  if(todayBtn)todayBtn.style.display=d===today?'none':'inline-flex';
+}
+function renderDailyLogSections(){
+  renderLogWeights();
+  renderTodayMacros();
+  renderWater();
+  renderActivities();
+  renderEnergyBalance();
+  renderPhotoTracker();
+  renderChecklist();
+  const nd=document.getElementById('nutritionDate');
+  if(nd)nd.value=logDate();
+}
+function renderLogWeights(){
+  const wt=state.weights[logDate()]||{};
+  const am=document.getElementById('amWeight'),pm=document.getElementById('pmWeight'),hint=document.getElementById('weightHint');
+  if(am)am.value=wt.am||'';
+  if(pm)pm.value=wt.pm||'';
+  if(hint)hint.textContent=wt.post?`Post-workout: ${wt.post} lb`:'';
 }
 function save(){localStorage.setItem('mfState',JSON.stringify(state))}
 
@@ -144,7 +187,7 @@ function warmupHTML(type){const data=type==='lower'?lowerWarmup:upperWarmup;retu
 function getDraftKey(){return `${state.phase}-${state.round}-${state.workout}`}
 function getDraft(){return state.drafts[getDraftKey()]||{sets:{},warm:{}}}
 
-function photoDayState(date=todayISO()){
+function photoDayState(date=logDate()){
   state.photoDays=state.photoDays||{};
   state.photoDays[date]=state.photoDays[date]||{front:false,side:false,back:false,flex:false};
   return state.photoDays[date];
@@ -219,19 +262,16 @@ function renderToday(){
     document.getElementById('sessionLabel').textContent=`Workout ${Math.min(state.completed+1,total)} of ${total} · scheduled today`;
     startBtn.style.display='block';
   }
-  const wt=state.weights[today]||{};
-  document.getElementById('amWeight').value=wt.am||'';
-  document.getElementById('pmWeight').value=wt.pm||'';
-  document.getElementById('weightHint').textContent=wt.post?`Post-workout today: ${wt.post} lb`:'';
-  renderTodayMacros();renderWater();renderActivities();renderEnergyBalance();renderPhotoTracker();
+  renderDailyLogDate();
+  renderDailyLogSections();
   const activityTime=document.getElementById('activityTime');if(activityTime&&!activityTime.value)activityTime.value=currentTimeHHMM();
 }
-function renderTodayMacros(){const n=state.nutrition[todayISO()]||{foods:[]};const t=totals(n.foods||[]),g=state.goals;document.getElementById('todayMacros').innerHTML=macroBoxes(t,g);if(document.getElementById('energyBalance'))renderEnergyBalance();}
+function renderTodayMacros(){const n=state.nutrition[logDate()]||{foods:[]};const t=totals(n.foods||[]),g=state.goals;document.getElementById('todayMacros').innerHTML=macroBoxes(t,g);if(document.getElementById('energyBalance'))renderEnergyBalance();}
 function macroBoxes(t,g){return [['Calories',t.cal,g.cal],['Protein',t.p,g.p],['Carbs',t.c,g.c],['Fat',t.f,g.f]].map(([k,v,goal])=>`<div class="macro-box"><strong>${Math.round(v)}</strong><span>${k}${k==='Calories'?'':' g'}</span><small>/ ${goal}</small></div>`).join('')}
-function saveWeights(){state.weights[todayISO()]={...(state.weights[todayISO()]||{}),am:num('amWeight'),pm:num('pmWeight')};save();renderProgress();renderToday();}
+function saveWeights(){const d=logDate();state.weights[d]={...(state.weights[d]||{}),am:num('amWeight'),pm:num('pmWeight')};save();renderProgress();renderDailyLogSections();}
 
 function renderWater(){
-  const d=todayISO(), amount=+(state.water[d]||0), goal=+(state.waterGoal||96);
+  const d=logDate(), amount=+(state.water[d]||0), goal=+(state.waterGoal||96);
   const pct=Math.min(100,goal?amount/goal*100:0);
   const amountEl=document.getElementById('waterAmount');
   const goalEl=document.getElementById('waterGoal');
@@ -241,7 +281,7 @@ function renderWater(){
   if(bar)bar.style.width=`${pct}%`;
 }
 function changeWater(delta){
-  const d=todayISO();
+  const d=logDate();
   state.water[d]=Math.max(0,+(state.water[d]||0)+delta);
   save();renderWater();
 }
@@ -250,7 +290,7 @@ function saveWaterGoal(){
   save();renderWater();
 }
 function checklistDay(){
-  const d=todayISO();
+  const d=logDate();
   state.checklistDays[d]=state.checklistDays[d]||{};
   return state.checklistDays[d];
 }
@@ -559,7 +599,7 @@ function addActivity(){
 function renderEnergyBalance(){
   const el=document.getElementById('energyBalance');
   if(!el)return;
-  const e=energyForDate(todayISO());
+  const e=energyForDate(logDate());
   const label=e.balance<0?'deficit':e.balance>0?'surplus':'balance';
   const amount=Math.abs(Math.round(e.balance));
   el.innerHTML=`<div class="balance-main">
@@ -783,6 +823,7 @@ function renderDayDetail(date){
   const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b>Water</b><small>${water} oz</small></div>`;
   const cd=state.checklistDays[date];if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b>Checklist</b><small>${done} of ${items.length} complete</small></div>`}
   const pd=(state.photoDays||{})[date];if(pd&&Object.values(pd).some(Boolean)){const taken=Object.entries(pd).filter(([,v])=>v).map(([k])=>k[0].toUpperCase()+k.slice(1)).join(' · ');parts+=`<div class="day-detail-row"><b>📷 Progress photos</b><small>${taken}</small></div>`}
+  if(date<=todayISO())parts+=`<button class="secondary compact history-edit-day-btn" onclick="setLogDate('${date}');go('today')">Edit this day</button>`;
   if(!hs.length&&!state.restDays[date]&&!wt&&!nut&&!acts.length&&!water&&!cd&&!anyPhotoTaken(date))parts+='<p class="notice">No saved data for this day.</p>';
   document.getElementById('dayDetail').innerHTML=parts;
 }
@@ -1041,7 +1082,17 @@ document.getElementById('newUserBtn').addEventListener('click',openNewUser);
 document.getElementById('closeNewUserBtn').addEventListener('click',closeNewUser);
 document.getElementById('confirmNewUserBtn').addEventListener('click',createNewUser);
 
-document.getElementById('nutritionDate').value=todayISO();setHrDefaultsForType();renderAll();bindPhotoInputs();save();
+document.getElementById('nutritionDate').value=logDate();setHrDefaultsForType();renderAll();bindPhotoInputs();save();
 
 setTimeout(bindPhotoInputs,0);
 
+
+
+document.getElementById('logPrevDay')?.addEventListener('click',()=>changeLogDate(-1));
+document.getElementById('logNextDay')?.addEventListener('click',()=>changeLogDate(1));
+document.getElementById('logTodayBtn')?.addEventListener('click',()=>setLogDate(todayISO()));
+document.getElementById('logDateBtn')?.addEventListener('click',()=>document.getElementById('logDatePicker')?.showPicker?.());
+document.getElementById('logDatePicker')?.addEventListener('change',e=>setLogDate(e.target.value));
+document.getElementById('nutritionDate')?.addEventListener('change',e=>{
+  if(e.target.value&&e.target.value<=todayISO())selectedLogDate=e.target.value;
+});
