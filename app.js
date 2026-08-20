@@ -42,7 +42,7 @@ const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weig
 let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
-let timerInterval=null,timerLeft=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false;
+let timerInterval=null,timerLeft=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null;
 function save(){localStorage.setItem('mfState',JSON.stringify(state))}
 function phase(){return program[state.phase]}
 function current(){return phase().workouts[state.workout]}
@@ -370,6 +370,25 @@ function activityPace(a){
   if(!d||!sec)return '';
   return fmtDuration(sec/d)+'/mi';
 }
+
+function editActivity(index){
+  const today=todayISO();
+  const a=(state.activities[today]||[])[index];
+  if(!a)return;
+  activityEditIndex=index;
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=(val??'')};
+  const typeEl=document.getElementById('activityType');
+  if(typeEl)typeEl.value=a.type||'Walk';
+  set('activityMinutes',a.minutes||0);
+  set('activitySeconds',a.seconds||0);
+  set('activityDistance',a.distance||0);
+  set('activityCalories',a.calories||0);
+  set('activityAvgHr',a.avgHr||0);
+  ['z1','z2','z3','z4','z5'].forEach(k=>set('activity'+k.toUpperCase(),a[k]||''));
+  const addBtn=document.getElementById('addActivityBtn');
+  if(addBtn)addBtn.textContent='Save changes';
+}
+
 function renderActivities(){
   const today=todayISO();
   const acts=state.activities[today]||[];
@@ -396,7 +415,7 @@ function renderActivities(){
   }));
   const t=todaysExerciseTotals();
   const summary=document.getElementById('activitySummary');
-  if(summary)summary.textContent=`${Math.round(t.minutes)} min exercise · ${Math.round(t.calories)} active exercise kcal`;
+  if(summary)summary.textContent=`${Math.round(t.minutes)} min exercise · ${Math.round(t.calories)} active exercise total kcal`;
 }
 
 function setHrDefaultsForType(){
@@ -440,8 +459,17 @@ function addActivity(){
   if(!minutes&&!seconds&&!distance&&!calories)return;
   const today=todayISO();
   state.activities[today]=state.activities[today]||[];
-  state.activities[today].push({type,minutes,seconds,distance,calories,avgHr,...zones});
-  ['activityMinutes','activitySeconds','activityDistance','activityCalories'].forEach(id=>document.getElementById(id).value='');setHrDefaultsForType();
+  const entry={type,minutes,seconds,distance,calories,avgHr,...zones};
+  if(activityEditIndex!==null && state.activities[today][activityEditIndex]){
+    state.activities[today][activityEditIndex]=entry;
+  }else{
+    state.activities[today].push(entry);
+  }
+  activityEditIndex=null;
+  const addBtn=document.getElementById('addActivityBtn');
+  if(addBtn)addBtn.textContent='Add activity';
+  ['activityMinutes','activitySeconds','activityDistance','activityCalories'].forEach(id=>document.getElementById(id).value='');
+  setHrDefaultsForType();
   save();renderActivities();renderEnergyBalance();
 }
 function renderEnergyBalance(){
@@ -466,7 +494,7 @@ function renderEnergyBalance(){
     <div class="balance-grid">
       <div><b>${Math.round(intake)}</b><span>intake</span></div>
       <div><b>${Math.round(totalBurn)}</b><span>estimated burn</span></div>
-      <div><b>${Math.round(ex.calories)}</b><span>exercise kcal</span></div>
+      <div><b>${Math.round(ex.calories)}</b><span>exercise total kcal</span></div>
       <div><b>${Math.round(nonExerciseBurn)}</b><span>non-exercise burn</span></div>
     </div>
     <p class="tiny balance-note">${Math.round(ex.minutes)} exercise min + ${Math.round(nonExerciseMinutes)} non-exercise min. Non-exercise burn uses BMR ${bmr} kcal/day. Measured TDEE: ${tdee} kcal/day (reference).</p>`;
@@ -728,6 +756,27 @@ function bindPhotoInputs(){
   });
 }
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.screen===id));if(id==='workout')renderWorkout();if(id==='nutrition')renderNutrition();if(id==='history')renderHistory();if(id==='progress')renderProgress();if(id==='checklist')renderChecklist();if(id==='today')renderToday();window.scrollTo(0,0)}
+
+async function resetForNewUser(){
+  const ok=confirm('Reset this app for a new user? This permanently clears all saved workout, nutrition, weight, activity, checklist, water and progress-photo tracking data on this device.');
+  if(!ok)return;
+  try{
+    localStorage.removeItem('mfState');
+    localStorage.removeItem('mwState');
+    if(typeof photoClear==='function'){
+      try{await photoClear()}catch(e){}
+    }
+  }catch(e){}
+  state=JSON.parse(JSON.stringify(base));
+  state.photoDays={};
+  save();
+  calendarCursor=new Date();
+  calendarCursor.setDate(1);
+  activityEditIndex=null;
+  renderAll();
+  alert('App reset complete. Ready for a new user.');
+}
+
 function renderAll(){renderToday();renderWorkout();renderNutrition();renderChecklist();renderHistory();renderProgress()}
 function num(id){return parseFloat(document.getElementById(id).value)||0}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}

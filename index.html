@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=24">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="app">
@@ -49,7 +49,7 @@
         <label>Distance (mi)<input id="activityDistance" inputmode="decimal" placeholder="3.20"></label>
         <label>Minutes<input id="activityMinutes" inputmode="numeric" placeholder="30"></label>
         <label>Seconds<input id="activitySeconds" inputmode="numeric" placeholder="17" max="59"></label>
-        <label>Active Calories<input id="activityCalories" inputmode="numeric" placeholder="342"></label>
+        <label>Total Calories<input id="activityCalories" inputmode="numeric" placeholder="342"></label>
       </div>
       <details class="hr-details" id="hrDetails">
         <summary>Heart Rate Details</summary><p class="tiny hr-hint">Jog defaults use your current baseline; Run starts at zero.</p>
@@ -185,7 +185,15 @@
       <div class="history-session"><b>Session 2 · Sep–Nov 2025</b><span>191.6 → 182.4 lb weekly AM average</span></div>
       <div class="history-session"><b>Brazil · May 4–Jul 12, 2026</b><span>10-week avg: 2,995 kcal · 179 P · 247 C · 100 F</span></div>
     </div>
-  </section>
+  
+    <div class="section-title">App data</div>
+    <div class="card">
+      <div class="eyebrow">Profile & data</div>
+      <h3>New user / reset</h3>
+      <p class="muted">Start fresh on this device. This clears saved workouts, nutrition, weights, activities, checklist history, water, photo checkmarks and profile data.</p>
+      <button class="danger compact" id="newUserResetBtn" onclick="resetForNewUser()">Reset for new user</button>
+    </div>
+</section>
 </div>
 
 <div class="modal" id="finishModal" aria-hidden="true">
@@ -193,7 +201,7 @@
     <div class="modal-head"><div><div class="eyebrow">Workout complete</div><h2 id="finishWorkoutName"></h2></div><button class="ghost" id="closeFinish">✕</button></div>
     <div class="summary-grid">
       <label>Duration <span>min</span><input id="sumDuration" inputmode="numeric"></label>
-      <label>Active calories <span>kcal</span><input id="sumActiveCal" inputmode="numeric"></label>
+      <label>Total calories <span>kcal</span><input id="sumActiveCal" inputmode="numeric"></label>
       <label>Total calories <span>kcal</span><input id="sumTotalCal" inputmode="numeric"></label>
       <label>Avg heart rate <span>bpm</span><input id="sumAvgHr" inputmode="numeric"></label>
       <label>Max heart rate <span>bpm</span><input id="sumMaxHr" inputmode="numeric"></label>
@@ -213,7 +221,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=24"></script>
-<script src="app.js?v=24"></script>
+<script src="data.js?v=25"></script>
+<script src="app.js?v=25"></script>
 </body>
 </html>
