@@ -394,3 +394,5 @@
   opacity:.75;
   margin-top:4px;
 }
+
+input[type="time"]{color-scheme:dark}

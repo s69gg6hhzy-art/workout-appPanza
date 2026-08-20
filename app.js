@@ -43,6 +43,11 @@ const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weig
 let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
+if(!Array.isArray(state.history))state.history=[];
+['workoutLogs','weights','nutrition','goalHistory','drafts','water','checklistDays','activities','restDays','photoDays'].forEach(k=>{
+  if(!state[k]||typeof state[k]!=='object'||Array.isArray(state[k]))state[k]={};
+});
+if(!Array.isArray(state.checklistItems))state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
 if(!Array.isArray(state.checklistItems)||state.checklistItems.length===0)state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
 let timerInterval=null,timerLeft=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null,selectedLogDate=todayISO();
 function currentTimeHHMM(){
@@ -129,7 +134,15 @@ function renderLogWeights(){
   if(pm)pm.value=wt.pm||'';
   if(hint)hint.textContent=wt.post?`Post-workout: ${wt.post} lb`:'';
 }
-function save(){localStorage.setItem('mfState',JSON.stringify(state))}
+function save(){
+  try{
+    localStorage.setItem('mfState',JSON.stringify(state));
+    return true;
+  }catch(err){
+    console.error('Could not save app state',err);
+    return false;
+  }
+}
 
 if(!state.goalHistory||typeof state.goalHistory!=='object'){
   state.goalHistory={};
@@ -222,7 +235,15 @@ function projectSchedule(startDate,endDate){
 
 function warmupHTML(type){const data=type==='lower'?lowerWarmup:upperWarmup;return `<div class="warmup"><div class="warmup-title">${type==='lower'?'Lower':'Upper'} Warm-up</div>${data.map(x=>`<div class="warm-row"><div class="warm-copy"><b>${x[0]}</b><small>${x[1]}${x[2]?` · ${x[2]}`:''}</small></div><button class="warm-check" type="button">✓</button></div>`).join('')}</div>`}
 function getDraftKey(){return `${state.phase}-${state.round}-${state.workout}`}
-function getDraft(){return state.drafts[getDraftKey()]||{sets:{},warm:{}}}
+function getDraft(){
+  state.drafts=state.drafts||{};
+  const key=getDraftKey();
+  const d=state.drafts[key];
+  if(!d||typeof d!=='object')return {sets:{},warm:{}};
+  if(!d.sets||typeof d.sets!=='object')d.sets={};
+  if(!d.warm||typeof d.warm!=='object')d.warm={};
+  return d;
+}
 
 function photoDayState(date=logDate()){
   state.photoDays=state.photoDays||{};
@@ -748,6 +769,76 @@ function acknowledgeRest(){
   state.scheduleDate=plusDays(today,1);
   state.nextEventType='workout';
   save();renderAll();showScreen('today');
+}
+
+
+function latestExercise(name){
+  for(const h of (state.history||[])){
+    const sets=h?.sets?.[name];
+    if(!Array.isArray(sets)||!sets.length)continue;
+    const parts=sets.map(s=>{
+      const w=String(s?.weight??'').trim();
+      const r=String(s?.reps??'').trim();
+      if(w&&r)return `${w}×${r}`;
+      return w||r;
+    }).filter(Boolean);
+    if(parts.length)return parts.join(', ');
+  }
+  return '';
+}
+function storeDraft(draft){
+  state.drafts=state.drafts||{};
+  state.drafts[getDraftKey()]=draft;
+  save();
+}
+function restSeconds(value){
+  if(!value)return 0;
+  const text=String(value).trim();
+  if(/^\d+:\d{1,2}$/.test(text)){
+    const [m,s]=text.split(':').map(Number);
+    return (m*60)+s;
+  }
+  const n=Number(text);
+  return Number.isFinite(n)?Math.round(n):0;
+}
+function stopTimer(){
+  if(timerInterval){
+    clearInterval(timerInterval);
+    timerInterval=null;
+  }
+  timerLeft=0;
+  const timer=document.getElementById('timer');
+  if(timer)timer.classList.remove('show');
+}
+function startTimer(rest){
+  stopTimer();
+  timerLeft=restSeconds(rest);
+  if(!timerLeft)return;
+  const timer=document.getElementById('timer');
+  const text=document.getElementById('timerText');
+  const paint=()=>{
+    const m=Math.floor(timerLeft/60);
+    const s=timerLeft%60;
+    if(text)text.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  };
+  if(timer)timer.classList.add('show');
+  paint();
+  timerInterval=setInterval(()=>{
+    timerLeft--;
+    if(timerLeft<=0){
+      stopTimer();
+      return;
+    }
+    paint();
+  },1000);
+}
+function openFinish(){
+  const modal=document.getElementById('finishModal');
+  if(!modal)return;
+  const time=document.getElementById('sumTime');
+  if(time&&!time.value)time.value=currentTimeHHMM();
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden','false');
 }
 
 function renderWorkout(){
@@ -1412,12 +1503,12 @@ function renderAll(){renderToday();renderWorkout();renderNutrition();renderCheck
 function num(id){return parseFloat(document.getElementById(id).value)||0}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.go)));document.getElementById('startBtn').addEventListener('click',()=>showScreen('workout'));
-document.getElementById('ackRestBtn').addEventListener('click',acknowledgeRest);document.getElementById('finishBtn').addEventListener('click',openFinish);document.getElementById('closeFinish').addEventListener('click',closeFinish);document.getElementById('saveWorkoutBtn').addEventListener('click',saveWorkout);document.getElementById('skipTimer').addEventListener('click',stopTimer);document.getElementById('saveWeightBtn').addEventListener('click',saveWeights);document.getElementById('nutritionDate').addEventListener('change',renderNutrition);document.getElementById('saveGoalsBtn').addEventListener('click',saveGoals);document.getElementById('prevMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderHistory()});document.getElementById('nextMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderHistory()});document.getElementById('activityType').addEventListener('change',setHrDefaultsForType);
+document.getElementById('ackRestBtn').addEventListener('click',acknowledgeRest);document.getElementById('closeFinish').addEventListener('click',closeFinish);document.getElementById('saveWorkoutBtn').addEventListener('click',saveWorkout);document.getElementById('skipTimer').addEventListener('click',stopTimer);document.getElementById('saveWeightBtn').addEventListener('click',saveWeights);document.getElementById('nutritionDate').addEventListener('change',renderNutrition);document.getElementById('saveGoalsBtn').addEventListener('click',saveGoals);document.getElementById('prevMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderHistory()});document.getElementById('nextMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderHistory()});document.getElementById('activityType').addEventListener('change',setHrDefaultsForType);
 
-document.getElementById('waterMinusBtn').addEventListener('click',()=>changeWater(-8));
-document.getElementById('waterPlusBtn').addEventListener('click',()=>changeWater(8));
-document.getElementById('saveWaterGoalBtn').addEventListener('click',saveWaterGoal);
-document.getElementById('addChecklistBtn').addEventListener('click',addChecklistItem);
+
+
+
+
 
 document.getElementById('newChecklistItem').addEventListener('keydown',e=>{if(e.key==='Enter')addChecklistItem()});
 document.getElementById('backupBtn')?.addEventListener('click',downloadBackup);

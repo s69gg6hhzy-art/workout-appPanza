@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=53">
+  <link rel="stylesheet" href="style.css?v=54">
 </head>
 <body>
 <div class="app">
@@ -33,8 +33,8 @@
     <div class="card water-card">
       <div class="water-head"><div><strong id="waterAmount">0 / 96 oz</strong><span id="waterDateLabel">selected day</span></div><label>Goal <input id="waterGoal" inputmode="numeric" value="96"></label></div>
       <div class="water-track"><div id="waterProgress"></div></div>
-      <div class="water-controls"><button class="secondary" id="waterMinusBtn">− 8 oz</button><button class="primary water-add" id="waterPlusBtn">+ 8 oz</button></div>
-      <button class="ghost water-goal-save" id="saveWaterGoalBtn">Save water goal</button>
+      <div class="water-controls"><button class="secondary" id="waterMinusBtn" type="button" onclick="changeWater(-8)">− 8 oz</button><button class="primary water-add" id="waterPlusBtn" type="button" onclick="changeWater(8)">+ 8 oz</button></div>
+      <button class="ghost water-goal-save" id="saveWaterGoalBtn" type="button" onclick="saveWaterGoal()">Save water goal</button>
     </div>
 
     <div class="section-title">Workout</div>
@@ -107,7 +107,7 @@
     <div class="timer" id="timer"><span>Rest <span id="timerText">02:00</span></span><button id="skipTimer">Skip</button></div>
     <div class="card"><div class="eyebrow">Current workout</div><h2 id="workoutTitle"></h2><p class="muted" id="workoutMeta"></p></div>
     <div class="card" id="exerciseList"></div>
-    <button class="primary" id="finishBtn">Finish workout</button>
+    <button class="primary" id="finishBtn" type="button" onclick="openFinish()">Finish workout</button>
   </section>
 
   <section id="nutrition" class="screen">
@@ -141,7 +141,7 @@
     </div>
     <div class="card checklist-add">
       <label>New item<input id="newChecklistItem" type="text" placeholder="Creatine, stretch, vitamins..."></label>
-      <button class="primary" id="addChecklistBtn">Add item</button>
+      <button class="primary" id="addChecklistBtn" type="button" onclick="addChecklistItem()">Add item</button>
     </div>
   </section>
 
@@ -240,7 +240,7 @@
     <div class="modal-head"><div><div class="eyebrow">Workout complete</div><h2 id="finishWorkoutName"></h2></div><button class="ghost" id="closeFinish">✕</button></div>
     <div class="summary-grid">
       <label>Duration <span>HH:MM:SS</span><input id="sumDuration" inputmode="numeric" placeholder="00:00:00"></label>
-      <label>Completed at<input id="sumTime" type="time"></label>
+      <label>Completed at<input id="sumTime" type="time" step="60"></label>
       <label>Total calories <span>kcal</span><input id="sumTotalCal" inputmode="numeric"></label>
       <label>Avg heart rate <span>bpm</span><input id="sumAvgHr" inputmode="numeric"></label>
       <label>Max heart rate <span>bpm</span><input id="sumMaxHr" inputmode="numeric"></label>
@@ -261,7 +261,7 @@
 
     <div class="summary-grid">
       <label>Duration <span>HH:MM:SS</span><input id="editWorkoutDuration" inputmode="numeric" placeholder="00:00:00"></label>
-      <label>Completed at<input id="editWorkoutTime" type="time"></label>
+      <label>Completed at<input id="editWorkoutTime" type="time" step="60"></label>
       <label>Total calories <span>kcal</span><input id="editWorkoutCalories" inputmode="numeric"></label>
       <label>Avg heart rate <span>bpm</span><input id="editWorkoutAvgHr" inputmode="numeric"></label>
       <label>Max heart rate <span>bpm</span><input id="editWorkoutMaxHr" inputmode="numeric"></label>
@@ -285,7 +285,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=53"></script>
-<script src="app.js?v=53"></script>
+<script src="data.js?v=54"></script>
+<script src="app.js?v=54"></script>
 </body>
 </html>
