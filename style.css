@@ -326,3 +326,11 @@
   grid-template-columns:minmax(105px,1.35fr) repeat(4,58px) 62px minmax(105px,1fr);
   gap:7px;
 }
+
+.activity-entry-divider{
+  border-top:1px solid var(--line);
+  margin:14px 0 12px;
+}
+.activity-entry-label{
+  margin-bottom:10px;
+}

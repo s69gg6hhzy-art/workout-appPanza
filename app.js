@@ -673,18 +673,77 @@ function acknowledgeRest(){
   save();renderAll();showScreen('today');
 }
 
-function renderWorkout(){const p=phase(),w=current(),draft=getDraft();document.getElementById('workoutPhase').textContent=`${p.name} · R${state.round+1}`;document.getElementById('workoutTitle').textContent=w.name;document.getElementById('workoutMeta').textContent=`${w.ex.length} exercises · ${p.on} days on / 1 off`;const el=document.getElementById('exerciseList');el.innerHTML=warmupHTML(workoutType(w.name));w.ex.forEach((x,i)=>{const [name,sets,rest,last]=x;const previous=latestExercise(name)||last||'—';let rows=sets.map((target,j)=>{const v=(draft.sets[i]||[])[j]||{};return `<div class="setrow"><div class="setnum">${j+1}</div><input data-e="${i}" data-s="${j}" data-k="weight" inputmode="decimal" placeholder="weight" value="${v.weight??''}"><input data-e="${i}" data-s="${j}" data-k="reps" inputmode="numeric" placeholder="reps · ${target}" value="${v.reps??''}"><button class="check ${v.done?'done':''}" data-e="${i}" data-s="${j}" data-rest="${rest}">✓</button></div>`}).join('');el.insertAdjacentHTML('beforeend',`<div class="exercise"><h3>${name}</h3><div class="rx">${sets.length} set${sets.length>1?'s':''} · ${sets.join(' / ')}${rest?` · ${rest} rest`:''}</div><div class="last">Last: ${previous}</div>${rows}</div>`)});document.querySelectorAll('.warm-check').forEach((b,i)=>{if(draft.warm[i]){b.classList.add('done');b.closest('.warm-row').classList.add('done')}b.addEventListener('click',()=>{draft.warm[i]=!draft.warm[i];b.classList.toggle('done');b.closest('.warm-row').classList.toggle('done');storeDraft(draft)})});document.querySelectorAll('.setrow input').forEach(inp=>inp.addEventListener('input',()=>{const e=+inp.dataset.e,s=+inp.dataset.s;draft.sets[e]=draft.sets[e]||[];draft.sets[e][s]=draft.sets[e][s]||{};draft.sets[e][s][inp.dataset.k]=inp.value;storeDraft(draft)}));document.querySelectorAll('.check').forEach(b=>b.addEventListener('click',()=>{const e=+b.dataset.e,s=+b.dataset.s;draft.sets[e]=draft.sets[e]||[];draft.sets[e][s]=draft.sets[e][s]||{};draft.sets[e][s].done=!draft.sets[e][s].done;b.classList.toggle('done');storeDraft(draft);if(draft.sets[e][s].done&&b.dataset.rest)startTimer(b.dataset.rest)}));}
-function storeDraft(d){state.drafts[getDraftKey()]=d;save()}
-function latestExercise(name){for(const h of state.history){if(h.sets&&h.sets[name]){const vals=h.sets[name].filter(x=>x.weight||x.reps).map(x=>`${x.weight?x.weight+'×':''}${x.reps||''}`);if(vals.length)return vals.join(', ')}}return null}
-function parseRest(s){if(!s)return 0;const [m,sec]=s.split(':').map(Number);return m*60+sec}
-function startTimer(rest){stopTimer();timerLeft=parseRest(rest);if(!timerLeft)return;document.getElementById('timer').classList.add('show');tick();timerInterval=setInterval(()=>{timerLeft--;tick();if(timerLeft<=0)stopTimer()},1000)}
-function tick(){document.getElementById('timerText').textContent=`${String(Math.floor(timerLeft/60)).padStart(2,'0')}:${String(timerLeft%60).padStart(2,'0')}`}
-function stopTimer(){clearInterval(timerInterval);document.getElementById('timer').classList.remove('show')}
-function openFinish(){
-  document.getElementById('finishWorkoutName').textContent=current().name;
-  const t=document.getElementById('sumTime');if(t)t.value=currentTimeHHMM();
-  document.getElementById('finishModal').classList.add('show');
-  document.getElementById('finishModal').setAttribute('aria-hidden','false');
+function renderWorkout(){
+  ensureScheduleState();
+  const today=todayISO();
+  const completedToday=state.history.some(h=>isoDate(h.date)===today);
+  const isRestToday=state.nextEventType==='rest'&&state.scheduleDate===today;
+
+  const phaseEl=document.getElementById('workoutPhase');
+  const titleEl=document.getElementById('workoutTitle');
+  const metaEl=document.getElementById('workoutMeta');
+  const listEl=document.getElementById('exerciseList');
+  const finishBtn=document.getElementById('finishBtn');
+
+  if(isRestToday){
+    if(phaseEl)phaseEl.textContent='Rest day';
+    if(titleEl)titleEl.textContent='No workout scheduled today';
+    if(metaEl)metaEl.textContent='Use the Home screen to acknowledge today’s rest day.';
+    if(listEl)listEl.innerHTML='<p class="notice">Your next workout will appear here after the rest day is acknowledged.</p>';
+    if(finishBtn)finishBtn.style.display='none';
+    return;
+  }
+
+  if(completedToday){
+    if(phaseEl)phaseEl.textContent='Workout complete';
+    if(titleEl)titleEl.textContent='Today’s workout is finished';
+    if(metaEl)metaEl.textContent='The next scheduled workout will become active on its scheduled day.';
+    if(listEl)listEl.innerHTML='<p class="notice">Nothing else is scheduled for today.</p>';
+    if(finishBtn)finishBtn.style.display='none';
+    return;
+  }
+
+  if(finishBtn)finishBtn.style.display='';
+  const p=phase(),w=current(),draft=getDraft();
+  if(phaseEl)phaseEl.textContent=`${p.name} · R${state.round+1}`;
+  if(titleEl)titleEl.textContent=w.name;
+  if(metaEl)metaEl.textContent=`${w.ex.length} exercises · ${p.on} days on / 1 off`;
+  const el=listEl;
+  el.innerHTML=warmupHTML(workoutType(w.name));
+  w.ex.forEach((x,i)=>{
+    const [name,sets,rest,last]=x;
+    const previous=latestExercise(name)||last||'—';
+    let rows=sets.map((target,j)=>{
+      const v=(draft.sets[i]||[])[j]||{};
+      return `<div class="setrow"><div class="setnum">${j+1}</div><input data-e="${i}" data-s="${j}" data-k="weight" inputmode="decimal" placeholder="weight" value="${v.weight??''}"><input data-e="${i}" data-s="${j}" data-k="reps" inputmode="numeric" placeholder="reps · ${target}" value="${v.reps??''}"><button class="check ${v.done?'done':''}" data-e="${i}" data-s="${j}" data-rest="${rest}">✓</button></div>`;
+    }).join('');
+    el.insertAdjacentHTML('beforeend',`<div class="exercise"><h3>${name}</h3><div class="rx">${sets.length} set${sets.length>1?'s':''} · ${sets.join(' / ')}${rest?` · ${rest} rest`:''}</div><div class="last">Last: ${previous}</div>${rows}</div>`);
+  });
+  document.querySelectorAll('.warm-check').forEach((b,i)=>{
+    if(draft.warm[i]){b.classList.add('done');b.closest('.warm-row').classList.add('done')}
+    b.addEventListener('click',()=>{
+      draft.warm[i]=!draft.warm[i];
+      b.classList.toggle('done');
+      b.closest('.warm-row').classList.toggle('done');
+      storeDraft(draft);
+    });
+  });
+  document.querySelectorAll('.setrow input').forEach(inp=>inp.addEventListener('input',()=>{
+    const e=+inp.dataset.e,s=+inp.dataset.s;
+    draft.sets[e]=draft.sets[e]||[];
+    draft.sets[e][s]=draft.sets[e][s]||{};
+    draft.sets[e][s][inp.dataset.k]=inp.value;
+    storeDraft(draft);
+  }));
+  document.querySelectorAll('.check').forEach(b=>b.addEventListener('click',()=>{
+    const e=+b.dataset.e,s=+b.dataset.s;
+    draft.sets[e]=draft.sets[e]||[];
+    draft.sets[e][s]=draft.sets[e][s]||{};
+    draft.sets[e][s].done=!draft.sets[e][s].done;
+    b.classList.toggle('done');
+    storeDraft(draft);
+    if(draft.sets[e][s].done&&b.dataset.rest)startTimer(b.dataset.rest);
+  }));
 }
 function closeFinish(){document.getElementById('finishModal').classList.remove('show');document.getElementById('finishModal').setAttribute('aria-hidden','true')}
 function saveWorkout(){
