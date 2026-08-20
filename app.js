@@ -527,7 +527,7 @@ function signedKcal(v){
   return `${n>0?'+':''}${n} kcal`;
 }
 
-function todaysExerciseTotals(){return exerciseTotalsForDate(todayISO());}
+function todaysExerciseTotals(){return exerciseTotalsForDate(logDate());}
 function fmtDuration(sec){
   sec=Math.max(0,Math.round(+sec||0));
   const m=Math.floor(sec/60),s=sec%60;
@@ -541,8 +541,8 @@ function activityPace(a){
 }
 
 function editActivity(index){
-  const today=todayISO();
-  const a=(state.activities[today]||[])[index];
+  const date=logDate();
+  const a=(state.activities[date]||[])[index];
   if(!a)return;
   activityEditIndex=index;
   const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=(val??'')};
@@ -560,8 +560,8 @@ function editActivity(index){
 }
 
 function renderActivities(){
-  const today=todayISO();
-  const acts=state.activities[today]||[];
+  const date=logDate();
+  const acts=state.activities[date]||[];
   const list=document.getElementById('activityList');
   if(!list)return;
   list.innerHTML=acts.length?acts.map((a,i)=>{
@@ -577,10 +577,10 @@ function renderActivities(){
       <div><b>${esc(a.type)}</b><small>${a.time?`${formatTime12(a.time)} · `:''}${bits.join(' · ')}</small>${zoneLine?`<small class="zone-line">${zoneLine}</small>`:''}</div>
       <div class="activity-actions"><button data-activity-edit="${i}" aria-label="Edit ${esc(a.type)}">Edit</button><button data-activity-delete="${i}" aria-label="Delete ${esc(a.type)}">×</button></div>
     </div>`;
-  }).join(''):'<p class="notice">No walks or jogs logged today.</p>';
+  }).join(''):'<p class="notice">No walks or jogs logged for this day.</p>';
   document.querySelectorAll('[data-activity-edit]').forEach(b=>b.addEventListener('click',()=>editActivity(+b.dataset.activityEdit)));
   document.querySelectorAll('[data-activity-delete]').forEach(b=>b.addEventListener('click',()=>{
-    state.activities[today].splice(+b.dataset.activityDelete,1);
+    state.activities[date].splice(+b.dataset.activityDelete,1);
     save();renderActivities();renderEnergyBalance();
   }));
   const t=todaysExerciseTotals();
@@ -627,13 +627,13 @@ function addActivity(){
   const zones={};
   [1,2,3,4,5].forEach(z=>{const v=document.getElementById(`activityZ${z}`).value.trim();if(v)zones[`z${z}`]=v});
   if(!minutes&&!seconds&&!distance&&!calories)return;
-  const today=todayISO();
-  state.activities[today]=state.activities[today]||[];
+  const date=logDate();
+  state.activities[date]=state.activities[date]||[];
   const entry={type,time,minutes,seconds,distance,calories,avgHr,...zones};
-  if(activityEditIndex!==null && state.activities[today][activityEditIndex]){
-    state.activities[today][activityEditIndex]=entry;
+  if(activityEditIndex!==null && state.activities[date][activityEditIndex]){
+    state.activities[date][activityEditIndex]=entry;
   }else{
-    state.activities[today].push(entry);
+    state.activities[date].push(entry);
   }
   activityEditIndex=null;
   const addBtn=document.getElementById('addActivityBtn');
@@ -1088,9 +1088,9 @@ async function createNewUser(){
  save();closeNewUser();renderAll();showScreen('today');
 }
 function editActivity(i){
- const today=todayISO(),a=(state.activities[today]||[])[i];if(!a)return;
+ const date=logDate(),a=(state.activities[date]||[])[i];if(!a)return;
  document.getElementById('activityType').value=a.type||'Walk';setHrDefaultsForType();document.getElementById('activityDistance').value=a.distance||'';document.getElementById('activityMinutes').value=a.minutes||'';document.getElementById('activitySeconds').value=a.seconds||'';document.getElementById('activityCalories').value=a.calories||'';document.getElementById('activityAvgHr').value=a.avgHr||'';[1,2,3,4,5].forEach(z=>document.getElementById(`activityZ${z}`).value=a[`z${z}`]||'');
- state.activities[today].splice(i,1);save();renderActivities();renderEnergyBalance();
+ state.activities[date].splice(i,1);save();renderActivities();renderEnergyBalance();
 }
 
 function bindPhotoInputs(){
