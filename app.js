@@ -712,6 +712,13 @@ function addActivity(){
   resetActivityEntryForm();
   renderActivities();
   renderEnergyBalance();
+  const addBtn=document.getElementById('addActivityBtn');
+  if(addBtn){
+    addBtn.textContent=editIndex!==null?'Saved ✓':'Added ✓';
+    setTimeout(()=>{
+      if(activityEditIndex===null && addBtn) addBtn.textContent='+ Add activity';
+    },700);
+  }
 }
 function renderEnergyBalance(){
   const el=document.getElementById('energyBalance');
@@ -1273,11 +1280,6 @@ async function createNewUser(){
  const name=document.getElementById('newName').value.trim()||'User',cal=+document.getElementById('newCalGoal').value||2500,p=+document.getElementById('newProteinGoal').value||180,c=+document.getElementById('newCarbGoal').value||250,f=+document.getElementById('newFatGoal').value||85,bmr=+document.getElementById('newBmr').value||1891,tdee=+document.getElementById('newTdee').value||2741,waterGoal=+document.getElementById('newWaterGoal').value||96,startWeight=+document.getElementById('newStartWeight').value||0;
  await photoDeleteAll();state=JSON.parse(JSON.stringify(base));state.profile={name};state.goals={cal,p,c,f};state.goalHistory={[todayISO()]:{cal,p,c,f}};state.bmr=bmr;state.tdee=tdee;state.waterGoal=waterGoal;state.historicalEnabled=false;state.scheduleDate=todayISO();state.nextEventType='workout';if(startWeight)state.weights[todayISO()]={am:startWeight};
  save();closeNewUser();renderAll();showScreen('today');
-}
-function editActivity(i){
- const date=logDate(),a=(state.activities[date]||[])[i];if(!a)return;
- document.getElementById('activityType').value=a.type||'Walk';setHrDefaultsForType();document.getElementById('activityDistance').value=a.distance||'';document.getElementById('activityMinutes').value=a.minutes||'';document.getElementById('activitySeconds').value=a.seconds||'';document.getElementById('activityCalories').value=a.calories||'';document.getElementById('activityAvgHr').value=a.avgHr||'';[1,2,3,4,5].forEach(z=>document.getElementById(`activityZ${z}`).value=a[`z${z}`]||'');
- state.activities[date].splice(i,1);save();renderActivities();renderEnergyBalance();
 }
 
 function bindPhotoInputs(){
