@@ -269,3 +269,19 @@
 @media(min-width:620px){
   .macro-dial-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
+
+#todayMacros.macro-snapshot{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  padding-top:18px;
+  padding-bottom:18px
+}
+#todayMacros .macro-dial svg{
+  width:132px;
+}
+@media(min-width:620px){
+  #todayMacros.macro-snapshot{
+    grid-template-columns:repeat(4,minmax(0,1fr))
+  }
+}
