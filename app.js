@@ -498,7 +498,8 @@ function currentWeeklyMacroEnergy(){
     const key=mondayOf(date);
     const n=totals(state.nutrition[date]?.foods||[]);
     const e=energyForDate(date);
-    (weeks[key]||(weeks[key]=[])).push({date,...n,energy:e.balance});
+    const ex=exerciseTotalsForDate(date);
+    (weeks[key]||(weeks[key]=[])).push({date,...n,exerciseCalories:ex.calories||0,energy:e.balance});
   });
   return Object.entries(weeks).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,days],idx)=>({
     date,
@@ -509,6 +510,7 @@ function currentWeeklyMacroEnergy(){
     p:days.reduce((s,x)=>s+x.p,0)/days.length,
     c:days.reduce((s,x)=>s+x.c,0)/days.length,
     f:days.reduce((s,x)=>s+x.f,0)/days.length,
+    exerciseCalories:days.reduce((s,x)=>s+(x.exerciseCalories||0),0)/days.length,
     energy:days.reduce((s,x)=>s+x.energy,0)/days.length
   }));
 }
@@ -1036,30 +1038,33 @@ function renderProgress(){
     p:weeks.reduce((s,x)=>s+x.p,0)/weeks.length,
     c:weeks.reduce((s,x)=>s+x.c,0)/weeks.length,
     f:weeks.reduce((s,x)=>s+x.f,0)/weeks.length,
+    exerciseCalories:weeks.reduce((s,x)=>s+(x.exerciseCalories||0),0)/weeks.length,
     energy:weeks.reduce((s,x)=>s+x.energy,0)/weeks.length
   }:null;
-  document.getElementById('weeklyAverageHistory').innerHTML=weeks.length?`<div class="weekly-table weekly-history-table">
-    <div class="weekly-row weekly-head"><span>Week</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span>Energy</span></div>
-    ${weeks.map(x=>`<div class="weekly-row"><span><b>${x.label}</b><small>${x.range} · ${x.days}d</small></span><span>${Math.round(x.cal)}</span><span>${Math.round(x.p)}</span><span>${Math.round(x.c)}</span><span>${Math.round(x.f)}</span><span>${signedKcal(x.energy)}</span></div>`).join('')}
-    <div class="weekly-row weekly-average"><span>All weeks avg</span><span>${Math.round(all.cal)}</span><span>${Math.round(all.p)}</span><span>${Math.round(all.c)}</span><span>${Math.round(all.f)}</span><span>${signedKcal(all.energy)}</span></div>
+  document.getElementById('weeklyAverageHistory').innerHTML=weeks.length?`<div class="weekly-table weekly-history-table history-exercise-table">
+    <div class="weekly-row weekly-head"><span>Week</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span>Ex Cal</span><span>Energy</span></div>
+    ${weeks.map(x=>`<div class="weekly-row"><span><b>${x.label}</b><small>${x.range} · ${x.days}d</small></span><span>${Math.round(x.cal)}</span><span>${Math.round(x.p)}</span><span>${Math.round(x.c)}</span><span>${Math.round(x.f)}</span><span>${Math.round(x.exerciseCalories||0)}</span><span>${signedKcal(x.energy)}</span></div>`).join('')}
+    <div class="weekly-row weekly-average"><span>All weeks avg</span><span>${Math.round(all.cal)}</span><span>${Math.round(all.p)}</span><span>${Math.round(all.c)}</span><span>${Math.round(all.f)}</span><span>${Math.round(all.exerciseCalories||0)}</span><span>${signedKcal(all.energy)}</span></div>
   </div>`:'<p class="notice">Weekly averages will appear after you log nutrition.</p>';
 
   const dailyRows=Object.keys(state.nutrition).sort().map(date=>{
     const n=totals(state.nutrition[date]?.foods||[]);
     if(!n.cal)return null;
-    return {date,...n,energy:energyForDate(date).balance};
+    const ex=exerciseTotalsForDate(date);
+    return {date,...n,exerciseCalories:ex.calories||0,energy:energyForDate(date).balance};
   }).filter(Boolean);
   const dailyAvg=dailyRows.length?{
     cal:dailyRows.reduce((s,x)=>s+x.cal,0)/dailyRows.length,
     p:dailyRows.reduce((s,x)=>s+x.p,0)/dailyRows.length,
     c:dailyRows.reduce((s,x)=>s+x.c,0)/dailyRows.length,
     f:dailyRows.reduce((s,x)=>s+x.f,0)/dailyRows.length,
+    exerciseCalories:dailyRows.reduce((s,x)=>s+(x.exerciseCalories||0),0)/dailyRows.length,
     energy:dailyRows.reduce((s,x)=>s+x.energy,0)/dailyRows.length
   }:null;
-  document.getElementById('dailyMacroEnergyHistory').innerHTML=dailyRows.length?`<div class="weekly-table daily-history-table">
-    <div class="weekly-row weekly-head"><span>Date</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span>Energy</span></div>
-    ${dailyRows.map(x=>`<div class="weekly-row"><span><b>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</b><small>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'2-digit'})}</small></span><span>${Math.round(x.cal)}</span><span>${Math.round(x.p)}</span><span>${Math.round(x.c)}</span><span>${Math.round(x.f)}</span><span>${signedKcal(x.energy)}</span></div>`).join('')}
-    <div class="weekly-row weekly-average"><span>Average</span><span>${Math.round(dailyAvg.cal)}</span><span>${Math.round(dailyAvg.p)}</span><span>${Math.round(dailyAvg.c)}</span><span>${Math.round(dailyAvg.f)}</span><span>${signedKcal(dailyAvg.energy)}</span></div>
+  document.getElementById('dailyMacroEnergyHistory').innerHTML=dailyRows.length?`<div class="weekly-table daily-history-table history-exercise-table">
+    <div class="weekly-row weekly-head"><span>Date</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span>Ex Cal</span><span>Energy</span></div>
+    ${dailyRows.map(x=>`<div class="weekly-row"><span><b>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</b><small>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'2-digit'})}</small></span><span>${Math.round(x.cal)}</span><span>${Math.round(x.p)}</span><span>${Math.round(x.c)}</span><span>${Math.round(x.f)}</span><span>${Math.round(x.exerciseCalories||0)}</span><span>${signedKcal(x.energy)}</span></div>`).join('')}
+    <div class="weekly-row weekly-average"><span>Average</span><span>${Math.round(dailyAvg.cal)}</span><span>${Math.round(dailyAvg.p)}</span><span>${Math.round(dailyAvg.c)}</span><span>${Math.round(dailyAvg.f)}</span><span>${Math.round(dailyAvg.exerciseCalories||0)}</span><span>${signedKcal(dailyAvg.energy)}</span></div>
   </div>`:'<p class="notice">Daily macro and energy history will appear after you log nutrition.</p>';
 
   document.getElementById('weightHistory').innerHTML=entries.length?entries.slice(-10).reverse().map(([d,v])=>`<div class="weight-line"><span>${new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><b>${v.am?`AM ${v.am}`:'—'}</b><b>${v.pm?`PM ${v.pm}`:(v.post?`Post ${v.post}`:'—')}</b></div>`).join(''):'<p class="notice">Start entering morning and evening weights to build your current trend.</p>';

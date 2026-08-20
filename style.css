@@ -318,3 +318,11 @@
 .export-actions button{
   flex:1 1 160px
 }
+
+.history-exercise-table{
+  min-width:690px;
+}
+.history-exercise-table .weekly-row{
+  grid-template-columns:minmax(105px,1.35fr) repeat(4,58px) 62px minmax(105px,1fr);
+  gap:7px;
+}
