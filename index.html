@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=38">
+  <link rel="stylesheet" href="style.css?v=40">
 </head>
 <body>
 <div class="app">
@@ -181,6 +181,11 @@
       <h3>Weekly averages</h3>
       <div class="weekly-table-wrap"><div id="weeklyAverageHistory"></div></div>
     </div>
+    <div class="card">
+      <div class="eyebrow">Daily log history</div>
+      <h3>Macros + energy by day</h3>
+      <div class="weekly-table-wrap daily-log-table-wrap"><div id="dailyMacroEnergyHistory"></div></div>
+    </div>
     <div class="card chart-card">
       <div class="chart-head"><div><div class="eyebrow">Historical weight</div><h3>Weight over time</h3></div><span class="badge measured">2025 → now</span></div>
       <div id="weightChart" class="chart-wrap"></div>
@@ -219,6 +224,10 @@
       <div class="eyebrow">Profile & data</div>
       <h3>New user / reset</h3>
       <p class="muted">Start fresh on this device. This clears saved workouts, nutrition, weights, activities, checklist history, water, photo checkmarks and profile data.</p>
+      <div class="export-actions">
+        <button class="secondary compact" id="exportDailyCsvBtn" type="button" onclick="exportDailyCSV()">Export daily CSV</button>
+        <button class="secondary compact" id="exportFullBackupBtn" type="button" onclick="exportFullBackup()">Export full backup</button>
+      </div>
       <button class="danger compact" id="newUserResetBtn" onclick="resetForNewUser()">Reset for new user</button>
     </div>
 </section>
@@ -274,7 +283,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=38"></script>
-<script src="app.js?v=38"></script>
+<script src="data.js?v=40"></script>
+<script src="app.js?v=40"></script>
 </body>
 </html>

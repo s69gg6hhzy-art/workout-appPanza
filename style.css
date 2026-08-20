@@ -285,3 +285,36 @@
     grid-template-columns:repeat(4,minmax(0,1fr))
   }
 }
+
+#currentWeekSnapshot .weekly-table{
+  min-width:540px;
+}
+#currentWeekSnapshot .weekly-row{
+  grid-template-columns:minmax(94px,1.2fr) repeat(4,54px) minmax(92px,1fr);
+  gap:6px;
+  padding-left:2px;
+  padding-right:2px;
+}
+#currentWeekSnapshot .weekly-row span:first-child{
+  white-space:nowrap;
+}
+.daily-history-table{
+  min-width:620px;
+}
+
+#currentWeekSnapshot .weekly-table{
+  min-width:590px;
+}
+#currentWeekSnapshot .weekly-row{
+  grid-template-columns:minmax(98px,1.25fr) repeat(4,48px) 58px minmax(92px,1fr);
+  gap:5px;
+}
+.export-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:12px 0 14px
+}
+.export-actions button{
+  flex:1 1 160px
+}
