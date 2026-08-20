@@ -37,7 +37,7 @@ const historicalCalories=[
 
 const isoDate=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)};
 const todayISO=()=>isoDate(new Date());
-const defaultChecklistItems=[{"id":"brush-am","text":"Brush Teeth AM"},{"id":"floss-am","text":"Floss AM"},{"id":"weight-am","text":"Take Weight AM"},{"id":"walk-dogs","text":"Walk Dogs"},{"id":"morning-jog","text":"Morning Jog"},{"id":"brush-pm","text":"Brush Teeth PM"},{"id":"floss-pm","text":"Floss PM"}];
+const defaultChecklistItems=[{"id":"am-brush-floss","text":"AM Brush & Floss"},{"id":"make-bed","text":"Make Bed"},{"id":"gum","text":"Gum"},{"id":"portuguese-1","text":"Portuguese #1"},{"id":"walk-dogs","text":"Walk Dogs"},{"id":"jog-run","text":"Jog/Run"},{"id":"pushups-1","text":"30 Push Ups #1"},{"id":"stretch","text":"Stretch"},{"id":"creatine-bcaas","text":"Creatine & BCAAs"},{"id":"coconut-oil-brush","text":"Gargle Coconut Oil & Brush"},{"id":"wash-face-guasha","text":"Wash Face & Guasha"},{"id":"fast-until-2","text":"Fast Until 2pm"},{"id":"portuguese-2","text":"Portuguese #2"},{"id":"pushups-2","text":"30 Push Ups #2"},{"id":"pm-brush-floss","text":"PM Brush & Floss"},{"id":"portuguese-3","text":"Portuguese #3"},{"id":"ab-roller","text":"10 Ab Roller"},{"id":"ab-twists","text":"30 Ab Twists"}];
 const old=JSON.parse(localStorage.getItem('mwState')||'null');
 const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},drafts:{},water:{},waterGoal:96,checklistItems:JSON.parse(JSON.stringify(defaultChecklistItems)),checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'Matt'},historicalEnabled:true,photoSettings:{weekly:false},photoCheckins:[],photoDays:{}};
 let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
@@ -65,6 +65,13 @@ function workoutTime(h){
   return '';
 }
 function save(){localStorage.setItem('mfState',JSON.stringify(state))}
+
+const v28MistakenChecklistIds=new Set(["brush-am","floss-am","weight-am","walk-dogs","morning-jog","brush-pm","floss-pm"]);
+if(Array.isArray(state.checklistItems)&&state.checklistItems.length===7&&state.checklistItems.every(x=>v28MistakenChecklistIds.has(x.id))){
+  state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
+  save();
+}
+
 function phase(){return program[state.phase]}
 function current(){return phase().workouts[state.workout]}
 function workoutType(n){return /lower|legs/i.test(n)?'lower':'upper'}
@@ -511,9 +518,8 @@ function setHrDefaultsForType(){
   details.style.display='block';
 
   if(type==='Jog'){
-    avg.value='154';
-    const vals=['1:43','4:14','5:23','6:55','0:00'];
-    z.forEach((x,i)=>x.value=vals[i]);
+    avg.value='0';
+    z.forEach(x=>x.value='0:00');
   }else if(type==='Run'){
     avg.value='0';
     z.forEach(x=>x.value='0:00');
