@@ -217,3 +217,5 @@
 .history-edit-day-btn{margin-top:12px}
 .activity-form .activity-time-field{max-width:125px!important}
 .activity-form .activity-time-field input{max-width:125px!important}
+
+.daily-date-card + .section-title{margin-top:20px}

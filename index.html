@@ -5,12 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=32">
 </head>
 <body>
 <div class="app">
   <section id="today" class="screen active">
     <div class="top"><div class="title">Today</div><div class="pill" id="todayLabel"></div></div>
+    <div class="section-title">Daily log</div>
+    <div class="card daily-date-card">
+      <div class="daily-date-nav">
+        <button class="ghost compact" id="logPrevDay" type="button" onclick="changeLogDate(-1)">‹</button>
+        <button class="secondary daily-date-label" id="logDateBtn" type="button" onclick="openLogDatePicker()"></button>
+        <button class="ghost compact" id="logNextDay" type="button" onclick="changeLogDate(1)">›</button>
+      </div>
+      <input id="logDatePicker" type="date" class="daily-date-picker" onchange="setLogDate(this.value)">
+      <button class="ghost compact" id="logTodayBtn" type="button" onclick="setLogDate(todayISO())">Today</button>
+      <p class="tiny">Weight, nutrition, energy, water, cardio, checklist and progress-photo tracking use this date. Workout scheduling stays on today.</p>
+    </div>
+
+    <div class="section-title">Workout</div>
     <div class="card hero">
       <div class="eyebrow" id="phaseLabel"></div>
       <h2 id="nextWorkout"></h2>
@@ -20,27 +33,15 @@
       <button class="primary" id="startBtn">Start workout</button><button class="primary rest-ack" id="ackRestBtn" style="display:none">Acknowledge rest day</button>
     </div>
 
-    <div class="section-title">Daily log</div>
-    <div class="card daily-date-card">
-      <div class="daily-date-nav">
-        <button class="ghost compact" id="logPrevDay">‹</button>
-        <button class="secondary daily-date-label" id="logDateBtn"></button>
-        <button class="ghost compact" id="logNextDay">›</button>
-      </div>
-      <input id="logDatePicker" type="date" class="daily-date-picker">
-      <button class="ghost compact" id="logTodayBtn">Today</button>
-      <p class="tiny">Weight, nutrition, energy, water, cardio, checklist and progress-photo tracking use this date. Workout scheduling stays on today.</p>
-    </div>
-
     <div class="section-title">Weight</div>
     <div class="card weight-card">
       <label>Morning <span>lb</span><input id="amWeight" inputmode="decimal" placeholder="185.0"></label>
       <label>Evening <span>lb</span><input id="pmWeight" inputmode="decimal" placeholder="188.0"></label>
-      <button class="secondary compact" id="saveWeightBtn">Save today's weights</button>
+      <button class="secondary compact" id="saveWeightBtn">Save weights</button>
       <div class="tiny" id="weightHint"></div>
     </div>
 
-    <div class="section-title">Nutrition today</div>
+    <div class="section-title">Nutrition</div>
     <div class="card macro-snapshot" id="todayMacros"></div>
 
     <div class="section-title">Energy balance</div>
@@ -48,7 +49,7 @@
 
     <div class="section-title">Water</div>
     <div class="card water-card">
-      <div class="water-head"><div><strong id="waterAmount">0 / 96 oz</strong><span>today</span></div><label>Goal <input id="waterGoal" inputmode="numeric" value="96"></label></div>
+      <div class="water-head"><div><strong id="waterAmount">0 / 96 oz</strong><span id="waterDateLabel">selected day</span></div><label>Goal <input id="waterGoal" inputmode="numeric" value="96"></label></div>
       <div class="water-track"><div id="waterProgress"></div></div>
       <div class="water-controls"><button class="secondary" id="waterMinusBtn">− 8 oz</button><button class="primary water-add" id="waterPlusBtn">+ 8 oz</button></div>
       <button class="ghost water-goal-save" id="saveWaterGoalBtn">Save water goal</button>
@@ -82,8 +83,8 @@
 
     <div class="section-title">Progress photos</div>
     <div class="card photo-tracker-card">
-      <div class="eyebrow">Progress photos taken today</div>
-      <p class="muted">Mark the angles you took.</p>
+      <div class="eyebrow">Progress photos</div>
+      <p class="muted">Mark the angles you took for the selected Daily Log date.</p>
       <div class="photo-check-grid">
         <label><input type="checkbox" id="photoDoneFront" onchange="setPhotoDone('front', this.checked)"><span>Front</span></label>
         <label><input type="checkbox" id="photoDoneSide" onchange="setPhotoDone('side', this.checked)"><span>Side</span></label>
@@ -277,7 +278,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=31"></script>
-<script src="app.js?v=31"></script>
+<script src="data.js?v=32"></script>
+<script src="app.js?v=32"></script>
 </body>
 </html>

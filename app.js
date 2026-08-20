@@ -77,7 +77,24 @@ function setLogDate(date){
   renderDailyLogDate();
   renderDailyLogSections();
 }
-function changeLogDate(days){setLogDate(plusDays(logDate(),days));}
+function changeLogDate(days){
+  const next=plusDays(logDate(),days);
+  if(next>todayISO())return;
+  setLogDate(next);
+}
+function openLogDatePicker(){
+  const picker=document.getElementById('logDatePicker');
+  if(!picker)return;
+  if(typeof picker.showPicker==='function'){
+    try{picker.showPicker();return;}catch(e){}
+  }
+  picker.style.position='static';
+  picker.style.opacity='1';
+  picker.style.pointerEvents='auto';
+  picker.style.width='100%';
+  picker.style.height='44px';
+  picker.focus();
+}
 function renderDailyLogDate(){
   const d=logDate(),today=todayISO();
   const label=document.getElementById('logDateBtn');
@@ -98,7 +115,10 @@ function renderDailyLogSections(){
   renderPhotoTracker();
   renderChecklist();
   const nd=document.getElementById('nutritionDate');
-  if(nd)nd.value=logDate();
+  if(nd){
+    nd.value=logDate();
+    renderNutrition();
+  }
 }
 function renderLogWeights(){
   const wt=state.weights[logDate()]||{};
@@ -205,7 +225,7 @@ function renderPhotoTracker(){
   });
   const n=Object.values(p).filter(Boolean).length;
   const s=document.getElementById('photoTakenStatus');
-  if(s)s.textContent=n?`${n} of 4 angles marked complete`:'No progress photos marked today';
+  if(s)s.textContent=n?`${n} of 4 angles marked complete`:'No progress photos marked for this day';
 }
 function setPhotoDone(angle,checked){
   const p=photoDayState();
@@ -277,6 +297,8 @@ function renderWater(){
   const goalEl=document.getElementById('waterGoal');
   const bar=document.getElementById('waterProgress');
   if(amountEl)amountEl.textContent=`${amount} / ${goal} oz`;
+  const dateLabel=document.getElementById('waterDateLabel');
+  if(dateLabel)dateLabel.textContent=d===todayISO()?'today':formatLogDate(d);
   if(goalEl)goalEl.value=goal;
   if(bar)bar.style.width=`${pct}%`;
 }
@@ -659,11 +681,11 @@ function saveWorkout(){
 }
 function advanceProgram(){state.workout++;if(state.workout>=phase().workouts.length){state.workout=0;state.round++;if(state.round>=phase().rounds){state.round=0;state.phase++;if(state.phase>=program.length){state.phase=program.length-1;state.round=phase().rounds-1;state.workout=phase().workouts.length-1}}}}
 function clearSummary(){['sumDuration','sumTime','sumTotalCal','sumAvgHr','sumMaxHr','sumWeight','sumNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})}
-function renderNutrition(){const d=document.getElementById('nutritionDate').value||todayISO();document.getElementById('nutritionDate').value=d;const g=state.goals;[['goalCal','cal'],['goalP','p'],['goalC','c'],['goalF','f']].forEach(([id,k])=>document.getElementById(id).value=g[k]);state.nutrition[d]=state.nutrition[d]||{foods:[]};const foods=state.nutrition[d].foods;document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);document.getElementById('foodList').innerHTML=foods.length?foods.map((f,i)=>foodRow(f,i)).join(''):'<p class="notice">No foods logged yet.</p>';document.querySelectorAll('.food-row input').forEach(inp=>inp.addEventListener('blur',foodChanged));document.querySelectorAll('.food-row button').forEach(b=>b.addEventListener('click',()=>{foods.splice(+b.dataset.i,1);save();renderNutrition();renderTodayMacros()}));}
+function renderNutrition(){const d=document.getElementById('nutritionDate').value||logDate();document.getElementById('nutritionDate').value=d;const g=state.goals;[['goalCal','cal'],['goalP','p'],['goalC','c'],['goalF','f']].forEach(([id,k])=>document.getElementById(id).value=g[k]);state.nutrition[d]=state.nutrition[d]||{foods:[]};const foods=state.nutrition[d].foods;document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);document.getElementById('foodList').innerHTML=foods.length?foods.map((f,i)=>foodRow(f,i)).join(''):'<p class="notice">No foods logged yet.</p>';document.querySelectorAll('.food-row input').forEach(inp=>inp.addEventListener('blur',foodChanged));document.querySelectorAll('.food-row button').forEach(b=>b.addEventListener('click',()=>{foods.splice(+b.dataset.i,1);save();renderNutrition();renderTodayMacros()}));}
 function foodRow(f,i){return `<div class="food-row"><label class="food-name">Food<input data-i="${i}" data-k="name" value="${esc(f.name||'')}"></label><label>Wt(g)<input inputmode="decimal" data-i="${i}" data-k="weight" value="${f.weight||''}"></label><label>Cal<input inputmode="numeric" data-i="${i}" data-k="cal" value="${f.cal||''}"></label><label>P<input inputmode="decimal" data-i="${i}" data-k="p" value="${f.p||''}"></label><label>C<input inputmode="decimal" data-i="${i}" data-k="c" value="${f.c||''}"></label><label>F<input inputmode="decimal" data-i="${i}" data-k="f" value="${f.f||''}"></label><label>Time<input type="time" data-i="${i}" data-k="time" value="${f.time||''}"></label><button data-i="${i}">×</button></div>`}
-function refreshNutritionTotals(d){const foods=(state.nutrition[d]?.foods)||[],g=state.goals;document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);if(d===todayISO())renderTodayMacros()}
+function refreshNutritionTotals(d){const foods=(state.nutrition[d]?.foods)||[],g=state.goals;document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);if(d===logDate()){renderTodayMacros();renderEnergyBalance();}}
 function foodChanged(e){const d=document.getElementById('nutritionDate').value,foods=state.nutrition[d].foods,i=+e.target.dataset.i,k=e.target.dataset.k;foods[i][k]=(k==='name'||k==='time')?e.target.value:(parseFloat(e.target.value)||0);save();refreshNutritionTotals(d)}
-function addFood(){const d=document.getElementById('nutritionDate').value||todayISO();state.nutrition[d]=state.nutrition[d]||{foods:[]};state.nutrition[d].foods.push({name:'',weight:0,cal:0,p:0,c:0,f:0,time:currentTimeHHMM()});save();renderNutrition();setTimeout(()=>document.querySelectorAll('.food-name input')[document.querySelectorAll('.food-name input').length-1]?.focus(),0)}
+function addFood(){const d=document.getElementById('nutritionDate').value||logDate();state.nutrition[d]=state.nutrition[d]||{foods:[]};state.nutrition[d].foods.push({name:'',weight:0,cal:0,p:0,c:0,f:0,time:currentTimeHHMM()});save();renderNutrition();setTimeout(()=>document.querySelectorAll('.food-name input')[document.querySelectorAll('.food-name input').length-1]?.focus(),0)}
 function totals(foods){return foods.reduce((a,f)=>({cal:a.cal+(+f.cal||0),p:a.p+(+f.p||0),c:a.c+(+f.c||0),f:a.f+(+f.f||0)}),{cal:0,p:0,c:0,f:0})}
 function saveGoals(){state.goals={cal:num('goalCal'),p:num('goalP'),c:num('goalC'),f:num('goalF')};save();renderNutrition();renderTodayMacros()}
 
@@ -1088,11 +1110,12 @@ setTimeout(bindPhotoInputs,0);
 
 
 
-document.getElementById('logPrevDay')?.addEventListener('click',()=>changeLogDate(-1));
-document.getElementById('logNextDay')?.addEventListener('click',()=>changeLogDate(1));
-document.getElementById('logTodayBtn')?.addEventListener('click',()=>setLogDate(todayISO()));
-document.getElementById('logDateBtn')?.addEventListener('click',()=>document.getElementById('logDatePicker')?.showPicker?.());
-document.getElementById('logDatePicker')?.addEventListener('change',e=>setLogDate(e.target.value));
 document.getElementById('nutritionDate')?.addEventListener('change',e=>{
-  if(e.target.value&&e.target.value<=todayISO())selectedLogDate=e.target.value;
+  const d=e.target.value;
+  if(!d||d>todayISO())return;
+  selectedLogDate=d;
+  renderDailyLogDate();
+  renderNutrition();
+  renderTodayMacros();
+  renderEnergyBalance();
 });
