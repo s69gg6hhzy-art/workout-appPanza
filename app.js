@@ -861,7 +861,7 @@ function renderNutrition(){const d=document.getElementById('nutritionDate').valu
 function foodRow(f,i){return `<div class="food-row"><label class="food-name">Food<input data-i="${i}" data-k="name" value="${esc(f.name||'')}"></label><label>Wt(g)<input inputmode="decimal" data-i="${i}" data-k="weight" value="${f.weight||''}"></label><label>Cal<input inputmode="numeric" data-i="${i}" data-k="cal" value="${f.cal||''}"></label><label>P<input inputmode="decimal" data-i="${i}" data-k="p" value="${f.p||''}"></label><label>C<input inputmode="decimal" data-i="${i}" data-k="c" value="${f.c||''}"></label><label>F<input inputmode="decimal" data-i="${i}" data-k="f" value="${f.f||''}"></label><label>Time<input type="time" data-i="${i}" data-k="time" value="${f.time||''}"></label><button data-i="${i}">×</button></div>`}
 function refreshNutritionTotals(d){const foods=(state.nutrition[d]?.foods)||[],g=goalsForDate(d);document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);if(d===logDate()){renderTodayMacros();renderEnergyBalance();}}
 function foodChanged(e){const d=document.getElementById('nutritionDate').value,foods=state.nutrition[d].foods,i=+e.target.dataset.i,k=e.target.dataset.k;foods[i][k]=(k==='name'||k==='time')?e.target.value:(parseFloat(e.target.value)||0);save();refreshNutritionTotals(d)}
-function addFood(){const d=document.getElementById('nutritionDate').value||logDate();state.nutrition[d]=state.nutrition[d]||{foods:[]};state.nutrition[d].foods.push({name:'',weight:0,cal:0,p:0,c:0,f:0,time:currentTimeHHMM()});save();renderNutrition();setTimeout(()=>document.querySelectorAll('.food-name input')[document.querySelectorAll('.food-name input').length-1]?.focus(),0)}
+function addFood(){const d=document.getElementById('nutritionDate')?.value||logDate();state.nutrition[d]=state.nutrition[d]||{foods:[]};state.nutrition[d].foods.push({name:'',weight:0,cal:0,p:0,c:0,f:0,time:currentTimeHHMM()});save();renderNutrition();renderTodayMacros();setTimeout(()=>{const inputs=document.querySelectorAll('.food-name input');inputs[inputs.length-1]?.focus()},0)}
 function totals(foods){return foods.reduce((a,f)=>({cal:a.cal+(+f.cal||0),p:a.p+(+f.p||0),c:a.c+(+f.c||0),f:a.f+(+f.f||0)}),{cal:0,p:0,c:0,f:0})}
 function saveGoals(){
   const d=document.getElementById('nutritionDate').value||logDate();
@@ -1412,7 +1412,7 @@ function renderAll(){renderToday();renderWorkout();renderNutrition();renderCheck
 function num(id){return parseFloat(document.getElementById(id).value)||0}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.go)));document.getElementById('startBtn').addEventListener('click',()=>showScreen('workout'));
-document.getElementById('ackRestBtn').addEventListener('click',acknowledgeRest);document.getElementById('finishBtn').addEventListener('click',openFinish);document.getElementById('closeFinish').addEventListener('click',closeFinish);document.getElementById('saveWorkoutBtn').addEventListener('click',saveWorkout);document.getElementById('skipTimer').addEventListener('click',stopTimer);document.getElementById('saveWeightBtn').addEventListener('click',saveWeights);document.getElementById('nutritionDate').addEventListener('change',renderNutrition);document.getElementById('addFoodBtn').addEventListener('click',addFood);document.getElementById('saveGoalsBtn').addEventListener('click',saveGoals);document.getElementById('prevMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderHistory()});document.getElementById('nextMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderHistory()});document.getElementById('activityType').addEventListener('change',setHrDefaultsForType);
+document.getElementById('ackRestBtn').addEventListener('click',acknowledgeRest);document.getElementById('finishBtn').addEventListener('click',openFinish);document.getElementById('closeFinish').addEventListener('click',closeFinish);document.getElementById('saveWorkoutBtn').addEventListener('click',saveWorkout);document.getElementById('skipTimer').addEventListener('click',stopTimer);document.getElementById('saveWeightBtn').addEventListener('click',saveWeights);document.getElementById('nutritionDate').addEventListener('change',renderNutrition);document.getElementById('addFoodBtn')?.addEventListener('click',addFood);document.getElementById('saveGoalsBtn').addEventListener('click',saveGoals);document.getElementById('prevMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderHistory()});document.getElementById('nextMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderHistory()});document.getElementById('activityType').addEventListener('change',setHrDefaultsForType);
 const activityAddBtn=document.getElementById('addActivityBtn');
 if(activityAddBtn)activityAddBtn.onclick=addActivity;
 document.getElementById('waterMinusBtn').addEventListener('click',()=>changeWater(-8));
@@ -1421,11 +1421,11 @@ document.getElementById('saveWaterGoalBtn').addEventListener('click',saveWaterGo
 document.getElementById('addChecklistBtn').addEventListener('click',addChecklistItem);
 document.getElementById('reorderChecklistBtn').addEventListener('click',toggleChecklistReorder);
 document.getElementById('newChecklistItem').addEventListener('keydown',e=>{if(e.key==='Enter')addChecklistItem()});
-document.getElementById('backupBtn').addEventListener('click',downloadBackup);
-document.getElementById('restoreInput').addEventListener('change',e=>{restoreBackupFile(e.target.files[0]);e.target.value=''});
-document.getElementById('newUserBtn').addEventListener('click',openNewUser);
-document.getElementById('closeNewUserBtn').addEventListener('click',closeNewUser);
-document.getElementById('confirmNewUserBtn').addEventListener('click',createNewUser);
+document.getElementById('backupBtn')?.addEventListener('click',downloadBackup);
+document.getElementById('restoreInput')?.addEventListener('change',e=>{restoreBackupFile(e.target.files[0]);e.target.value=''});
+document.getElementById('newUserBtn')?.addEventListener('click',openNewUser);
+document.getElementById('closeNewUserBtn')?.addEventListener('click',closeNewUser);
+document.getElementById('confirmNewUserBtn')?.addEventListener('click',createNewUser);
 
 document.getElementById('nutritionDate').value=logDate();setHrDefaultsForType();renderAll();bindPhotoInputs();save();
 
