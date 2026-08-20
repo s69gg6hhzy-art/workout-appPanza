@@ -428,3 +428,32 @@ input[type="time"]{color-scheme:dark}
   font-weight:600;
   opacity:.7;
 }
+
+/* V56 — wider duration values on iPhone/Safari */
+.duration-picker{
+  grid-template-columns:minmax(72px,1fr) 8px minmax(72px,1fr) 8px minmax(72px,1fr);
+  gap:3px;
+}
+.duration-picker select{
+  min-width:72px;
+  padding-left:10px;
+  padding-right:24px;
+  font-size:21px;
+}
+.duration-picker b{
+  width:8px;
+  text-align:center;
+  font-size:21px;
+}
+@media (max-width:430px){
+  .duration-picker{
+    grid-template-columns:minmax(70px,1fr) 6px minmax(70px,1fr) 6px minmax(70px,1fr);
+    gap:2px;
+  }
+  .duration-picker select{
+    min-width:70px;
+    padding-left:8px;
+    padding-right:22px;
+    font-size:20px;
+  }
+}
