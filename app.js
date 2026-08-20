@@ -1127,6 +1127,26 @@ async function renderPhotoGallery(){
 async function comparePhotos(){const list=state.photoCheckins||[],a=list.find(x=>x.id===document.getElementById('compareA').value),b=list.find(x=>x.id===document.getElementById('compareB').value);if(!a||!b)return;const wrap=document.getElementById('photoCompare');wrap.innerHTML='';for(const angle of ['front','side','back','flex']){if(!a.angles.includes(angle)||!b.angles.includes(angle))continue;const ua=await photoURL(a,angle),ub=await photoURL(b,angle);const row=document.createElement('div');row.className='compare-row';row.innerHTML=`<div class="compare-angle">${angle[0].toUpperCase()+angle.slice(1)}</div><div class="compare-pair"><figure><img src="${ua}"><figcaption>${esc(photoLabel(a))}</figcaption></figure><figure><img src="${ub}"><figcaption>${esc(photoLabel(b))}</figcaption></figure></div>`;wrap.appendChild(row)}}
 function toggleWeeklyPhotos(){state.photoSettings=state.photoSettings||{};state.photoSettings.weekly=document.getElementById('weeklyPhotosToggle').checked;save();renderPhotoDue()}
 
+
+function weeklyCardioMiles(){
+  const byWeek={};
+  Object.entries(state.activities||{}).forEach(([date,acts])=>{
+    const week=mondayOf(date);
+    byWeek[week]=byWeek[week]||{walk:0,run:0};
+    (acts||[]).forEach(a=>{
+      const miles=+a.distance||0;
+      if(!miles)return;
+      if((a.type||'').toLowerCase()==='walk')byWeek[week].walk+=miles;
+      else if(['jog','run'].includes((a.type||'').toLowerCase()))byWeek[week].run+=miles;
+    });
+  });
+  return Object.entries(byWeek).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,v])=>({
+    date,
+    label:new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}),
+    walk:+v.walk.toFixed(2),
+    run:+v.run.toFixed(2)
+  }));
+}
 function renderProgress(){
   const entries=Object.entries(state.weights).filter(([,v])=>v.am||v.pm).sort((a,b)=>a[0].localeCompare(b[0]));
   const ams=entries.filter(([,v])=>v.am).map(([d,v])=>({d,v:+v.am}));
@@ -1142,8 +1162,25 @@ function renderProgress(){
   document.getElementById('calorieChart').innerHTML=svgLineChart(histNut,{valueKey:'cal',minPad:150,maxPad:150});
   document.getElementById('proteinChart').innerHTML=svgLineChart(histNut,{valueKey:'protein',suffix:'g',minPad:10,maxPad:10});
 
-  const cardio=currentCardioSeries();
-  document.getElementById('cardioChart').innerHTML=cardio.length?svgLineChart(cardio,{valueKey:'pace',suffix:'',minPad:.5,maxPad:.5}):'<p class="notice">Your jog/run pace graph will appear here after you log cardio sessions.</p>';
+  const cardio=weeklyCardioMiles();
+  const cardioEl=document.getElementById('cardioChart');
+  if(cardioEl){
+    if(!cardio.length){
+      cardioEl.innerHTML='<p class="notice">Add walks, jogs or runs to build weekly mileage.</p>';
+    }else{
+      const max=Math.max(1,...cardio.flatMap(x=>[x.walk,x.run]));
+      cardioEl.innerHTML=`<div class="weekly-cardio-chart">
+        ${cardio.map(x=>`<div class="weekly-cardio-group">
+          <div class="weekly-cardio-bars">
+            <div class="weekly-cardio-bar walk" style="height:${(x.walk/max)*100}%"><span>${x.walk||''}</span></div>
+            <div class="weekly-cardio-bar run" style="height:${(x.run/max)*100}%"><span>${x.run||''}</span></div>
+          </div>
+          <small>${x.label}</small>
+        </div>`).join('')}
+      </div>
+      <div class="weekly-cardio-legend"><span>Walk</span><span>Run/Jog</span></div>`;
+    }
+  }
 
   const energy=dailyEnergySeries();
   document.getElementById('energyChart').innerHTML=energy.length?svgLineChart(energy,{valueKey:'energy',suffix:'',minPad:150,maxPad:150}):'<p class="notice">Your energy graph will appear after you log nutrition.</p>';

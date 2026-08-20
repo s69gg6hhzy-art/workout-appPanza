@@ -340,3 +340,57 @@
   opacity:.65;
   font-weight:600;
 }
+
+.weekly-cardio-chart{
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  height:220px;
+  overflow-x:auto;
+  padding:14px 4px 8px;
+}
+.weekly-cardio-group{
+  flex:0 0 58px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:7px;
+  height:100%;
+  justify-content:flex-end;
+}
+.weekly-cardio-bars{
+  display:flex;
+  align-items:flex-end;
+  gap:5px;
+  height:180px;
+  width:100%;
+}
+.weekly-cardio-bar{
+  flex:1;
+  min-height:2px;
+  border-radius:6px 6px 2px 2px;
+  background:currentColor;
+  opacity:.9;
+  position:relative;
+}
+.weekly-cardio-bar.run{opacity:.55}
+.weekly-cardio-bar span{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:-18px;
+  font-size:10px;
+  font-weight:700;
+}
+.weekly-cardio-group small{
+  white-space:nowrap;
+  opacity:.7;
+}
+.weekly-cardio-legend{
+  display:flex;
+  justify-content:center;
+  gap:18px;
+  font-size:12px;
+  opacity:.75;
+  margin-top:4px;
+}
