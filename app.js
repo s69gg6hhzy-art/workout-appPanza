@@ -476,9 +476,37 @@ function addChecklistItem(){
 
 
 
+
+function parseWorkoutDuration(value){
+  if(value===null||value===undefined||value==='')return 0;
+  if(typeof value==='number')return value;
+  const s=String(value).trim();
+  if(/^\d+(\.\d+)?$/.test(s))return +s;
+  const parts=s.split(':').map(Number);
+  if(parts.length===3&&parts.every(Number.isFinite)){
+    const [h,m,sec]=parts;
+    return h*60+m+sec/60;
+  }
+  if(parts.length===2&&parts.every(Number.isFinite)){
+    const [m,sec]=parts;
+    return m+sec/60;
+  }
+  return 0;
+}
+function formatWorkoutDuration(value){
+  if(value===null||value===undefined||value==='')return '';
+  if(typeof value==='string'&&/^\d{1,2}:\d{2}:\d{2}$/.test(value))return value;
+  const mins=parseWorkoutDuration(value);
+  if(!mins)return '';
+  const totalSec=Math.round(mins*60);
+  const h=Math.floor(totalSec/3600);
+  const m=Math.floor((totalSec%3600)/60);
+  const s=totalSec%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
 function exerciseTotalsForDate(date){
   const workoutEntries=state.history.filter(h=>isoDate(h.date)===date);
-  const workoutMinutes=workoutEntries.reduce((s,h)=>s+(+(h.summary?.duration)||0),0);
+  const workoutMinutes=workoutEntries.reduce((s,h)=>s+parseWorkoutDuration(h.summary?.duration),0);
   const workoutCalories=workoutEntries.reduce((s,h)=>s+(+(h.summary?.totalCalories ?? h.summary?.activeCalories)||0),0);
   const acts=state.activities[date]||[];
   const activityMinutes=acts.reduce((s,a)=>s+(+a.minutes||0)+((+a.seconds||0)/60),0);
@@ -765,7 +793,7 @@ function saveWorkout(){
   ensureScheduleState();
   const w=current(),p=phase(),draft=getDraft(),sets={};
   w.ex.forEach((x,i)=>sets[x[0]]=(draft.sets[i]||[]).map(v=>({weight:v.weight||'',reps:v.reps||'',done:!!v.done})));
-  const summary={duration:num('sumDuration'),time:document.getElementById('sumTime')?.value||currentTimeHHMM(),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),maxHr:num('sumMaxHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
+  const summary={duration:formatWorkoutDuration(document.getElementById('sumDuration')?.value||''),time:document.getElementById('sumTime')?.value||currentTimeHHMM(),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),maxHr:num('sumMaxHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
   const date=new Date().toISOString(),completedPhaseIndex=state.phase;
   state.history.unshift({date,phase:p.name,phaseIndex:state.phase,round:state.round+1,workout:w.name,sets,summary});
   if(summary.postWeight)state.weights[todayISO()]={...(state.weights[todayISO()]||{}),post:summary.postWeight};
@@ -818,7 +846,7 @@ function openWorkoutEditor(index){
   workoutEditIndex=index;
   const s=h.summary||{};
   document.getElementById('editWorkoutName').textContent=`${h.workout} · ${h.phase} · Round ${h.round}`;
-  document.getElementById('editWorkoutDuration').value=s.duration||'';
+  document.getElementById('editWorkoutDuration').value=formatWorkoutDuration(s.duration);
   document.getElementById('editWorkoutTime').value=workoutTime(h);
   document.getElementById('editWorkoutCalories').value=(s.totalCalories ?? s.activeCalories ?? '')||'';
   document.getElementById('editWorkoutAvgHr').value=s.avgHr||'';
@@ -863,7 +891,7 @@ function saveEditedWorkout(){
   const oldDate=isoDate(h.date);
   const summary={
     ...(h.summary||{}),
-    duration:num('editWorkoutDuration'),
+    duration:formatWorkoutDuration(document.getElementById('editWorkoutDuration')?.value||''),
     time:document.getElementById('editWorkoutTime')?.value||workoutTime(h),
     totalCalories:num('editWorkoutCalories'),
     avgHr:num('editWorkoutAvgHr'),
@@ -941,7 +969,7 @@ function renderDayDetail(date){
     parts+=`<div class="day-detail-row workout-history-detail">
       <div>
         <b>${esc(h.workout)}</b>
-        <small>${workoutTime(h)?`${formatTime12(workoutTime(h))} · `:''}${esc(h.phase)} · Round ${h.round}${s.duration?` · ${s.duration} min`:''}${kcal?` · ${kcal} total kcal`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.maxHr?` · ${s.maxHr} max HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}</small>
+        <small>${workoutTime(h)?`${formatTime12(workoutTime(h))} · `:''}${esc(h.phase)} · Round ${h.round}${s.duration?` · ${formatWorkoutDuration(s.duration)}`:''}${kcal?` · ${kcal} total kcal`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.maxHr?` · ${s.maxHr} max HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}</small>
         ${s.notes?`<small class="history-notes">${esc(s.notes)}</small>`:''}
       </div>
       <button class="secondary compact edit-workout-history-btn" onclick="openWorkoutEditor(${historyIndex})">Edit workout</button>
@@ -1346,4 +1374,21 @@ document.getElementById('nutritionDate')?.addEventListener('change',e=>{
   renderNutrition();
   renderTodayMacros();
   renderEnergyBalance();
+});
+
+['sumDuration','editWorkoutDuration'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('blur',()=>{
+    const v=el.value.trim();
+    if(!v)return;
+    if(/^\d{1,2}:\d{2}:\d{2}$/.test(v))return;
+    if(/^\d+$/.test(v)){
+      const digits=v.padStart(6,'0').slice(-6);
+      el.value=`${digits.slice(0,2)}:${digits.slice(2,4)}:${digits.slice(4,6)}`;
+      return;
+    }
+    const mins=parseWorkoutDuration(v);
+    if(mins)el.value=formatWorkoutDuration(mins);
+  });
 });
