@@ -185,3 +185,25 @@
   grid-template-columns:minmax(145px,1.7fr) 72px 72px 64px 64px 64px 105px 38px;
 }
 .history-subrow{padding-left:10px;opacity:.92}
+
+.activity-form .activity-time-field{max-width:170px}
+.activity-form .activity-time-field input{max-width:170px}
+.energy-history-row small{font-weight:600}
+.weekly-table-wrap{overflow-x:auto;margin-top:10px}
+.weekly-table{min-width:620px}
+.weekly-row{
+  display:grid;
+  grid-template-columns:minmax(105px,1.35fr) repeat(4,65px) minmax(105px,1fr);
+  gap:8px;
+  align-items:center;
+  padding:10px 4px;
+  border-bottom:1px solid var(--line);
+}
+.weekly-row span:not(:first-child){text-align:right}
+.weekly-row span:first-child small{display:block;margin-top:2px;opacity:.65;font-weight:400}
+.weekly-head{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.65;font-weight:700}
+.weekly-average{font-weight:800;border-top:1px solid var(--line);border-bottom:0}
+@media(max-width:560px){
+  .activity-form .activity-time-field{max-width:145px}
+  .activity-form .activity-time-field input{max-width:145px}
+}

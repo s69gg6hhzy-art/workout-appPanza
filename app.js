@@ -37,11 +37,13 @@ const historicalCalories=[
 
 const isoDate=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)};
 const todayISO=()=>isoDate(new Date());
+const defaultChecklistItems=[{"id":"brush-am","text":"Brush Teeth AM"},{"id":"floss-am","text":"Floss AM"},{"id":"weight-am","text":"Take Weight AM"},{"id":"walk-dogs","text":"Walk Dogs"},{"id":"morning-jog","text":"Morning Jog"},{"id":"brush-pm","text":"Brush Teeth PM"},{"id":"floss-pm","text":"Floss PM"}];
 const old=JSON.parse(localStorage.getItem('mwState')||'null');
-const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},drafts:{},water:{},waterGoal:96,checklistItems:[],checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'Matt'},historicalEnabled:true,photoSettings:{weekly:false},photoCheckins:[],photoDays:{}};
+const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},drafts:{},water:{},waterGoal:96,checklistItems:JSON.parse(JSON.stringify(defaultChecklistItems)),checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'Matt'},historicalEnabled:true,photoSettings:{weekly:false},photoCheckins:[],photoDays:{}};
 let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
+if(!Array.isArray(state.checklistItems)||state.checklistItems.length===0)state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
 let timerInterval=null,timerLeft=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null;
 function currentTimeHHMM(){
   const d=new Date();
@@ -346,6 +348,7 @@ function renderChecklist(){
     });
 
     const handle=row.querySelector('.drag-handle');
+    if(!handle)return;
     handle.addEventListener('touchstart',()=>{
       row.classList.add('touch-drag-ready');
     },{passive:true});
@@ -365,12 +368,12 @@ function addChecklistItem(){
 }
 
 
-function todaysExerciseTotals(){
-  const today=todayISO();
-  const workoutEntries=state.history.filter(h=>isoDate(h.date)===today);
+
+function exerciseTotalsForDate(date){
+  const workoutEntries=state.history.filter(h=>isoDate(h.date)===date);
   const workoutMinutes=workoutEntries.reduce((s,h)=>s+(+(h.summary?.duration)||0),0);
   const workoutCalories=workoutEntries.reduce((s,h)=>s+(+(h.summary?.totalCalories ?? h.summary?.activeCalories)||0),0);
-  const acts=state.activities[today]||[];
+  const acts=state.activities[date]||[];
   const activityMinutes=acts.reduce((s,a)=>s+(+a.minutes||0)+((+a.seconds||0)/60),0);
   const activityCalories=acts.reduce((s,a)=>s+(+a.calories||0),0);
   return {
@@ -379,6 +382,58 @@ function todaysExerciseTotals(){
     calories:workoutCalories+activityCalories
   };
 }
+function energyForDate(date){
+  const foods=(state.nutrition[date]?.foods)||[];
+  const intake=totals(foods).cal;
+  const ex=exerciseTotalsForDate(date);
+  const bmr=+(state.bmr||1891);
+  const tdee=+(state.tdee||2741);
+  const nonExerciseMinutes=Math.max(0,1440-ex.minutes);
+  const nonExerciseBurn=bmr*(nonExerciseMinutes/1440);
+  const totalBurn=nonExerciseBurn+ex.calories;
+  return {date,intake,ex,bmr,tdee,nonExerciseMinutes,nonExerciseBurn,totalBurn,balance:intake-totalBurn};
+}
+function mondayOf(date){
+  const d=new Date(date+'T12:00:00'),day=(d.getDay()+6)%7;
+  d.setDate(d.getDate()-day);
+  return isoDate(d);
+}
+function currentWeeklyMacroEnergy(){
+  const dates=Object.keys(state.nutrition).filter(date=>totals(state.nutrition[date]?.foods||[]).cal>0).sort();
+  if(!dates.length)return[];
+  const weeks={};
+  dates.forEach(date=>{
+    const key=mondayOf(date);
+    const n=totals(state.nutrition[date]?.foods||[]);
+    const e=energyForDate(date);
+    (weeks[key]||(weeks[key]=[])).push({date,...n,energy:e.balance});
+  });
+  return Object.entries(weeks).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,days],idx)=>({
+    date,
+    label:`Week ${idx+1}`,
+    range:`${new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}`,
+    days:days.length,
+    cal:days.reduce((s,x)=>s+x.cal,0)/days.length,
+    p:days.reduce((s,x)=>s+x.p,0)/days.length,
+    c:days.reduce((s,x)=>s+x.c,0)/days.length,
+    f:days.reduce((s,x)=>s+x.f,0)/days.length,
+    energy:days.reduce((s,x)=>s+x.energy,0)/days.length
+  }));
+}
+function dailyEnergySeries(){
+  return Object.keys(state.nutrition).sort().map(date=>{
+    const n=totals(state.nutrition[date]?.foods||[]);
+    if(!n.cal)return null;
+    const e=energyForDate(date);
+    return {date,label:new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}),energy:Math.round(e.balance)};
+  }).filter(Boolean);
+}
+function signedKcal(v){
+  const n=Math.round(+v||0);
+  return `${n>0?'+':''}${n} kcal`;
+}
+
+function todaysExerciseTotals(){return exerciseTotalsForDate(todayISO());}
 function fmtDuration(sec){
   sec=Math.max(0,Math.round(+sec||0));
   const m=Math.floor(sec/60),s=sec%60;
@@ -498,29 +553,20 @@ function addActivity(){
 function renderEnergyBalance(){
   const el=document.getElementById('energyBalance');
   if(!el)return;
-  const today=todayISO();
-  const foods=(state.nutrition[today]?.foods)||[];
-  const intake=totals(foods).cal;
-  const ex=todaysExerciseTotals();
-  const bmr=+(state.bmr||1891);
-  const tdee=+(state.tdee||2741);
-  const nonExerciseMinutes=Math.max(0,1440-ex.minutes);
-  const nonExerciseBurn=bmr*(nonExerciseMinutes/1440);
-  const totalBurn=nonExerciseBurn+ex.calories;
-  const balance=intake-totalBurn;
-  const label=balance<0?'deficit':balance>0?'surplus':'balance';
-  const amount=Math.abs(Math.round(balance));
+  const e=energyForDate(todayISO());
+  const label=e.balance<0?'deficit':e.balance>0?'surplus':'balance';
+  const amount=Math.abs(Math.round(e.balance));
   el.innerHTML=`<div class="balance-main">
       <span>${label==='deficit'?'Estimated deficit':label==='surplus'?'Estimated surplus':'Estimated balance'}</span>
       <strong class="${label}">${amount} kcal</strong>
     </div>
     <div class="balance-grid">
-      <div><b>${Math.round(intake)}</b><span>intake</span></div>
-      <div><b>${Math.round(totalBurn)}</b><span>estimated burn</span></div>
-      <div><b>${Math.round(ex.calories)}</b><span>exercise total kcal</span></div>
-      <div><b>${Math.round(nonExerciseBurn)}</b><span>non-exercise burn</span></div>
+      <div><b>${Math.round(e.intake)}</b><span>intake</span></div>
+      <div><b>${Math.round(e.totalBurn)}</b><span>estimated burn</span></div>
+      <div><b>${Math.round(e.ex.calories)}</b><span>exercise total kcal</span></div>
+      <div><b>${Math.round(e.nonExerciseBurn)}</b><span>non-exercise burn</span></div>
     </div>
-    <p class="tiny balance-note">${Math.round(ex.minutes)} exercise min + ${Math.round(nonExerciseMinutes)} non-exercise min. Non-exercise burn uses BMR ${bmr} kcal/day. Measured TDEE: ${tdee} kcal/day (reference).</p>`;
+    <p class="tiny balance-note">${Math.round(e.ex.minutes)} exercise min + ${Math.round(e.nonExerciseMinutes)} non-exercise min. Non-exercise burn uses BMR ${e.bmr} kcal/day. Measured TDEE: ${e.tdee} kcal/day (reference).</p>`;
 }
 
 
@@ -723,6 +769,11 @@ function renderDayDetail(date){
     parts+=`<div class="day-detail-row"><b>Walks / jogs</b><small>${Math.round(mins)} min · ${Math.round(cals)} total kcal</small></div>`;
     acts.forEach(a=>parts+=`<div class="day-detail-row history-subrow"><b>${a.time?formatTime12(a.time)+' · ':''}${esc(a.type||'Cardio')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
   }
+  if(totals((state.nutrition[date]?.foods)||[]).cal>0){
+    const e=energyForDate(date);
+    const label=e.balance<0?'Estimated deficit':e.balance>0?'Estimated surplus':'Estimated balance';
+    parts+=`<div class="day-detail-row energy-history-row"><b>Energy result</b><small>${label}: ${Math.abs(Math.round(e.balance))} kcal · ${Math.round(e.intake)} intake · ${Math.round(e.totalBurn)} estimated burn</small></div>`;
+  }
   const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b>Water</b><small>${water} oz</small></div>`;
   const cd=state.checklistDays[date];if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b>Checklist</b><small>${done} of ${items.length} complete</small></div>`}
   const pd=(state.photoDays||{})[date];if(pd&&Object.values(pd).some(Boolean)){const taken=Object.entries(pd).filter(([,v])=>v).map(([k])=>k[0].toUpperCase()+k.slice(1)).join(' · ');parts+=`<div class="day-detail-row"><b>📷 Progress photos</b><small>${taken}</small></div>`}
@@ -861,6 +912,44 @@ function renderProgress(){
 
   const cardio=currentCardioSeries();
   document.getElementById('cardioChart').innerHTML=cardio.length?svgLineChart(cardio,{valueKey:'pace',suffix:'',minPad:.5,maxPad:.5}):'<p class="notice">Your jog/run pace graph will appear here after you log cardio sessions.</p>';
+
+  const energy=dailyEnergySeries();
+  document.getElementById('energyChart').innerHTML=energy.length?svgLineChart(energy,{valueKey:'energy',suffix:'',minPad:150,maxPad:150}):'<p class="notice">Your energy graph will appear after you log nutrition.</p>';
+
+  const today=todayISO(),weekStart=mondayOf(today);
+  const weekDays=Array.from({length:7},(_,i)=>plusDays(weekStart,i));
+  const rows=weekDays.map(date=>{
+    const n=totals(state.nutrition[date]?.foods||[]);
+    if(!n.cal)return {date};
+    return {date,...n,energy:energyForDate(date).balance};
+  });
+  const logged=rows.filter(x=>x.cal);
+  const avg=logged.length?{
+    cal:logged.reduce((s,x)=>s+x.cal,0)/logged.length,
+    p:logged.reduce((s,x)=>s+x.p,0)/logged.length,
+    c:logged.reduce((s,x)=>s+x.c,0)/logged.length,
+    f:logged.reduce((s,x)=>s+x.f,0)/logged.length,
+    energy:logged.reduce((s,x)=>s+x.energy,0)/logged.length
+  }:null;
+  document.getElementById('currentWeekSnapshot').innerHTML=`<div class="weekly-table">
+    <div class="weekly-row weekly-head"><span>Day</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span>Energy</span></div>
+    ${rows.map(x=>`<div class="weekly-row"><span>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</span><span>${x.cal?Math.round(x.cal):'—'}</span><span>${x.cal?Math.round(x.p):'—'}</span><span>${x.cal?Math.round(x.c):'—'}</span><span>${x.cal?Math.round(x.f):'—'}</span><span>${x.cal?signedKcal(x.energy):'—'}</span></div>`).join('')}
+    <div class="weekly-row weekly-average"><span>Average</span><span>${avg?Math.round(avg.cal):'—'}</span><span>${avg?Math.round(avg.p):'—'}</span><span>${avg?Math.round(avg.c):'—'}</span><span>${avg?Math.round(avg.f):'—'}</span><span>${avg?signedKcal(avg.energy):'—'}</span></div>
+  </div>`;
+
+  const weeks=currentWeeklyMacroEnergy();
+  const all=weeks.length?{
+    cal:weeks.reduce((s,x)=>s+x.cal,0)/weeks.length,
+    p:weeks.reduce((s,x)=>s+x.p,0)/weeks.length,
+    c:weeks.reduce((s,x)=>s+x.c,0)/weeks.length,
+    f:weeks.reduce((s,x)=>s+x.f,0)/weeks.length,
+    energy:weeks.reduce((s,x)=>s+x.energy,0)/weeks.length
+  }:null;
+  document.getElementById('weeklyAverageHistory').innerHTML=weeks.length?`<div class="weekly-table weekly-history-table">
+    <div class="weekly-row weekly-head"><span>Week</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span>Energy</span></div>
+    ${weeks.map(x=>`<div class="weekly-row"><span><b>${x.label}</b><small>${x.range} · ${x.days}d</small></span><span>${Math.round(x.cal)}</span><span>${Math.round(x.p)}</span><span>${Math.round(x.c)}</span><span>${Math.round(x.f)}</span><span>${signedKcal(x.energy)}</span></div>`).join('')}
+    <div class="weekly-row weekly-average"><span>All weeks avg</span><span>${Math.round(all.cal)}</span><span>${Math.round(all.p)}</span><span>${Math.round(all.c)}</span><span>${Math.round(all.f)}</span><span>${signedKcal(all.energy)}</span></div>
+  </div>`:'<p class="notice">Weekly averages will appear after you log nutrition.</p>';
 
   document.getElementById('weightHistory').innerHTML=entries.length?entries.slice(-10).reverse().map(([d,v])=>`<div class="weight-line"><span>${new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><b>${v.am?`AM ${v.am}`:'—'}</b><b>${v.pm?`PM ${v.pm}`:(v.post?`Post ${v.post}`:'—')}</b></div>`).join(''):'<p class="notice">Start entering morning and evening weights to build your current trend.</p>';
 }
