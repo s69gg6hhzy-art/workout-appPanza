@@ -178,3 +178,10 @@
   .workout-history-detail{display:block}
   .workout-history-detail .edit-workout-history-btn{margin-top:10px}
 }
+
+#foodList{overflow-x:auto}
+.food-row{
+  min-width:720px;
+  grid-template-columns:minmax(145px,1.7fr) 72px 72px 64px 64px 64px 105px 38px;
+}
+.history-subrow{padding-left:10px;opacity:.92}

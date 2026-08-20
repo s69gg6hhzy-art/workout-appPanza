@@ -43,6 +43,25 @@ let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
 let timerInterval=null,timerLeft=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null;
+function currentTimeHHMM(){
+  const d=new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function formatTime12(t){
+  if(!t)return '';
+  const [hh,mm]=String(t).split(':');
+  const h=+hh;
+  if(Number.isNaN(h))return String(t);
+  return `${h%12||12}:${String(mm||'00').padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+function workoutTime(h){
+  if(h?.summary?.time)return h.summary.time;
+  if(h?.date){
+    const d=new Date(h.date);
+    if(!Number.isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+  return '';
+}
 function save(){localStorage.setItem('mfState',JSON.stringify(state))}
 function phase(){return program[state.phase]}
 function current(){return phase().workouts[state.workout]}
@@ -196,6 +215,7 @@ function renderToday(){
   document.getElementById('pmWeight').value=wt.pm||'';
   document.getElementById('weightHint').textContent=wt.post?`Post-workout today: ${wt.post} lb`:'';
   renderTodayMacros();renderWater();renderActivities();renderEnergyBalance();renderPhotoTracker();
+  const activityTime=document.getElementById('activityTime');if(activityTime&&!activityTime.value)activityTime.value=currentTimeHHMM();
 }
 function renderTodayMacros(){const n=state.nutrition[todayISO()]||{foods:[]};const t=totals(n.foods||[]),g=state.goals;document.getElementById('todayMacros').innerHTML=macroBoxes(t,g);if(document.getElementById('energyBalance'))renderEnergyBalance();}
 function macroBoxes(t,g){return [['Calories',t.cal,g.cal],['Protein',t.p,g.p],['Carbs',t.c,g.c],['Fat',t.f,g.f]].map(([k,v,goal])=>`<div class="macro-box"><strong>${Math.round(v)}</strong><span>${k}${k==='Calories'?'':' g'}</span><small>/ ${goal}</small></div>`).join('')}
@@ -379,6 +399,7 @@ function editActivity(index){
   const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=(val??'')};
   const typeEl=document.getElementById('activityType');
   if(typeEl)typeEl.value=a.type||'Walk';
+  set('activityTime',a.time||'');
   set('activityMinutes',a.minutes||0);
   set('activitySeconds',a.seconds||0);
   set('activityDistance',a.distance||0);
@@ -404,7 +425,7 @@ function renderActivities(){
     const zones=[1,2,3,4,5].map(z=>a[`z${z}`]).filter(Boolean);
     const zoneLine=zones.length?[1,2,3,4,5].map(z=>a[`z${z}`]?`Z${z} ${a[`z${z}`]}`:'').filter(Boolean).join(' · '):'';
     return `<div class="activity-row">
-      <div><b>${esc(a.type)}</b><small>${bits.join(' · ')}</small>${zoneLine?`<small class="zone-line">${zoneLine}</small>`:''}</div>
+      <div><b>${esc(a.type)}</b><small>${a.time?`${formatTime12(a.time)} · `:''}${bits.join(' · ')}</small>${zoneLine?`<small class="zone-line">${zoneLine}</small>`:''}</div>
       <div class="activity-actions"><button data-activity-edit="${i}" aria-label="Edit ${esc(a.type)}">Edit</button><button data-activity-delete="${i}" aria-label="Delete ${esc(a.type)}">×</button></div>
     </div>`;
   }).join(''):'<p class="notice">No walks or jogs logged today.</p>';
@@ -449,6 +470,7 @@ function setHrDefaultsForType(){
 
 function addActivity(){
   const type=document.getElementById('activityType').value;
+  const time=document.getElementById('activityTime')?.value||currentTimeHHMM();
   const minutes=num('activityMinutes');
   const seconds=Math.min(59,num('activitySeconds'));
   const distance=+document.getElementById('activityDistance').value||0;
@@ -459,7 +481,7 @@ function addActivity(){
   if(!minutes&&!seconds&&!distance&&!calories)return;
   const today=todayISO();
   state.activities[today]=state.activities[today]||[];
-  const entry={type,minutes,seconds,distance,calories,avgHr,...zones};
+  const entry={type,time,minutes,seconds,distance,calories,avgHr,...zones};
   if(activityEditIndex!==null && state.activities[today][activityEditIndex]){
     state.activities[today][activityEditIndex]=entry;
   }else{
@@ -470,6 +492,7 @@ function addActivity(){
   if(addBtn)addBtn.textContent='Add activity';
   ['activityMinutes','activitySeconds','activityDistance','activityCalories'].forEach(id=>document.getElementById(id).value='');
   setHrDefaultsForType();
+  const t=document.getElementById('activityTime');if(t)t.value=currentTimeHHMM();
   save();renderActivities();renderEnergyBalance();
 }
 function renderEnergyBalance(){
@@ -518,13 +541,18 @@ function parseRest(s){if(!s)return 0;const [m,sec]=s.split(':').map(Number);retu
 function startTimer(rest){stopTimer();timerLeft=parseRest(rest);if(!timerLeft)return;document.getElementById('timer').classList.add('show');tick();timerInterval=setInterval(()=>{timerLeft--;tick();if(timerLeft<=0)stopTimer()},1000)}
 function tick(){document.getElementById('timerText').textContent=`${String(Math.floor(timerLeft/60)).padStart(2,'0')}:${String(timerLeft%60).padStart(2,'0')}`}
 function stopTimer(){clearInterval(timerInterval);document.getElementById('timer').classList.remove('show')}
-function openFinish(){document.getElementById('finishWorkoutName').textContent=current().name;document.getElementById('finishModal').classList.add('show');document.getElementById('finishModal').setAttribute('aria-hidden','false')}
+function openFinish(){
+  document.getElementById('finishWorkoutName').textContent=current().name;
+  const t=document.getElementById('sumTime');if(t)t.value=currentTimeHHMM();
+  document.getElementById('finishModal').classList.add('show');
+  document.getElementById('finishModal').setAttribute('aria-hidden','false');
+}
 function closeFinish(){document.getElementById('finishModal').classList.remove('show');document.getElementById('finishModal').setAttribute('aria-hidden','true')}
 function saveWorkout(){
   ensureScheduleState();
   const w=current(),p=phase(),draft=getDraft(),sets={};
   w.ex.forEach((x,i)=>sets[x[0]]=(draft.sets[i]||[]).map(v=>({weight:v.weight||'',reps:v.reps||'',done:!!v.done})));
-  const summary={duration:num('sumDuration'),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),maxHr:num('sumMaxHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
+  const summary={duration:num('sumDuration'),time:document.getElementById('sumTime')?.value||currentTimeHHMM(),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),maxHr:num('sumMaxHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
   const date=new Date().toISOString(),completedPhaseIndex=state.phase;
   state.history.unshift({date,phase:p.name,phaseIndex:state.phase,round:state.round+1,workout:w.name,sets,summary});
   if(summary.postWeight)state.weights[todayISO()]={...(state.weights[todayISO()]||{}),post:summary.postWeight};
@@ -538,12 +566,12 @@ function saveWorkout(){
   save();clearSummary();closeFinish();renderAll();showScreen('today');
 }
 function advanceProgram(){state.workout++;if(state.workout>=phase().workouts.length){state.workout=0;state.round++;if(state.round>=phase().rounds){state.round=0;state.phase++;if(state.phase>=program.length){state.phase=program.length-1;state.round=phase().rounds-1;state.workout=phase().workouts.length-1}}}}
-function clearSummary(){['sumDuration','sumTotalCal','sumAvgHr','sumMaxHr','sumWeight','sumNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})}
+function clearSummary(){['sumDuration','sumTime','sumTotalCal','sumAvgHr','sumMaxHr','sumWeight','sumNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})}
 function renderNutrition(){const d=document.getElementById('nutritionDate').value||todayISO();document.getElementById('nutritionDate').value=d;const g=state.goals;[['goalCal','cal'],['goalP','p'],['goalC','c'],['goalF','f']].forEach(([id,k])=>document.getElementById(id).value=g[k]);state.nutrition[d]=state.nutrition[d]||{foods:[]};const foods=state.nutrition[d].foods;document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);document.getElementById('foodList').innerHTML=foods.length?foods.map((f,i)=>foodRow(f,i)).join(''):'<p class="notice">No foods logged yet.</p>';document.querySelectorAll('.food-row input').forEach(inp=>inp.addEventListener('blur',foodChanged));document.querySelectorAll('.food-row button').forEach(b=>b.addEventListener('click',()=>{foods.splice(+b.dataset.i,1);save();renderNutrition();renderTodayMacros()}));}
-function foodRow(f,i){return `<div class="food-row"><label class="food-name">Food<input data-i="${i}" data-k="name" value="${esc(f.name||'')}"></label><label>Cal<input inputmode="numeric" data-i="${i}" data-k="cal" value="${f.cal||''}"></label><label>P<input inputmode="decimal" data-i="${i}" data-k="p" value="${f.p||''}"></label><label>C<input inputmode="decimal" data-i="${i}" data-k="c" value="${f.c||''}"></label><label>F<input inputmode="decimal" data-i="${i}" data-k="f" value="${f.f||''}"></label><button data-i="${i}">×</button></div>`}
+function foodRow(f,i){return `<div class="food-row"><label class="food-name">Food<input data-i="${i}" data-k="name" value="${esc(f.name||'')}"></label><label>Wt(g)<input inputmode="decimal" data-i="${i}" data-k="weight" value="${f.weight||''}"></label><label>Cal<input inputmode="numeric" data-i="${i}" data-k="cal" value="${f.cal||''}"></label><label>P<input inputmode="decimal" data-i="${i}" data-k="p" value="${f.p||''}"></label><label>C<input inputmode="decimal" data-i="${i}" data-k="c" value="${f.c||''}"></label><label>F<input inputmode="decimal" data-i="${i}" data-k="f" value="${f.f||''}"></label><label>Time<input type="time" data-i="${i}" data-k="time" value="${f.time||''}"></label><button data-i="${i}">×</button></div>`}
 function refreshNutritionTotals(d){const foods=(state.nutrition[d]?.foods)||[],g=state.goals;document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);if(d===todayISO())renderTodayMacros()}
-function foodChanged(e){const d=document.getElementById('nutritionDate').value,foods=state.nutrition[d].foods,i=+e.target.dataset.i,k=e.target.dataset.k;foods[i][k]=k==='name'?e.target.value:(parseFloat(e.target.value)||0);save();refreshNutritionTotals(d)}
-function addFood(){const d=document.getElementById('nutritionDate').value||todayISO();state.nutrition[d]=state.nutrition[d]||{foods:[]};state.nutrition[d].foods.push({name:'',cal:0,p:0,c:0,f:0});save();renderNutrition();setTimeout(()=>document.querySelectorAll('.food-name input')[document.querySelectorAll('.food-name input').length-1]?.focus(),0)}
+function foodChanged(e){const d=document.getElementById('nutritionDate').value,foods=state.nutrition[d].foods,i=+e.target.dataset.i,k=e.target.dataset.k;foods[i][k]=(k==='name'||k==='time')?e.target.value:(parseFloat(e.target.value)||0);save();refreshNutritionTotals(d)}
+function addFood(){const d=document.getElementById('nutritionDate').value||todayISO();state.nutrition[d]=state.nutrition[d]||{foods:[]};state.nutrition[d].foods.push({name:'',weight:0,cal:0,p:0,c:0,f:0,time:currentTimeHHMM()});save();renderNutrition();setTimeout(()=>document.querySelectorAll('.food-name input')[document.querySelectorAll('.food-name input').length-1]?.focus(),0)}
 function totals(foods){return foods.reduce((a,f)=>({cal:a.cal+(+f.cal||0),p:a.p+(+f.p||0),c:a.c+(+f.c||0),f:a.f+(+f.f||0)}),{cal:0,p:0,c:0,f:0})}
 function saveGoals(){state.goals={cal:num('goalCal'),p:num('goalP'),c:num('goalC'),f:num('goalF')};save();renderNutrition();renderTodayMacros()}
 
@@ -554,6 +582,7 @@ function openWorkoutEditor(index){
   const s=h.summary||{};
   document.getElementById('editWorkoutName').textContent=`${h.workout} · ${h.phase} · Round ${h.round}`;
   document.getElementById('editWorkoutDuration').value=s.duration||'';
+  document.getElementById('editWorkoutTime').value=workoutTime(h);
   document.getElementById('editWorkoutCalories').value=(s.totalCalories ?? s.activeCalories ?? '')||'';
   document.getElementById('editWorkoutAvgHr').value=s.avgHr||'';
   document.getElementById('editWorkoutMaxHr').value=s.maxHr||'';
@@ -598,6 +627,7 @@ function saveEditedWorkout(){
   const summary={
     ...(h.summary||{}),
     duration:num('editWorkoutDuration'),
+    time:document.getElementById('editWorkoutTime')?.value||workoutTime(h),
     totalCalories:num('editWorkoutCalories'),
     avgHr:num('editWorkoutAvgHr'),
     maxHr:num('editWorkoutMaxHr'),
@@ -674,7 +704,7 @@ function renderDayDetail(date){
     parts+=`<div class="day-detail-row workout-history-detail">
       <div>
         <b>${esc(h.workout)}</b>
-        <small>${esc(h.phase)} · Round ${h.round}${s.duration?` · ${s.duration} min`:''}${kcal?` · ${kcal} total kcal`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.maxHr?` · ${s.maxHr} max HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}</small>
+        <small>${workoutTime(h)?`${formatTime12(workoutTime(h))} · `:''}${esc(h.phase)} · Round ${h.round}${s.duration?` · ${s.duration} min`:''}${kcal?` · ${kcal} total kcal`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.maxHr?` · ${s.maxHr} max HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}</small>
         ${s.notes?`<small class="history-notes">${esc(s.notes)}</small>`:''}
       </div>
       <button class="secondary compact edit-workout-history-btn" onclick="openWorkoutEditor(${historyIndex})">Edit workout</button>
@@ -682,9 +712,17 @@ function renderDayDetail(date){
   });
 
   if(wt)parts+=`<div class="day-detail-row"><b>Weight</b><small>${wt.am?`AM ${wt.am} lb · `:''}${wt.post?`Post ${wt.post} lb · `:''}${wt.pm?`PM ${wt.pm} lb`:''}</small></div>`;
-  if(nut){const t=totals(nut.foods||[]);parts+=`<div class="day-detail-row"><b>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`}
+  if(nut){
+    const t=totals(nut.foods||[]);
+    parts+=`<div class="day-detail-row"><b>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`;
+    (nut.foods||[]).filter(x=>x.name||x.cal).forEach(x=>parts+=`<div class="day-detail-row history-subrow"><b>${x.time?formatTime12(x.time)+' · ':''}${esc(x.name||'Food')}</b><small>${x.weight?`${x.weight} g · `:''}${Math.round(+x.cal||0)} kcal</small></div>`);
+  }
   const acts=state.activities[date]||[];
-  if(acts.length){const mins=acts.reduce((s,a)=>s+(+a.minutes||0)+((+a.seconds||0)/60),0),cals=acts.reduce((s,a)=>s+(+a.calories||0),0);parts+=`<div class="day-detail-row"><b>Walks / jogs</b><small>${Math.round(mins)} min · ${Math.round(cals)} total kcal</small></div>`}
+  if(acts.length){
+    const mins=acts.reduce((s,a)=>s+(+a.minutes||0)+((+a.seconds||0)/60),0),cals=acts.reduce((s,a)=>s+(+a.calories||0),0);
+    parts+=`<div class="day-detail-row"><b>Walks / jogs</b><small>${Math.round(mins)} min · ${Math.round(cals)} total kcal</small></div>`;
+    acts.forEach(a=>parts+=`<div class="day-detail-row history-subrow"><b>${a.time?formatTime12(a.time)+' · ':''}${esc(a.type||'Cardio')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
+  }
   const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b>Water</b><small>${water} oz</small></div>`;
   const cd=state.checklistDays[date];if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b>Checklist</b><small>${done} of ${items.length} complete</small></div>`}
   const pd=(state.photoDays||{})[date];if(pd&&Object.values(pd).some(Boolean)){const taken=Object.entries(pd).filter(([,v])=>v).map(([k])=>k[0].toUpperCase()+k.slice(1)).join(' · ');parts+=`<div class="day-detail-row"><b>📷 Progress photos</b><small>${taken}</small></div>`}
