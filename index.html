@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=52">
+  <link rel="stylesheet" href="style.css?v=53">
 </head>
 <body>
 <div class="app">
@@ -80,7 +80,7 @@
           <label>Zone 5<input id="activityZ5" placeholder="0:00"></label>
         </div>
       </details>
-      <button class="secondary compact" id="addActivityBtn" type="button">+ Add activity</button>
+      <button class="secondary compact" id="addActivityBtn" type="button" onclick="addActivity()">+ Add activity</button>
     </div>
 
     <div class="section-title">Progress photos</div>
@@ -119,7 +119,7 @@
     <div class="card">
       <div class="eyebrow">Food log</div>
       <div id="foodList"></div>
-      <button class="secondary compact" id="addFoodBtn" type="button">+ Add food</button>
+      <button class="secondary compact" id="addFoodBtn" type="button" onclick="addFood()">+ Add food</button>
     </div>
     <div class="card">
       <div class="eyebrow">Daily targets</div>
@@ -136,7 +136,7 @@
   <section id="checklist" class="screen">
     <div class="top"><div class="title">Checklist</div><div class="pill" id="checklistDate"></div></div>
     <div class="card">
-      <div class="checklist-head"><div><div class="eyebrow">Daily checklist</div><h3 id="checklistCount">0 of 0 complete</h3></div><button class="secondary compact" id="reorderChecklistBtn">Reorder</button></div>
+      <div class="checklist-head"><div><div class="eyebrow">Daily checklist</div><h3 id="checklistCount">0 of 0 complete</h3></div><button class="secondary compact" id="reorderChecklistBtn" type="button" onclick="toggleChecklistReorder()">Reorder</button></div>
       <div id="checklistList"></div>
     </div>
     <div class="card checklist-add">
@@ -285,7 +285,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=52"></script>
-<script src="app.js?v=52"></script>
+<script src="data.js?v=53"></script>
+<script src="app.js?v=53"></script>
 </body>
 </html>
