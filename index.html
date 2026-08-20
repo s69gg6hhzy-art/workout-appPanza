@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=35">
+  <link rel="stylesheet" href="style.css?v=37">
 </head>
 <body>
 <div class="app">
@@ -21,6 +21,20 @@
       <input id="logDatePicker" type="date" class="daily-date-picker" onchange="setLogDate(this.value)">
       <button class="ghost compact" id="logTodayBtn" type="button" onclick="setLogDate(todayISO())">Today</button>
       <p class="tiny">Weight, nutrition, energy, water, cardio, checklist and progress-photo tracking use this date. Workout scheduling stays on today.</p>
+    </div>
+
+    <div class="section-title">Energy balance</div>
+    <div class="card" id="energyBalance"></div>
+
+    <div class="section-title">Nutrition</div>
+    <div class="card macro-snapshot" id="todayMacros"></div>
+
+    <div class="section-title">Water</div>
+    <div class="card water-card">
+      <div class="water-head"><div><strong id="waterAmount">0 / 96 oz</strong><span id="waterDateLabel">selected day</span></div><label>Goal <input id="waterGoal" inputmode="numeric" value="96"></label></div>
+      <div class="water-track"><div id="waterProgress"></div></div>
+      <div class="water-controls"><button class="secondary" id="waterMinusBtn">− 8 oz</button><button class="primary water-add" id="waterPlusBtn">+ 8 oz</button></div>
+      <button class="ghost water-goal-save" id="saveWaterGoalBtn">Save water goal</button>
     </div>
 
     <div class="section-title">Workout</div>
@@ -39,20 +53,6 @@
       <label>Evening <span>lb</span><input id="pmWeight" inputmode="decimal" placeholder="188.0"></label>
       <button class="secondary compact" id="saveWeightBtn">Save weights</button>
       <div class="tiny" id="weightHint"></div>
-    </div>
-
-    <div class="section-title">Nutrition</div>
-    <div class="card macro-snapshot" id="todayMacros"></div>
-
-    <div class="section-title">Energy balance</div>
-    <div class="card" id="energyBalance"></div>
-
-    <div class="section-title">Water</div>
-    <div class="card water-card">
-      <div class="water-head"><div><strong id="waterAmount">0 / 96 oz</strong><span id="waterDateLabel">selected day</span></div><label>Goal <input id="waterGoal" inputmode="numeric" value="96"></label></div>
-      <div class="water-track"><div id="waterProgress"></div></div>
-      <div class="water-controls"><button class="secondary" id="waterMinusBtn">− 8 oz</button><button class="primary water-add" id="waterPlusBtn">+ 8 oz</button></div>
-      <button class="ghost water-goal-save" id="saveWaterGoalBtn">Save water goal</button>
     </div>
 
     <div class="section-title">Walks & jogs</div>
@@ -98,7 +98,7 @@
       <div class="stat"><strong id="completedStat">0</strong><span>workouts completed</span></div>
       <div class="stat"><strong id="phaseStat">1 / 3</strong><span>current phase</span></div>
     </div>
-  </section>
+</section>
 
   <section id="workout" class="screen">
     <div class="top"><button class="ghost" data-go="today">← Back</button><div class="pill" id="workoutPhase"></div></div>
@@ -111,16 +111,6 @@
   <section id="nutrition" class="screen">
     <div class="top"><div class="title">Nutrition</div><input class="date-control" id="nutritionDate" type="date"></div>
     <div class="card">
-      <div class="eyebrow">Daily targets</div>
-      <div class="target-grid">
-        <label>Calories<input id="goalCal" inputmode="numeric"></label>
-        <label>Protein<input id="goalP" inputmode="numeric"></label>
-        <label>Carbs<input id="goalC" inputmode="numeric"></label>
-        <label>Fat<input id="goalF" inputmode="numeric"></label>
-      </div>
-      <button class="secondary compact" id="saveGoalsBtn">Save targets</button>
-    </div>
-    <div class="card">
       <div class="eyebrow">Daily totals</div>
       <div class="macro-grid" id="macroTotals"></div>
     </div>
@@ -129,6 +119,14 @@
       <div id="foodList"></div>
       <button class="secondary compact" id="addFoodBtn">+ Add food</button>
     </div>
+    <div class="card">
+      <div class="eyebrow">Daily targets</div>
+      <div class="target-grid">
+        <label>Calories<input id="goalCal" inputmode="numeric"></label>
+        <label>Protein<input id="goalP" inputmode="numeric"></label>
+        <label>Carbs<input id="goalC" inputmode="numeric"></label>
+        <label>Fat<input id="goalF" inputmode="numeric"></label>
+      </div>
   </section>
 
   <section id="checklist" class="screen">
@@ -274,7 +272,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=35"></script>
-<script src="app.js?v=35"></script>
+<script src="data.js?v=37"></script>
+<script src="app.js?v=37"></script>
 </body>
 </html>
