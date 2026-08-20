@@ -333,7 +333,7 @@ function renderChecklist(){
   const day=checklistDay();
   const items=state.checklistItems||[];
   const done=items.filter(x=>day[x.id]).length;
-  document.getElementById('checklistDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('checklistDate').textContent=formatLogDate(logDate());
   document.getElementById('checklistCount').textContent=`${done} of ${items.length} complete`;
   const reorderBtn=document.getElementById('reorderChecklistBtn');if(reorderBtn)reorderBtn.textContent=checklistReorderMode?'Done':'Reorder';
   list.innerHTML=items.length?items.map(item=>`<div class="checklist-row ${day[item.id]?'done':''} ${checklistReorderMode?'reorder-mode':''}" data-item="${item.id}">
@@ -845,7 +845,6 @@ function renderDayDetail(date){
   const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b>Water</b><small>${water} oz</small></div>`;
   const cd=state.checklistDays[date];if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b>Checklist</b><small>${done} of ${items.length} complete</small></div>`}
   const pd=(state.photoDays||{})[date];if(pd&&Object.values(pd).some(Boolean)){const taken=Object.entries(pd).filter(([,v])=>v).map(([k])=>k[0].toUpperCase()+k.slice(1)).join(' · ');parts+=`<div class="day-detail-row"><b>📷 Progress photos</b><small>${taken}</small></div>`}
-  if(date<=todayISO())parts+=`<button class="secondary compact history-edit-day-btn" onclick="setLogDate('${date}');go('today')">Edit this day</button>`;
   if(!hs.length&&!state.restDays[date]&&!wt&&!nut&&!acts.length&&!water&&!cd&&!anyPhotoTaken(date))parts+='<p class="notice">No saved data for this day.</p>';
   document.getElementById('dayDetail').innerHTML=parts;
 }

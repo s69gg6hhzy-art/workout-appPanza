@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=32">
+  <link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
 <div class="app">
@@ -167,6 +167,26 @@
       <p class="tiny chart-note">Historical weekly AM averages + DEXA checkpoint + new AM weights logged in the app.</p>
     </div>
     <div class="card chart-card">
+      <div class="chart-head"><div><div class="eyebrow">Energy trend</div><h3>Daily energy balance</h3></div></div>
+      <div id="energyChart" class="chart-wrap"></div>
+      <p class="tiny chart-note">Negative = estimated deficit · Positive = estimated surplus.</p>
+    </div>
+    <div class="card chart-card">
+      <div class="chart-head"><div><div class="eyebrow">Cardio progress</div><h3>Jog / run pace</h3></div></div>
+      <div id="cardioChart" class="chart-wrap"></div>
+      <p class="tiny chart-note">This fills automatically from new Jog and Run entries.</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Current week</div>
+      <h3>Macro + energy snapshot</h3>
+      <div class="weekly-table-wrap"><div id="currentWeekSnapshot"></div></div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Weekly history</div>
+      <h3>Weekly averages</h3>
+      <div class="weekly-table-wrap"><div id="weeklyAverageHistory"></div></div>
+    </div>
+    <div class="card chart-card">
       <div class="chart-head"><div><div class="eyebrow">Nutrition history</div><h3>Average daily calories by week</h3></div></div>
       <div id="calorieChart" class="chart-wrap"></div>
       <p class="tiny chart-note">Session 1 selected weekly averages, Brazil weeks 1–10, and future weekly averages from your app.</p>
@@ -175,30 +195,6 @@
       <div class="chart-head"><div><div class="eyebrow">Protein history</div><h3>Average protein by week</h3></div></div>
       <div id="proteinChart" class="chart-wrap"></div>
     </div>
-    <div class="card chart-card">
-      <div class="chart-head"><div><div class="eyebrow">Cardio progress</div><h3>Jog / run pace</h3></div></div>
-      <div id="cardioChart" class="chart-wrap"></div>
-      <p class="tiny chart-note">This fills automatically from new Jog and Run entries.</p>
-    </div>
-
-    <div class="card chart-card">
-      <div class="chart-head"><div><div class="eyebrow">Energy trend</div><h3>Daily energy balance</h3></div></div>
-      <div id="energyChart" class="chart-wrap"></div>
-      <p class="tiny chart-note">Negative = estimated deficit · Positive = estimated surplus.</p>
-    </div>
-
-    <div class="card">
-      <div class="eyebrow">Current week</div>
-      <h3>Macro + energy snapshot</h3>
-      <div class="weekly-table-wrap"><div id="currentWeekSnapshot"></div></div>
-    </div>
-
-    <div class="card">
-      <div class="eyebrow">Weekly history</div>
-      <h3>Weekly averages</h3>
-      <div class="weekly-table-wrap"><div id="weeklyAverageHistory"></div></div>
-    </div>
-
 
     <div class="card">
       <div class="eyebrow">Progress photos</div>
@@ -278,7 +274,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=32"></script>
-<script src="app.js?v=32"></script>
+<script src="data.js?v=33"></script>
+<script src="app.js?v=33"></script>
 </body>
 </html>

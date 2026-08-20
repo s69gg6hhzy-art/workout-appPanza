@@ -214,7 +214,6 @@
 .daily-date-picker{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
 .daily-date-card #logTodayBtn{align-self:center}
 .daily-date-nav button:disabled{opacity:.3}
-.history-edit-day-btn{margin-top:12px}
 .activity-form .activity-time-field{max-width:125px!important}
 .activity-form .activity-time-field input{max-width:125px!important}
 
