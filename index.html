@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 <div class="app">
@@ -201,7 +201,6 @@
     <div class="modal-head"><div><div class="eyebrow">Workout complete</div><h2 id="finishWorkoutName"></h2></div><button class="ghost" id="closeFinish">✕</button></div>
     <div class="summary-grid">
       <label>Duration <span>min</span><input id="sumDuration" inputmode="numeric"></label>
-      <label>Total calories <span>kcal</span><input id="sumActiveCal" inputmode="numeric"></label>
       <label>Total calories <span>kcal</span><input id="sumTotalCal" inputmode="numeric"></label>
       <label>Avg heart rate <span>bpm</span><input id="sumAvgHr" inputmode="numeric"></label>
       <label>Max heart rate <span>bpm</span><input id="sumMaxHr" inputmode="numeric"></label>
@@ -209,6 +208,30 @@
     </div>
     <label class="notes-label">Notes<textarea id="sumNotes" rows="3" placeholder="Optional notes"></textarea></label>
     <button class="primary" id="saveWorkoutBtn">Save workout</button>
+  </div>
+</div>
+
+
+<div class="modal" id="editWorkoutModal" aria-hidden="true">
+  <div class="modal-sheet edit-workout-sheet">
+    <div class="modal-head">
+      <div><div class="eyebrow">Edit completed workout</div><h2 id="editWorkoutName"></h2></div>
+      <button class="ghost" id="closeEditWorkout" onclick="closeWorkoutEditor()">✕</button>
+    </div>
+
+    <div class="summary-grid">
+      <label>Duration <span>min</span><input id="editWorkoutDuration" inputmode="numeric"></label>
+      <label>Total calories <span>kcal</span><input id="editWorkoutCalories" inputmode="numeric"></label>
+      <label>Avg heart rate <span>bpm</span><input id="editWorkoutAvgHr" inputmode="numeric"></label>
+      <label>Max heart rate <span>bpm</span><input id="editWorkoutMaxHr" inputmode="numeric"></label>
+      <label>Post-workout weight <span>lb</span><input id="editWorkoutWeight" inputmode="decimal"></label>
+    </div>
+
+    <div class="section-title edit-sets-title">Sets / reps / weight</div>
+    <div id="editWorkoutSets"></div>
+
+    <label class="notes-label">Notes<textarea id="editWorkoutNotes" rows="3" placeholder="Optional notes"></textarea></label>
+    <button class="primary" id="saveEditedWorkout" onclick="saveEditedWorkout()">Save changes</button>
   </div>
 </div>
 
@@ -221,7 +244,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=25"></script>
-<script src="app.js?v=25"></script>
+<script src="data.js?v=26"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>
