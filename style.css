@@ -218,3 +218,54 @@
 .activity-form .activity-time-field input{max-width:125px!important}
 
 .daily-date-card + .section-title{margin-top:20px}
+
+.macro-dial-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  margin-top:12px
+}
+.macro-dial{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  min-width:0
+}
+.macro-dial svg{
+  width:118px;
+  max-width:100%;
+  height:auto;
+  overflow:visible
+}
+.macro-dial-track,
+.macro-dial-progress{
+  fill:none;
+  stroke-width:10
+}
+.macro-dial-track{
+  stroke:var(--line)
+}
+.macro-dial-progress{
+  stroke:currentColor;
+  stroke-linecap:round;
+  transform:rotate(-90deg);
+  transform-origin:55px 55px;
+  transition:stroke-dashoffset .25s ease
+}
+.macro-dial-value{
+  fill:currentColor;
+  font-size:22px;
+  font-weight:800
+}
+.macro-dial-percent{
+  fill:currentColor;
+  opacity:.68;
+  font-size:12px;
+  font-weight:700
+}
+.macro-dial b{margin-top:2px}
+.macro-dial small{margin-top:3px;opacity:.65}
+@media(min-width:620px){
+  .macro-dial-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}

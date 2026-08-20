@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=33">
+  <link rel="stylesheet" href="style.css?v=34">
 </head>
 <body>
 <div class="app">
@@ -122,7 +122,7 @@
     </div>
     <div class="card">
       <div class="eyebrow">Daily totals</div>
-      <div class="macro-grid" id="macroTotals"></div>
+      <div class="macro-dial-grid" id="macroTotals"></div>
     </div>
     <div class="card">
       <div class="eyebrow">Food log</div>
@@ -162,11 +162,6 @@
       <div id="weightHistory" class="weight-history"></div>
     </div>
     <div class="card chart-card">
-      <div class="chart-head"><div><div class="eyebrow">Historical weight</div><h3>Weight over time</h3></div><span class="badge measured">2025 → now</span></div>
-      <div id="weightChart" class="chart-wrap"></div>
-      <p class="tiny chart-note">Historical weekly AM averages + DEXA checkpoint + new AM weights logged in the app.</p>
-    </div>
-    <div class="card chart-card">
       <div class="chart-head"><div><div class="eyebrow">Energy trend</div><h3>Daily energy balance</h3></div></div>
       <div id="energyChart" class="chart-wrap"></div>
       <p class="tiny chart-note">Negative = estimated deficit · Positive = estimated surplus.</p>
@@ -185,6 +180,11 @@
       <div class="eyebrow">Weekly history</div>
       <h3>Weekly averages</h3>
       <div class="weekly-table-wrap"><div id="weeklyAverageHistory"></div></div>
+    </div>
+    <div class="card chart-card">
+      <div class="chart-head"><div><div class="eyebrow">Historical weight</div><h3>Weight over time</h3></div><span class="badge measured">2025 → now</span></div>
+      <div id="weightChart" class="chart-wrap"></div>
+      <p class="tiny chart-note">Historical weekly AM averages + DEXA checkpoint + new AM weights logged in the app.</p>
     </div>
     <div class="card chart-card">
       <div class="chart-head"><div><div class="eyebrow">Nutrition history</div><h3>Average daily calories by week</h3></div></div>
@@ -274,7 +274,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=33"></script>
-<script src="app.js?v=33"></script>
+<script src="data.js?v=34"></script>
+<script src="app.js?v=34"></script>
 </body>
 </html>

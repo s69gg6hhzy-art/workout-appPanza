@@ -288,6 +288,29 @@ function renderToday(){
 }
 function renderTodayMacros(){const n=state.nutrition[logDate()]||{foods:[]};const t=totals(n.foods||[]),g=state.goals;document.getElementById('todayMacros').innerHTML=macroBoxes(t,g);if(document.getElementById('energyBalance'))renderEnergyBalance();}
 function macroBoxes(t,g){return [['Calories',t.cal,g.cal],['Protein',t.p,g.p],['Carbs',t.c,g.c],['Fat',t.f,g.f]].map(([k,v,goal])=>`<div class="macro-box"><strong>${Math.round(v)}</strong><span>${k}${k==='Calories'?'':' g'}</span><small>/ ${goal}</small></div>`).join('')}
+function macroDial(label,value,goal){
+  const v=+(value||0),g=+(goal||0),pct=g?Math.round(v/g*100):0;
+  const capped=Math.max(0,Math.min(100,pct));
+  const radius=44,circ=2*Math.PI*radius,offset=circ*(1-capped/100);
+  return `<div class="macro-dial">
+    <svg viewBox="0 0 110 110" role="img" aria-label="${label} ${Math.round(v)} of ${g}, ${pct}% of goal">
+      <circle class="macro-dial-track" cx="55" cy="55" r="${radius}"></circle>
+      <circle class="macro-dial-progress" cx="55" cy="55" r="${radius}" stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"></circle>
+      <text x="55" y="50" text-anchor="middle" class="macro-dial-value">${Math.round(v)}</text>
+      <text x="55" y="69" text-anchor="middle" class="macro-dial-percent">${pct}%</text>
+    </svg>
+    <b>${label}</b>
+    <small>Goal ${g}${label==='Calories'?' kcal':' g'}</small>
+  </div>`;
+}
+function macroDials(t,g){
+  return [
+    ['Calories',t.cal,g.cal],
+    ['Protein',t.p,g.p],
+    ['Carbs',t.c,g.c],
+    ['Fat',t.f,g.f]
+  ].map(([label,value,goal])=>macroDial(label,value,goal)).join('');
+}
 function saveWeights(){const d=logDate();state.weights[d]={...(state.weights[d]||{}),am:num('amWeight'),pm:num('pmWeight')};save();renderProgress();renderDailyLogSections();}
 
 function renderWater(){
@@ -681,7 +704,7 @@ function saveWorkout(){
 }
 function advanceProgram(){state.workout++;if(state.workout>=phase().workouts.length){state.workout=0;state.round++;if(state.round>=phase().rounds){state.round=0;state.phase++;if(state.phase>=program.length){state.phase=program.length-1;state.round=phase().rounds-1;state.workout=phase().workouts.length-1}}}}
 function clearSummary(){['sumDuration','sumTime','sumTotalCal','sumAvgHr','sumMaxHr','sumWeight','sumNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})}
-function renderNutrition(){const d=document.getElementById('nutritionDate').value||logDate();document.getElementById('nutritionDate').value=d;const g=state.goals;[['goalCal','cal'],['goalP','p'],['goalC','c'],['goalF','f']].forEach(([id,k])=>document.getElementById(id).value=g[k]);state.nutrition[d]=state.nutrition[d]||{foods:[]};const foods=state.nutrition[d].foods;document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);document.getElementById('foodList').innerHTML=foods.length?foods.map((f,i)=>foodRow(f,i)).join(''):'<p class="notice">No foods logged yet.</p>';document.querySelectorAll('.food-row input').forEach(inp=>inp.addEventListener('blur',foodChanged));document.querySelectorAll('.food-row button').forEach(b=>b.addEventListener('click',()=>{foods.splice(+b.dataset.i,1);save();renderNutrition();renderTodayMacros()}));}
+function renderNutrition(){const d=document.getElementById('nutritionDate').value||logDate();document.getElementById('nutritionDate').value=d;const g=state.goals;[['goalCal','cal'],['goalP','p'],['goalC','c'],['goalF','f']].forEach(([id,k])=>document.getElementById(id).value=g[k]);state.nutrition[d]=state.nutrition[d]||{foods:[]};const foods=state.nutrition[d].foods;document.getElementById('macroTotals').innerHTML=macroDials(totals(foods),g);document.getElementById('foodList').innerHTML=foods.length?foods.map((f,i)=>foodRow(f,i)).join(''):'<p class="notice">No foods logged yet.</p>';document.querySelectorAll('.food-row input').forEach(inp=>inp.addEventListener('blur',foodChanged));document.querySelectorAll('.food-row button').forEach(b=>b.addEventListener('click',()=>{foods.splice(+b.dataset.i,1);save();renderNutrition();renderTodayMacros()}));}
 function foodRow(f,i){return `<div class="food-row"><label class="food-name">Food<input data-i="${i}" data-k="name" value="${esc(f.name||'')}"></label><label>Wt(g)<input inputmode="decimal" data-i="${i}" data-k="weight" value="${f.weight||''}"></label><label>Cal<input inputmode="numeric" data-i="${i}" data-k="cal" value="${f.cal||''}"></label><label>P<input inputmode="decimal" data-i="${i}" data-k="p" value="${f.p||''}"></label><label>C<input inputmode="decimal" data-i="${i}" data-k="c" value="${f.c||''}"></label><label>F<input inputmode="decimal" data-i="${i}" data-k="f" value="${f.f||''}"></label><label>Time<input type="time" data-i="${i}" data-k="time" value="${f.time||''}"></label><button data-i="${i}">×</button></div>`}
 function refreshNutritionTotals(d){const foods=(state.nutrition[d]?.foods)||[],g=state.goals;document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);if(d===logDate()){renderTodayMacros();renderEnergyBalance();}}
 function foodChanged(e){const d=document.getElementById('nutritionDate').value,foods=state.nutrition[d].foods,i=+e.target.dataset.i,k=e.target.dataset.k;foods[i][k]=(k==='name'||k==='time')?e.target.value:(parseFloat(e.target.value)||0);save();refreshNutritionTotals(d)}
