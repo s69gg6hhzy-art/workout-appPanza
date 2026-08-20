@@ -601,14 +601,22 @@ function editActivity(index){
   set('activityAvgHr',a.avgHr||0);
   ['z1','z2','z3','z4','z5'].forEach(k=>set('activity'+k.toUpperCase(),a[k]||''));
   const addBtn=document.getElementById('addActivityBtn');
-  if(addBtn)addBtn.textContent='Save changes';
+  if(addBtn){
+    addBtn.textContent='Save changes';
+    addBtn.disabled=false;
+    addBtn.type='button';
+  }
 }
 
 
 function resetActivityEntryForm(){
   activityEditIndex=null;
   const addBtn=document.getElementById('addActivityBtn');
-  if(addBtn)addBtn.textContent='+ Add activity';
+  if(addBtn){
+    addBtn.textContent='+ Add activity';
+    addBtn.disabled=false;
+    addBtn.type='button';
+  }
   const type=document.getElementById('activityType');
   if(type)type.value='Walk';
   ['activityDistance','activityMinutes','activitySeconds','activityCalories','activityAvgHr','activityZ1','activityZ2','activityZ3','activityZ4','activityZ5']
@@ -694,13 +702,16 @@ function addActivity(){
   const date=logDate();
   state.activities[date]=state.activities[date]||[];
   const entry={type,time,minutes,seconds,distance,calories,avgHr,...zones};
-  if(activityEditIndex!==null && state.activities[date][activityEditIndex]){
-    state.activities[date][activityEditIndex]=entry;
+  const editIndex=activityEditIndex;
+  if(editIndex!==null && state.activities[date][editIndex]){
+    state.activities[date][editIndex]=entry;
   }else{
     state.activities[date].push(entry);
   }
+  save();
   resetActivityEntryForm();
-  save();renderActivities();renderEnergyBalance();
+  renderActivities();
+  renderEnergyBalance();
 }
 function renderEnergyBalance(){
   const el=document.getElementById('energyBalance');
@@ -1400,7 +1411,8 @@ function num(id){return parseFloat(document.getElementById(id).value)||0}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.go)));document.getElementById('startBtn').addEventListener('click',()=>showScreen('workout'));
 document.getElementById('ackRestBtn').addEventListener('click',acknowledgeRest);document.getElementById('finishBtn').addEventListener('click',openFinish);document.getElementById('closeFinish').addEventListener('click',closeFinish);document.getElementById('saveWorkoutBtn').addEventListener('click',saveWorkout);document.getElementById('skipTimer').addEventListener('click',stopTimer);document.getElementById('saveWeightBtn').addEventListener('click',saveWeights);document.getElementById('nutritionDate').addEventListener('change',renderNutrition);document.getElementById('addFoodBtn').addEventListener('click',addFood);document.getElementById('saveGoalsBtn').addEventListener('click',saveGoals);document.getElementById('prevMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderHistory()});document.getElementById('nextMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderHistory()});document.getElementById('activityType').addEventListener('change',setHrDefaultsForType);
-document.getElementById('addActivityBtn').addEventListener('click',addActivity);
+const activityAddBtn=document.getElementById('addActivityBtn');
+if(activityAddBtn)activityAddBtn.onclick=addActivity;
 document.getElementById('waterMinusBtn').addEventListener('click',()=>changeWater(-8));
 document.getElementById('waterPlusBtn').addEventListener('click',()=>changeWater(8));
 document.getElementById('saveWaterGoalBtn').addEventListener('click',saveWaterGoal);
