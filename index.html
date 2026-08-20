@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=58">
+  <link rel="stylesheet" href="style.css?v=59">
 </head>
 <body>
 <div class="app">
@@ -265,12 +265,18 @@
 
 <div class="modal" id="editWorkoutModal" aria-hidden="true">
   <div class="modal-sheet edit-workout-sheet">
-    <div class="modal-head">
-      <div><div class="eyebrow">Edit completed workout</div><h2 id="editWorkoutName"></h2></div>
-      <button class="ghost" id="closeEditWorkout" onclick="closeWorkoutEditor()">✕</button>
+    <div class="edit-modal-topbar">
+      <button class="ghost compact" id="closeEditWorkout" type="button" onclick="closeWorkoutEditor()">Cancel</button>
+      <div class="edit-modal-heading">Edit Completed Workout</div>
+      <button class="ghost compact edit-save-top" type="button" onclick="saveEditedWorkout()">Save</button>
+    </div>
+    <div class="edit-workout-identity">
+      <h2 id="editWorkoutName"></h2>
+      <div class="muted" id="editWorkoutMeta"></div>
     </div>
 
-    <div class="summary-grid">
+    <div class="section-title edit-section-label">Duration</div>
+    <div class="summary-grid edit-summary-grid">
       <label class="duration-field">Duration <span>HH : MM : SS</span>
         <div class="duration-picker" aria-label="Workout duration">
           <select id="editWorkoutDurationH" aria-label="Hours"><option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option></select>
@@ -290,8 +296,8 @@
     <div class="section-title edit-sets-title">Sets / reps / weight</div>
     <div id="editWorkoutSets"></div>
 
-    <label class="notes-label">Notes<textarea id="editWorkoutNotes" rows="3" placeholder="Optional notes"></textarea></label>
-    <button class="primary" id="saveEditedWorkout" onclick="saveEditedWorkout()">Save changes</button>
+    <label class="notes-label edit-notes-label"><span>Notes (optional)</span><textarea id="editWorkoutNotes" rows="4" maxlength="200" placeholder="How did it go?"></textarea></label>
+    <button class="primary edit-save-bottom" id="saveEditedWorkout" type="button" onclick="saveEditedWorkout()">Save Changes</button>
   </div>
 </div>
 
@@ -304,7 +310,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=58"></script>
-<script src="app.js?v=58"></script>
+<script src="data.js?v=59"></script>
+<script src="app.js?v=59"></script>
 </body>
 </html>

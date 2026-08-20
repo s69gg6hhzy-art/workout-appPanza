@@ -992,12 +992,32 @@ function saveGoals(){
   alert(`Daily targets saved from ${new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})} forward.`);
 }
 
+
+function openWorkoutEditorByDate(date,workout,phase,round){
+  const index=(state.history||[]).findIndex(h=>
+    isoDate(h.date)===date &&
+    String(h.workout||'')===String(workout||'') &&
+    String(h.phase||'')===String(phase||'') &&
+    Number(h.round||0)===Number(round||0)
+  );
+  if(index<0){
+    alert('Could not find this completed workout. Please refresh and try again.');
+    return;
+  }
+  openWorkoutEditor(index);
+}
+
 function openWorkoutEditor(index){
   const h=state.history[index];
   if(!h)return;
   workoutEditIndex=index;
   const s=h.summary||{};
   document.getElementById('editWorkoutName').textContent=`${h.workout} · ${h.phase} · Round ${h.round}`;
+  const meta=document.getElementById('editWorkoutMeta');
+  if(meta){
+    const d=isoDate(h.date);
+    meta.textContent=`${new Date(d+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric',year:'numeric'})}${workoutTime(h)?' · '+formatTime12(workoutTime(h)):''}`;
+  }
   setDurationPicker('editWorkout',s.duration);
   document.getElementById('editWorkoutTime').value=workoutTime(h);
   document.getElementById('editWorkoutCalories').value=(s.totalCalories ?? s.activeCalories ?? '')||'';
@@ -1116,15 +1136,17 @@ function renderDayDetail(date){
 
   if(hs.length)hs.forEach(h=>{
     const s=h.summary||{};
-    const historyIndex=state.history.indexOf(h);
     const kcal=(s.totalCalories ?? s.activeCalories ?? 0);
-    parts+=`<div class="day-detail-row workout-history-detail">
-      <div>
-        <b>${esc(h.workout)}</b>
-        <small>${workoutTime(h)?`${formatTime12(workoutTime(h))} · `:''}${esc(h.phase)} · Round ${h.round}${s.duration?` · ${formatWorkoutDuration(s.duration)}`:''}${kcal?` · ${kcal} total kcal`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.maxHr?` · ${s.maxHr} max HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}</small>
+    const safeWorkout=String(h.workout||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const safePhase=String(h.phase||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const durationText=s.duration?formatWorkoutDuration(s.duration):'';
+    parts+=`<div class="day-detail-row workout-history-detail workout-history-tappable" onclick="openWorkoutEditorByDate('${date}','${safeWorkout}','${safePhase}',${Number(h.round||0)})">
+      <div class="workout-history-main">
+        <b>${esc(h.workout)} · ${esc(h.phase)} · Round ${h.round}</b>
+        <small>${workoutTime(h)?`${formatTime12(workoutTime(h))}`:''}${kcal?`${workoutTime(h)?' · ':''}${kcal} kcal`:''}${durationText?`${(workoutTime(h)||kcal)?' · ':''}${durationText}`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}</small>
         ${s.notes?`<small class="history-notes">${esc(s.notes)}</small>`:''}
       </div>
-      <button class="secondary compact edit-workout-history-btn" onclick="openWorkoutEditor(${historyIndex})">Edit workout</button>
+      <button class="ghost compact edit-workout-history-btn" type="button" aria-label="Edit workout" onclick="event.stopPropagation();openWorkoutEditorByDate('${date}','${safeWorkout}','${safePhase}',${Number(h.round||0)})">•••</button>
     </div>`;
   });
 
