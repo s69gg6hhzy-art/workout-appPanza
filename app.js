@@ -832,11 +832,36 @@ function startTimer(rest){
     paint();
   },1000);
 }
+
+function durationPickerValue(prefix){
+  const h=document.getElementById(prefix+'DurationH')?.value||'00';
+  const m=document.getElementById(prefix+'DurationM')?.value||'00';
+  const s=document.getElementById(prefix+'DurationS')?.value||'00';
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function setDurationPicker(prefix,value){
+  const formatted=formatWorkoutDuration(value)||'00:00:00';
+  const [h='00',m='00',s='00']=formatted.split(':');
+  const eh=document.getElementById(prefix+'DurationH');
+  const em=document.getElementById(prefix+'DurationM');
+  const es=document.getElementById(prefix+'DurationS');
+  if(eh)eh.value=String(Math.min(23,Math.max(0,+h||0))).padStart(2,'0');
+  if(em)em.value=String(Math.min(59,Math.max(0,+m||0))).padStart(2,'0');
+  if(es)es.value=String(Math.min(59,Math.max(0,+s||0))).padStart(2,'0');
+  const hidden=document.getElementById(prefix==='sum'?'sumDuration':'editWorkoutDuration');
+  if(hidden)hidden.value=durationPickerValue(prefix);
+}
+function syncDurationPicker(prefix){
+  const hidden=document.getElementById(prefix==='sum'?'sumDuration':'editWorkoutDuration');
+  if(hidden)hidden.value=durationPickerValue(prefix);
+}
+
 function openFinish(){
   const modal=document.getElementById('finishModal');
   if(!modal)return;
   const time=document.getElementById('sumTime');
   if(time&&!time.value)time.value=currentTimeHHMM();
+  setDurationPicker('sum',document.getElementById('sumDuration')?.value||'00:00:00');
   modal.classList.add('show');
   modal.setAttribute('aria-hidden','false');
 }
@@ -918,7 +943,7 @@ function saveWorkout(){
   ensureScheduleState();
   const w=current(),p=phase(),draft=getDraft(),sets={};
   w.ex.forEach((x,i)=>sets[x[0]]=(draft.sets[i]||[]).map(v=>({weight:v.weight||'',reps:v.reps||'',done:!!v.done})));
-  const summary={duration:formatWorkoutDuration(document.getElementById('sumDuration')?.value||''),time:document.getElementById('sumTime')?.value||currentTimeHHMM(),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),maxHr:num('sumMaxHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
+  const summary={duration:durationPickerValue('sum'),time:document.getElementById('sumTime')?.value||currentTimeHHMM(),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),maxHr:num('sumMaxHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
   const date=new Date().toISOString(),completedPhaseIndex=state.phase;
   state.history.unshift({date,phase:p.name,phaseIndex:state.phase,round:state.round+1,workout:w.name,sets,summary});
   if(summary.postWeight)state.weights[todayISO()]={...(state.weights[todayISO()]||{}),post:summary.postWeight};
@@ -932,7 +957,12 @@ function saveWorkout(){
   save();clearSummary();closeFinish();renderAll();showScreen('today');
 }
 function advanceProgram(){state.workout++;if(state.workout>=phase().workouts.length){state.workout=0;state.round++;if(state.round>=phase().rounds){state.round=0;state.phase++;if(state.phase>=program.length){state.phase=program.length-1;state.round=phase().rounds-1;state.workout=phase().workouts.length-1}}}}
-function clearSummary(){['sumDuration','sumTime','sumTotalCal','sumAvgHr','sumMaxHr','sumWeight','sumNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})}
+function clearSummary(){
+  ['sumTime','sumTotalCal','sumAvgHr','sumMaxHr','sumWeight','sumNotes'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  setDurationPicker('sum','00:00:00');
+}
 
 function goalsForDate(date){
   const baseGoals=state.goals||{cal:2500,p:180,c:250,f:85};
@@ -971,7 +1001,7 @@ function openWorkoutEditor(index){
   workoutEditIndex=index;
   const s=h.summary||{};
   document.getElementById('editWorkoutName').textContent=`${h.workout} · ${h.phase} · Round ${h.round}`;
-  document.getElementById('editWorkoutDuration').value=formatWorkoutDuration(s.duration);
+  setDurationPicker('editWorkout',s.duration);
   document.getElementById('editWorkoutTime').value=workoutTime(h);
   document.getElementById('editWorkoutCalories').value=(s.totalCalories ?? s.activeCalories ?? '')||'';
   document.getElementById('editWorkoutAvgHr').value=s.avgHr||'';
@@ -1016,7 +1046,7 @@ function saveEditedWorkout(){
   const oldDate=isoDate(h.date);
   const summary={
     ...(h.summary||{}),
-    duration:formatWorkoutDuration(document.getElementById('editWorkoutDuration')?.value||''),
+    duration:durationPickerValue('editWorkout'),
     time:document.getElementById('editWorkoutTime')?.value||workoutTime(h),
     totalCalories:num('editWorkoutCalories'),
     avgHr:num('editWorkoutAvgHr'),
@@ -1517,6 +1547,13 @@ document.getElementById('newUserBtn')?.addEventListener('click',openNewUser);
 document.getElementById('closeNewUserBtn')?.addEventListener('click',closeNewUser);
 document.getElementById('confirmNewUserBtn')?.addEventListener('click',createNewUser);
 
+['sum','editWorkout'].forEach(prefix=>{
+  ['H','M','S'].forEach(part=>{
+    const el=document.getElementById(prefix+'Duration'+part);
+    if(el)el.addEventListener('change',()=>syncDurationPicker(prefix));
+  });
+});
+
 document.getElementById('nutritionDate').value=logDate();setHrDefaultsForType();renderAll();bindPhotoInputs();save();
 
 setTimeout(bindPhotoInputs,0);
@@ -1533,19 +1570,4 @@ document.getElementById('nutritionDate')?.addEventListener('change',e=>{
   renderEnergyBalance();
 });
 
-['sumDuration','editWorkoutDuration'].forEach(id=>{
-  const el=document.getElementById(id);
-  if(!el)return;
-  el.addEventListener('blur',()=>{
-    const v=el.value.trim();
-    if(!v)return;
-    if(/^\d{1,2}:\d{2}:\d{2}$/.test(v))return;
-    if(/^\d+$/.test(v)){
-      const digits=v.padStart(6,'0').slice(-6);
-      el.value=`${digits.slice(0,2)}:${digits.slice(2,4)}:${digits.slice(4,6)}`;
-      return;
-    }
-    const mins=parseWorkoutDuration(v);
-    if(mins)el.value=formatWorkoutDuration(mins);
-  });
-});
+

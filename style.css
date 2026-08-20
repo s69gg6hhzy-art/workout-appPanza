@@ -396,3 +396,35 @@
 }
 
 input[type="time"]{color-scheme:dark}
+
+.duration-field{display:block}
+.duration-field>span{float:right}
+.duration-picker{
+  margin-top:8px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:7px;
+  width:100%;
+}
+.duration-picker select{
+  width:100%;
+  min-width:0;
+  height:58px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel2);
+  color:var(--text);
+  font:inherit;
+  font-size:22px;
+  text-align:center;
+  text-align-last:center;
+  padding:0 4px;
+  appearance:auto;
+  -webkit-appearance:menulist;
+}
+.duration-picker b{
+  font-size:24px;
+  font-weight:600;
+  opacity:.7;
+}
