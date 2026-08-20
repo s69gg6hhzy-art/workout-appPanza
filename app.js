@@ -79,8 +79,6 @@ function setLogDate(date){
   const today=todayISO();
   if(date>today)date=today;
   selectedLogDate=date;
-  const picker=document.getElementById('logDatePicker');
-  if(picker)picker.classList.remove('is-open');
   activityEditIndex=null;
   resetActivityEntryForm();
   renderDailyLogDate();
@@ -96,11 +94,10 @@ function openLogDatePicker(){
   if(!picker)return;
   picker.value=logDate();
   picker.max=todayISO();
-  if(typeof picker.showPicker==='function'){
-    try{picker.showPicker();return;}catch(e){}
-  }
-  picker.classList.add('is-open');
   picker.focus();
+  if(typeof picker.showPicker==='function'){
+    try{picker.showPicker();}catch(e){}
+  }
 }
 function renderDailyLogDate(){
   const d=logDate(),today=todayISO();
@@ -1005,7 +1002,7 @@ function openWorkoutEditor(index){
   document.getElementById('editWorkoutTime').value=workoutTime(h);
   document.getElementById('editWorkoutCalories').value=(s.totalCalories ?? s.activeCalories ?? '')||'';
   document.getElementById('editWorkoutAvgHr').value=s.avgHr||'';
-  document.getElementById('editWorkoutMaxHr').value=s.maxHr||'';
+  
   document.getElementById('editWorkoutWeight').value=s.postWeight||'';
   document.getElementById('editWorkoutNotes').value=s.notes||'';
 
@@ -1050,7 +1047,7 @@ function saveEditedWorkout(){
     time:document.getElementById('editWorkoutTime')?.value||workoutTime(h),
     totalCalories:num('editWorkoutCalories'),
     avgHr:num('editWorkoutAvgHr'),
-    maxHr:num('editWorkoutMaxHr'),
+    
     postWeight:num('editWorkoutWeight'),
     notes:document.getElementById('editWorkoutNotes').value.trim()
   };

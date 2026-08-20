@@ -480,3 +480,25 @@ input[type="time"]{color-scheme:dark}
 }
 
 .daily-date-label{cursor:pointer}
+
+/* V58 — iPhone-native calendar target over formatted date */
+.daily-date-native-wrap{
+  position:relative;
+  flex:1;
+  min-width:0;
+}
+.daily-date-native-wrap .daily-date-label{
+  width:100%;
+  pointer-events:none;
+}
+.daily-date-native-input{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0.001;
+  cursor:pointer;
+  z-index:5;
+  -webkit-appearance:auto;
+  appearance:auto;
+}

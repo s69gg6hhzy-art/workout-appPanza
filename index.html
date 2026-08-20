@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=57">
+  <link rel="stylesheet" href="style.css?v=58">
 </head>
 <body>
 <div class="app">
@@ -15,10 +15,12 @@
     <div class="card daily-date-card">
       <div class="daily-date-nav">
         <button class="ghost compact" id="logPrevDay" type="button" onclick="changeLogDate(-1)">‹</button>
-        <button class="secondary daily-date-label" id="logDateBtn" type="button" onclick="openLogDatePicker()"></button>
+        <div class="daily-date-native-wrap">
+          <button class="secondary daily-date-label" id="logDateBtn" type="button" aria-hidden="true"></button>
+          <input id="logDatePicker" type="date" class="daily-date-native-input" onchange="setLogDate(this.value)" aria-label="Choose daily log date">
+        </div>
         <button class="ghost compact" id="logNextDay" type="button" onclick="changeLogDate(1)">›</button>
       </div>
-      <input id="logDatePicker" type="date" class="daily-date-picker" onchange="setLogDate(this.value)">
       <button class="ghost compact" id="logTodayBtn" type="button" onclick="setLogDate(todayISO())">Today</button>
       <p class="tiny">Weight, nutrition, energy, water, cardio, checklist and progress-photo tracking use this date. Workout scheduling stays on today.</p>
     </div>
@@ -282,7 +284,6 @@
       <label>Completed at<input id="editWorkoutTime" type="time" step="60"></label>
       <label>Total calories <span>kcal</span><input id="editWorkoutCalories" inputmode="numeric"></label>
       <label>Avg heart rate <span>bpm</span><input id="editWorkoutAvgHr" inputmode="numeric"></label>
-      <label>Max heart rate <span>bpm</span><input id="editWorkoutMaxHr" inputmode="numeric"></label>
       <label>Post-workout weight <span>lb</span><input id="editWorkoutWeight" inputmode="decimal"></label>
     </div>
 
@@ -303,7 +304,7 @@
   <button data-screen="progress">Progress</button>
 </nav>
 
-<script src="data.js?v=57"></script>
-<script src="app.js?v=57"></script>
+<script src="data.js?v=58"></script>
+<script src="app.js?v=58"></script>
 </body>
 </html>
