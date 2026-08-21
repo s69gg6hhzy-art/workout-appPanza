@@ -1328,6 +1328,104 @@ function weeklyCardioMiles(){
     run:+v.run.toFixed(2)
   }));
 }
+
+function showMoreSection(section){
+  const progress=document.getElementById('moreProgressSection');
+  const workouts=document.getElementById('moreWorkoutsSection');
+  const pTab=document.getElementById('moreProgressTab');
+  const wTab=document.getElementById('moreWorkoutsTab');
+  const isWorkouts=section==='workouts';
+  if(progress)progress.style.display=isWorkouts?'none':'block';
+  if(workouts)workouts.style.display=isWorkouts?'block':'none';
+  if(pTab)pTab.classList.toggle('on',!isWorkouts);
+  if(wTab)wTab.classList.toggle('on',isWorkouts);
+  if(isWorkouts)renderProgramWorkoutLibrary();
+}
+
+function workoutExerciseList(workout){
+  const exercises=workout?.exercises||[];
+  if(!exercises.length)return '<p class="notice">No exercises listed for this workout.</p>';
+  return exercises.map((ex,i)=>{
+    const name=ex.name||`Exercise ${i+1}`;
+    const sets=ex.sets??'—';
+    const reps=ex.reps??ex.repRange??'—';
+    const rest=ex.rest??'—';
+    const note=ex.note||ex.notes||'';
+    return `<div class="program-exercise-row">
+      <div class="program-exercise-name">
+        <b>${esc(name)}</b>
+        ${note?`<small>${esc(String(note))}</small>`:''}
+      </div>
+      <div class="program-exercise-meta">
+        <span>${esc(String(sets))} sets</span>
+        <span>${esc(String(reps))} reps</span>
+        <span>${esc(String(rest))} rest</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderProgramWorkoutLibrary(){
+  const box=document.getElementById('programWorkoutLibrary');
+  if(!box)return;
+  if(!Array.isArray(program)||!program.length){
+    box.innerHTML='<div class="card"><p class="notice">No program data found.</p></div>';
+    return;
+  }
+
+  box.innerHTML=program.map((phase,pi)=>{
+    const workouts=phase.workouts||[];
+    return `<div class="card program-phase-card">
+      <div class="eyebrow">Phase ${pi+1}</div>
+      <h3>${esc(phase.name||`Phase ${pi+1}`)}</h3>
+      <div class="program-workout-list">
+        ${workouts.map((w,wi)=>`<button class="program-workout-row" type="button" onclick="openProgramWorkoutPreview(${pi},${wi})">
+          <div>
+            <b>${esc(w.name||`Workout ${wi+1}`)}</b>
+            <small>${(w.exercises||[]).length} exercises</small>
+          </div>
+          <span>View ›</span>
+        </button>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openProgramWorkoutPreview(phaseIndex,workoutIndex){
+  const phase=program?.[phaseIndex];
+  const workout=phase?.workouts?.[workoutIndex];
+  if(!workout)return;
+
+  document.getElementById('programWorkoutTitle').textContent=workout.name||`Workout ${workoutIndex+1}`;
+  document.getElementById('programWorkoutMeta').textContent=`Phase ${phaseIndex+1}${phase?.name?` · ${phase.name}`:''}`;
+
+  const warm=workout.warmup||workout.warmUp||[];
+  const warmRows=Array.isArray(warm)&&warm.length
+    ? `<div class="program-preview-section">
+        <div class="eyebrow">Warm-up</div>
+        ${warm.map(x=>{
+          const label=typeof x==='string'?x:(x?.name||x?.title||'Warm-up item');
+          const note=typeof x==='object'?(x?.note||x?.notes||''):'';
+          return `<div class="program-warm-row"><b>${esc(String(label))}</b>${note?`<small>${esc(String(note))}</small>`:''}</div>`;
+        }).join('')}
+      </div>`
+    : '';
+
+  document.getElementById('programWorkoutPreview').innerHTML=
+    `${warmRows}<div class="program-preview-section"><div class="eyebrow">Exercises</div>${workoutExerciseList(workout)}</div>`;
+
+  const modal=document.getElementById('programWorkoutModal');
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden','false');
+}
+
+function closeProgramWorkoutPreview(){
+  const modal=document.getElementById('programWorkoutModal');
+  if(!modal)return;
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden','true');
+}
+
 function renderProgress(){
   const entries=Object.entries(state.weights).filter(([,v])=>v.am||v.pm).sort((a,b)=>a[0].localeCompare(b[0]));
   const ams=entries.filter(([,v])=>v.am).map(([d,v])=>({d,v:+v.am}));

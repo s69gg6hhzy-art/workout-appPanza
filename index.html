@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=60">
+  <link rel="stylesheet" href="style.css?v=61">
 </head>
 <body>
 <div class="app">
@@ -159,7 +159,14 @@
   </section>
 
   <section id="progress" class="screen">
-    <div class="top"><div class="title">Progress</div><div class="pill">2025 → now</div></div>
+    <div class="top"><div class="title">More</div><div class="pill">Matt Fitness</div></div>
+
+    <div class="more-tabs">
+      <button class="secondary compact on" id="moreProgressTab" type="button" onclick="showMoreSection('progress')">Progress</button>
+      <button class="secondary compact" id="moreWorkoutsTab" type="button" onclick="showMoreSection('workouts')">Workouts</button>
+    </div>
+
+    <div id="moreProgressSection">
     <div class="card">
       <div class="eyebrow">Current week</div>
       <h3>Macro + energy snapshot</h3>
@@ -223,6 +230,17 @@
       <div class="history-session"><b>Brazil · May 4–Jul 12, 2026</b><span>10-week avg: 2,995 kcal · 179 P · 247 C · 100 F</span></div>
     </div>
   
+    </div>
+
+    <div id="moreWorkoutsSection" style="display:none">
+      <div class="card">
+        <div class="eyebrow">Program workouts</div>
+        <h3>Workout library</h3>
+        <p class="muted">View any workout in the full program at any time. Opening a workout here is read-only and does not change your schedule.</p>
+      </div>
+      <div id="programWorkoutLibrary"></div>
+    </div>
+
     <div class="section-title">App data</div>
     <div class="card">
       <div class="eyebrow">Profile & data</div>
@@ -301,16 +319,31 @@
   </div>
 </div>
 
+<div class="modal" id="programWorkoutModal" aria-hidden="true">
+  <div class="modal-sheet program-workout-sheet">
+    <div class="modal-head">
+      <div>
+        <div class="eyebrow">Workout preview</div>
+        <h2 id="programWorkoutTitle"></h2>
+        <div class="muted" id="programWorkoutMeta"></div>
+      </div>
+      <button class="ghost" type="button" onclick="closeProgramWorkoutPreview()">✕</button>
+    </div>
+    <div id="programWorkoutPreview"></div>
+    <button class="secondary" type="button" onclick="closeProgramWorkoutPreview()">Close</button>
+  </div>
+</div>
+
 <nav class="nav">
   <button data-screen="today" class="on">Today</button>
   <button data-screen="workout">Workout</button>
   <button data-screen="nutrition">Nutrition</button>
   <button data-screen="checklist">Checklist</button>
   <button data-screen="history">History</button>
-  <button data-screen="progress">Progress</button>
+  <button data-screen="progress">More</button>
 </nav>
 
-<script src="data.js?v=60"></script>
-<script src="app.js?v=60"></script>
+<script src="data.js?v=61"></script>
+<script src="app.js?v=61"></script>
 </body>
 </html>

@@ -685,3 +685,85 @@ input[type="time"]{color-scheme:dark}
     gap:6px;
   }
 }
+
+/* V61 — More tab + full workout library */
+.more-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:14px;
+}
+.more-tabs button.on{
+  background:var(--text);
+  color:var(--bg);
+}
+.program-phase-card h3{
+  margin-top:4px;
+}
+.program-workout-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:12px;
+}
+.program-workout-row{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel2);
+  color:var(--text);
+  text-align:left;
+}
+.program-workout-row b,
+.program-workout-row small{
+  display:block;
+}
+.program-workout-row small{
+  margin-top:3px;
+  color:var(--muted);
+}
+.program-workout-row>span{
+  color:var(--muted);
+  white-space:nowrap;
+}
+.program-workout-sheet{
+  max-height:88vh;
+  overflow:auto;
+}
+.program-preview-section{
+  margin:18px 0;
+}
+.program-warm-row,
+.program-exercise-row{
+  padding:13px 0;
+  border-bottom:1px solid var(--line);
+}
+.program-warm-row b,
+.program-warm-row small,
+.program-exercise-name b,
+.program-exercise-name small{
+  display:block;
+}
+.program-warm-row small,
+.program-exercise-name small{
+  margin-top:4px;
+  color:var(--muted);
+}
+.program-exercise-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:7px;
+}
+.program-exercise-meta span{
+  padding:5px 8px;
+  border-radius:999px;
+  background:var(--panel2);
+  color:var(--muted);
+  font-size:12px;
+}
