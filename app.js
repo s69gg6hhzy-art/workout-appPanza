@@ -322,7 +322,7 @@ function renderToday(){
   const activityTime=document.getElementById('activityTime');if(activityTime&&!activityTime.value)activityTime.value=currentTimeHHMM();
 }
 function renderTodayMacros(){const d=logDate(),n=state.nutrition[d]||{foods:[]};const t=totals(n.foods||[]),g=goalsForDate(d);document.getElementById('todayMacros').innerHTML=macroDials(t,g);if(document.getElementById('energyBalance'))renderEnergyBalance();}
-function macroBoxes(t,g){return [['Calories',t.cal,g.cal],['Protein',t.p,g.p],['Carbs',t.c,g.c],['Fat',t.f,g.f]].map(([k,v,goal])=>`<div class="macro-box"><strong>${Math.round(v)}</strong><span>${k}${k==='Calories'?'':' g'}</span><small>/ ${goal}</small></div>`).join('')}
+function macroBoxes(t,g){return [['Calories',t.cal,g.cal],['Protein',t.p,g.p],['Carbs',t.c,g.c],['Fat',t.f,g.f]].map(([k,v,goal])=>`<div class="macro-box ${(+v>+goal)?'over-goal':''}"><strong>${Math.round(v)}</strong><span>${k}${k==='Calories'?'':' g'}</span><small>/ ${goal}</small></div>`).join('')}
 function macroDial(label,value,goal){
   const v=+(value||0),g=+(goal||0),pct=g?Math.round(v/g*100):0;
   const capped=Math.max(0,Math.min(100,pct));
@@ -1163,13 +1163,47 @@ function renderHistory(){
 }
 function renderDayDetail(date){
   const hs=state.history.filter(h=>isoDate(h.date)===date),wt=state.weights[date],nut=state.nutrition[date];
+  const acts=state.activities[date]||[];
+  const walks=acts.filter(a=>String(a.type||'').toLowerCase()==='walk');
+  const runs=acts.filter(a=>['jog','run','run/jog','jog/run'].includes(String(a.type||'').toLowerCase()));
+  const otherActs=acts.filter(a=>!walks.includes(a)&&!runs.includes(a));
   let parts=`<div class="eyebrow">${new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</div>`;
 
   if(state.restDays[date])parts+=`<div class="day-detail-row"><b>Rest day complete</b><small>Acknowledged</small></div>`;
 
+  // 1 Nutrition
+  if(nut){
+    const t=totals(nut.foods||[]);
+    parts+=`<div class="day-detail-row"><b>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`;
+  }
+
+  // 2 Energy
+  if(totals((state.nutrition[date]?.foods)||[]).cal>0){
+    const e=energyForDate(date);
+    const label=e.balance<0?'Estimated deficit':e.balance>0?'Estimated surplus':'Estimated balance';
+    parts+=`<div class="day-detail-row energy-history-row"><b>Energy result</b><small>${label}: ${Math.abs(Math.round(e.balance))} kcal · ${Math.round(e.intake)} intake · ${Math.round(e.totalBurn)} estimated burn</small></div>`;
+  }
+
+  // 3 Checklist
+  const cd=state.checklistDays[date];
+  if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b>Checklist</b><small>${done} of ${items.length} complete</small></div>`}
+
+  // 4 Weight
+  if(wt)parts+=`<div class="day-detail-row"><b>Weight</b><small>${wt.am?`AM ${wt.am} lb · `:''}${wt.post?`Post ${wt.post} lb · `:''}${wt.pm?`PM ${wt.pm} lb`:''}</small></div>`;
+
+  // 5 Water
+  const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b>Water</b><small>${water} oz</small></div>`;
+
+  // 6 Walks
+  walks.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}Walk</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
+
+  // 7 Jog/Run
+  runs.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}${esc(a.type||'Jog/Run')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
+  otherActs.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}${esc(a.type||'Cardio')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
+
+  // 8 Workout
   if(hs.length)hs.forEach(h=>{
-    const s=h.summary||{};
-    const kcal=(s.totalCalories ?? s.activeCalories ?? 0);
+    const s=h.summary||{},kcal=(s.totalCalories ?? s.activeCalories ?? 0);
     const safeWorkout=String(h.workout||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const safePhase=String(h.phase||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const durationText=s.duration?formatWorkoutDuration(s.duration):'';
@@ -1183,22 +1217,6 @@ function renderDayDetail(date){
     </div>`;
   });
 
-  if(wt)parts+=`<div class="day-detail-row"><b>Weight</b><small>${wt.am?`AM ${wt.am} lb · `:''}${wt.post?`Post ${wt.post} lb · `:''}${wt.pm?`PM ${wt.pm} lb`:''}</small></div>`;
-  if(nut){
-    const t=totals(nut.foods||[]);
-    parts+=`<div class="day-detail-row"><b>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`;
-  }
-  const acts=state.activities[date]||[];
-  if(acts.length){
-    acts.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}${esc(a.type||'Cardio')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
-  }
-  if(totals((state.nutrition[date]?.foods)||[]).cal>0){
-    const e=energyForDate(date);
-    const label=e.balance<0?'Estimated deficit':e.balance>0?'Estimated surplus':'Estimated balance';
-    parts+=`<div class="day-detail-row energy-history-row"><b>Energy result</b><small>${label}: ${Math.abs(Math.round(e.balance))} kcal · ${Math.round(e.intake)} intake · ${Math.round(e.totalBurn)} estimated burn</small></div>`;
-  }
-  const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b>Water</b><small>${water} oz</small></div>`;
-  const cd=state.checklistDays[date];if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b>Checklist</b><small>${done} of ${items.length} complete</small></div>`}
   const pd=(state.photoDays||{})[date];if(pd&&Object.values(pd).some(Boolean)){const taken=Object.entries(pd).filter(([,v])=>v).map(([k])=>k[0].toUpperCase()+k.slice(1)).join(' · ');parts+=`<div class="day-detail-row"><b>📷 Progress photos</b><small>${taken}</small></div>`}
   if(!hs.length&&!state.restDays[date]&&!wt&&!nut&&!acts.length&&!water&&!cd&&!anyPhotoTaken(date))parts+='<p class="notice">No saved data for this day.</p>';
   document.getElementById('dayDetail').innerHTML=parts;
@@ -1444,11 +1462,12 @@ function renderProgress(){
       cardioEl.innerHTML='<p class="notice">Add walks, jogs or runs to build weekly mileage.</p>';
     }else{
       const max=Math.max(1,...cardio.flatMap(x=>[x.walk,x.run]));
+      const chartMax=max*1.2;
       cardioEl.innerHTML=`<div class="weekly-cardio-chart">
         ${cardio.map(x=>`<div class="weekly-cardio-group">
           <div class="weekly-cardio-bars">
-            <div class="weekly-cardio-bar walk" style="height:${(x.walk/max)*100}%"><span>${x.walk||''}</span></div>
-            <div class="weekly-cardio-bar run" style="height:${(x.run/max)*100}%"><span>${x.run||''}</span></div>
+            <div class="weekly-cardio-bar walk" style="height:${(x.walk/chartMax)*100}%"><span>${x.walk||''}</span></div>
+            <div class="weekly-cardio-bar run" style="height:${(x.run/chartMax)*100}%"><span>${x.run||''}</span></div>
           </div>
           <small>${x.label}</small>
         </div>`).join('')}

@@ -789,3 +789,22 @@ input[type="time"]{color-scheme:dark}
   display:block;
   margin-bottom:8px;
 }
+
+/* V63 — queued polish */
+.macro-box.over-goal{
+  background:#f4f4f2;
+  border-color:#f4f4f2;
+  color:#101216;
+}
+.macro-box.over-goal strong,
+.macro-box.over-goal span,
+.macro-box.over-goal small{
+  color:#101216;
+}
+.weekly-cardio-bars{
+  overflow:visible;
+}
+.weekly-cardio-bar span{
+  z-index:2;
+  white-space:nowrap;
+}
