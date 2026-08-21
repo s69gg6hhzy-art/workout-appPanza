@@ -49,7 +49,7 @@ if(!Array.isArray(state.history))state.history=[];
 });
 if(!Array.isArray(state.checklistItems))state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
 if(!Array.isArray(state.checklistItems)||state.checklistItems.length===0)state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
-let timerInterval=null,timerLeft=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null,selectedLogDate=todayISO();
+let timerInterval=null,timerLeft=0,timerEndsAt=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null,selectedLogDate=todayISO();
 function currentTimeHHMM(){
   const d=new Date();
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -822,31 +822,58 @@ function stopTimer(){
     timerInterval=null;
   }
   timerLeft=0;
+  timerEndsAt=0;
+  sessionStorage.removeItem('mfRestTimerEndsAt');
   const timer=document.getElementById('timer');
   if(timer)timer.classList.remove('show');
 }
-function startTimer(rest){
-  stopTimer();
-  timerLeft=restSeconds(rest);
-  if(!timerLeft)return;
+function paintTimerFromClock(){
+  if(!timerEndsAt)return;
+  timerLeft=Math.max(0,Math.ceil((timerEndsAt-Date.now())/1000));
   const timer=document.getElementById('timer');
   const text=document.getElementById('timerText');
-  const paint=()=>{
-    const m=Math.floor(timerLeft/60);
-    const s=timerLeft%60;
-    if(text)text.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  };
+  if(timerLeft<=0){
+    stopTimer();
+    return;
+  }
+  const m=Math.floor(timerLeft/60);
+  const s=timerLeft%60;
+  if(text)text.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   if(timer)timer.classList.add('show');
-  paint();
-  timerInterval=setInterval(()=>{
-    timerLeft--;
-    if(timerLeft<=0){
-      stopTimer();
-      return;
-    }
-    paint();
-  },1000);
 }
+function runTimerInterval(){
+  if(timerInterval)clearInterval(timerInterval);
+  paintTimerFromClock();
+  if(!timerEndsAt)return;
+  timerInterval=setInterval(paintTimerFromClock,250);
+}
+function startTimer(rest){
+  stopTimer();
+  const seconds=restSeconds(rest);
+  if(!seconds)return;
+  timerEndsAt=Date.now()+(seconds*1000);
+  sessionStorage.setItem('mfRestTimerEndsAt',String(timerEndsAt));
+  runTimerInterval();
+}
+function restoreRestTimer(){
+  const saved=Number(sessionStorage.getItem('mfRestTimerEndsAt')||0);
+  if(!saved||saved<=Date.now()){
+    sessionStorage.removeItem('mfRestTimerEndsAt');
+    return;
+  }
+  timerEndsAt=saved;
+  runTimerInterval();
+}
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&timerEndsAt)runTimerInterval();
+});
+window.addEventListener('pageshow',()=>{
+  if(timerEndsAt)runTimerInterval(); else restoreRestTimer();
+});
+window.addEventListener('focus',()=>{
+  if(timerEndsAt)runTimerInterval();
+});
 
 function durationPickerValue(prefix){
   const h=document.getElementById(prefix+'DurationH')?.value||'00';
@@ -1888,3 +1915,7 @@ document.getElementById('nutritionDate')?.addEventListener('change',e=>{
 });
 
 
+
+document.addEventListener('DOMContentLoaded',()=>{
+  restoreRestTimer();
+});
