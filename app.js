@@ -926,7 +926,14 @@ function renderWorkout(){
       return `<div class="setrow"><div class="setnum">${j+1}</div><input data-e="${i}" data-s="${j}" data-k="weight" inputmode="decimal" placeholder="weight" value="${v.weight??''}"><input data-e="${i}" data-s="${j}" data-k="reps" inputmode="numeric" placeholder="reps · ${target}" value="${v.reps??''}"><button class="check ${v.done?'done':''}" data-e="${i}" data-s="${j}" data-rest="${rest}">✓</button></div>`;
     }).join('');
     const sub=(draft.subs||{})[i]||'';
-    el.insertAdjacentHTML('beforeend',`<div class="exercise" data-exercise-index="${i}">
+    const isLower1Superset=(state.phase===0 && w.name==='Lower 1' && i>=w.ex.length-2);
+    if(isLower1Superset && i===w.ex.length-2){
+      el.insertAdjacentHTML('beforeend',`<div class="superset-callout">
+        <div class="superset-label">SUPERSET – ALTERNATING EXERCISES</div>
+        <div class="superset-note">Alternate between the two exercises for each set.</div>
+      </div>`);
+    }
+    el.insertAdjacentHTML('beforeend',`<div class="exercise ${isLower1Superset?'superset-exercise':''}" data-exercise-index="${i}">
       <div class="exercise-title-row">
         <h3>${name}</h3>
         <label class="sub-toggle"><input type="checkbox" class="sub-check" data-sub-i="${i}" ${sub?'checked':''}><span>Sub?</span></label>
