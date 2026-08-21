@@ -515,14 +515,21 @@ function parseWorkoutDuration(value){
 }
 function formatWorkoutDuration(value){
   if(value===null||value===undefined||value==='')return '';
-  if(typeof value==='string'&&/^\d{1,2}:\d{2}:\d{2}$/.test(value))return value;
-  const mins=parseWorkoutDuration(value);
-  if(!mins)return '';
-  const totalSec=Math.round(mins*60);
-  const h=Math.floor(totalSec/3600);
-  const m=Math.floor((totalSec%3600)/60);
-  const s=totalSec%60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const raw=String(value).trim();
+  if(/^\d+:\d{1,2}:\d{1,2}$/.test(raw)){
+    let [h,m,s]=raw.split(':').map(Number);
+    if(![h,m,s].every(Number.isFinite))return raw;
+    const total=Math.max(0,h*3600+m*60+s);
+    const hh=Math.floor(total/3600);
+    const mm=Math.floor((total%3600)/60);
+    const ss=total%60;
+    return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  }
+  const digits=raw.replace(/\D/g,'');
+  if(!digits)return '';
+  if(digits.length<=2)return `00:00:${digits.padStart(2,'0')}`;
+  if(digits.length<=4)return `00:${digits.slice(0,-2).padStart(2,'0')}:${digits.slice(-2)}`;
+  return `${digits.slice(0,-4).padStart(2,'0')}:${digits.slice(-4,-2)}:${digits.slice(-2)}`;
 }
 function exerciseTotalsForDate(date){
   const workoutEntries=state.history.filter(h=>isoDate(h.date)===date);
@@ -994,12 +1001,21 @@ function saveGoals(){
 
 
 function openWorkoutEditorByDate(date,workout,phase,round){
-  const index=(state.history||[]).findIndex(h=>
+  const history=state.history||[];
+  let index=history.findIndex(h=>
     isoDate(h.date)===date &&
     String(h.workout||'')===String(workout||'') &&
     String(h.phase||'')===String(phase||'') &&
     Number(h.round||0)===Number(round||0)
   );
+  if(index<0){
+    const sameDay=history.map((h,i)=>({h,i})).filter(x=>isoDate(x.h.date)===date);
+    if(sameDay.length===1)index=sameDay[0].i;
+    else{
+      const sameWorkout=sameDay.find(x=>String(x.h.workout||'')===String(workout||''));
+      if(sameWorkout)index=sameWorkout.i;
+    }
+  }
   if(index<0){
     alert('Could not find this completed workout. Please refresh and try again.');
     return;
@@ -1038,7 +1054,7 @@ function openWorkoutEditor(index){
         <span>${si+1}</span>
         <input class="edit-set-weight" inputmode="decimal" value="${esc(set.weight??'')}">
         <input class="edit-set-reps" inputmode="numeric" value="${esc(set.reps??'')}">
-        <input class="edit-set-done" type="checkbox" ${set.done?'checked':''}>
+        <button class="edit-set-done ${set.done?'is-done':''}" type="button" aria-pressed="${set.done?'true':'false'}" onclick="toggleEditSetDone(this)">${set.done?'✓':''}</button>
       </div>`).join('')}
     </div>`;
   }).join(''):'<p class="notice">No saved set details for this workout.</p>';
@@ -1047,6 +1063,13 @@ function openWorkoutEditor(index){
   modal.classList.add('show');
   modal.setAttribute('aria-hidden','false');
 }
+function toggleEditSetDone(btn){
+  const done=btn.getAttribute('aria-pressed')!=='true';
+  btn.setAttribute('aria-pressed',done?'true':'false');
+  btn.classList.toggle('is-done',done);
+  btn.textContent=done?'✓':'';
+}
+
 function closeWorkoutEditor(){
   workoutEditIndex=null;
   const modal=document.getElementById('editWorkoutModal');
@@ -1081,7 +1104,7 @@ function saveEditedWorkout(){
     newSets[name].push({
       weight:row.querySelector('.edit-set-weight')?.value||'',
       reps:row.querySelector('.edit-set-reps')?.value||'',
-      done:!!row.querySelector('.edit-set-done')?.checked
+      done:row.querySelector('.edit-set-done')?.getAttribute('aria-pressed')==='true'
     });
   });
   if(Object.keys(newSets).length)h.sets=newSets;
@@ -1146,7 +1169,7 @@ function renderDayDetail(date){
         <small>${workoutTime(h)?`${formatTime12(workoutTime(h))}`:''}${kcal?`${workoutTime(h)?' · ':''}${kcal} kcal`:''}${durationText?`${(workoutTime(h)||kcal)?' · ':''}${durationText}`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}</small>
         ${s.notes?`<small class="history-notes">${esc(s.notes)}</small>`:''}
       </div>
-      <button class="ghost compact edit-workout-history-btn" type="button" aria-label="Edit workout" onclick="event.stopPropagation();openWorkoutEditorByDate('${date}','${safeWorkout}','${safePhase}',${Number(h.round||0)})">•••</button>
+      <button class="ghost compact edit-workout-history-btn" type="button" aria-label="Edit workout" onclick="event.stopPropagation();openWorkoutEditorByDate('${date}','${safeWorkout}','${safePhase}',${Number(h.round||0)})">Edit</button>
     </div>`;
   });
 
