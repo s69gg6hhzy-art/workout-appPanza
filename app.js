@@ -39,7 +39,7 @@ const isoDate=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneO
 const todayISO=()=>isoDate(new Date());
 const defaultChecklistItems=[{"id":"am-brush-floss","text":"AM Brush & Floss"},{"id":"make-bed","text":"Make Bed"},{"id":"gum","text":"Gum"},{"id":"portuguese-1","text":"Portuguese #1"},{"id":"walk-dogs","text":"Walk Dogs"},{"id":"jog-run","text":"Jog/Run"},{"id":"pushups-1","text":"30 Push Ups #1"},{"id":"stretch","text":"Stretch"},{"id":"creatine-bcaas","text":"Creatine & BCAAs"},{"id":"coconut-oil-brush","text":"Gargle Coconut Oil & Brush"},{"id":"wash-face-guasha","text":"Wash Face & Guasha"},{"id":"fast-until-2","text":"Fast Until 2pm"},{"id":"portuguese-2","text":"Portuguese #2"},{"id":"pushups-2","text":"30 Push Ups #2"},{"id":"pm-brush-floss","text":"PM Brush & Floss"},{"id":"portuguese-3","text":"Portuguese #3"},{"id":"ab-roller","text":"10 Ab Roller"},{"id":"ab-twists","text":"30 Ab Twists"}];
 const old=JSON.parse(localStorage.getItem('mwState')||'null');
-const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},goalHistory:{},drafts:{},water:{},waterGoal:96,checklistItems:JSON.parse(JSON.stringify(defaultChecklistItems)),checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'Matt'},historicalEnabled:true,photoSettings:{weekly:false},photoCheckins:[],photoDays:{}};
+const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},goalHistory:{},drafts:{},water:{},waterGoal:96,checklistItems:JSON.parse(JSON.stringify(defaultChecklistItems)),checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'User'},historicalEnabled:false,photoSettings:{weekly:false},photoCheckins:[],photoDays:{}};
 let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
@@ -1696,7 +1696,26 @@ function renderZone3Chart(){
     : '<p class="notice">Add Jog/Run heart-rate zone data to build this trend.</p>';
 }
 
+function renderHistoricalProgressVisibility(){
+  const enabled=state.historicalEnabled!==false;
+  const checkpoint=document.getElementById('historicalCheckpointCard');
+  const sessions=document.getElementById('historicalSessionsCard');
+  if(checkpoint)checkpoint.style.display=enabled?'':'none';
+  if(sessions)sessions.style.display=enabled?'':'none';
+
+  const weightNote=document.getElementById('weightChartNote');
+  if(weightNote)weightNote.textContent=enabled
+    ? 'Historical weekly AM averages + DEXA checkpoint + new AM weights logged in the app.'
+    : 'Morning weights logged in this app will build your weight trend.';
+
+  const calNote=document.getElementById('calorieChartNote');
+  if(calNote)calNote.textContent=enabled
+    ? 'Session 1 selected weekly averages, Brazil weeks 1–10, and future weekly averages from your app.'
+    : 'Weekly calorie averages from nutrition logged in this app.';
+}
+
 function renderProgress(){
+  renderHistoricalProgressVisibility();
   const entries=Object.entries(state.weights).filter(([,v])=>v.am||v.pm).sort((a,b)=>a[0].localeCompare(b[0]));
   const ams=entries.filter(([,v])=>v.am).map(([d,v])=>({d,v:+v.am}));
   const latest=ams.at(-1),last7=ams.slice(-7);
@@ -1706,10 +1725,16 @@ function renderProgress(){
   document.getElementById('dailySwing').textContent=swings.length?`${(swings.reduce((a,b)=>a+b,0)/swings.length).toFixed(1)} lb`:'—';
 
   const allWeights=[...(state.historicalEnabled===false?[]:historicalWeight),...currentWeightSeries()].sort((a,b)=>a.date.localeCompare(b.date));
-  document.getElementById('weightChart').innerHTML=svgLineChart(allWeights,{valueKey:'weight',suffix:'',minPad:2,maxPad:2});
+  document.getElementById('weightChart').innerHTML=allWeights.length
+    ? svgLineChart(allWeights,{valueKey:'weight',suffix:'',minPad:2,maxPad:2})
+    : '<p class="notice">Log morning weights to build your weight trend.</p>';
   const histNut=[...(state.historicalEnabled===false?[]:historicalCalories),...currentWeeklyNutrition()].sort((a,b)=>a.date.localeCompare(b.date));
-  document.getElementById('calorieChart').innerHTML=svgLineChart(histNut,{valueKey:'cal',minPad:150,maxPad:150});
-  document.getElementById('proteinChart').innerHTML=svgLineChart(histNut,{valueKey:'protein',suffix:'g',minPad:10,maxPad:10});
+  document.getElementById('calorieChart').innerHTML=histNut.length
+    ? svgLineChart(histNut,{valueKey:'cal',minPad:150,maxPad:150})
+    : '<p class="notice">Log nutrition to build weekly calorie history.</p>';
+  document.getElementById('proteinChart').innerHTML=histNut.length
+    ? svgLineChart(histNut,{valueKey:'protein',suffix:'g',minPad:10,maxPad:10})
+    : '<p class="notice">Log nutrition to build weekly protein history.</p>';
 
   const cardio=weeklyCardioMiles();
   const cardioEl=document.getElementById('cardioChart');
@@ -1813,7 +1838,7 @@ function closeNewUser(){document.getElementById('newUserModal').classList.remove
 async function createNewUser(){
  if(document.getElementById('resetConfirm').value.trim().toUpperCase()!=='RESET'){alert('Type RESET to confirm.');return}
  const name=document.getElementById('newName').value.trim()||'User',cal=+document.getElementById('newCalGoal').value||2500,p=+document.getElementById('newProteinGoal').value||180,c=+document.getElementById('newCarbGoal').value||250,f=+document.getElementById('newFatGoal').value||85,bmr=+document.getElementById('newBmr').value||1891,tdee=+document.getElementById('newTdee').value||2741,waterGoal=+document.getElementById('newWaterGoal').value||96,startWeight=+document.getElementById('newStartWeight').value||0;
- await photoDeleteAll();state=JSON.parse(JSON.stringify(base));state.profile={name};state.goals={cal,p,c,f};state.goalHistory={[todayISO()]:{cal,p,c,f}};state.bmr=bmr;state.tdee=tdee;state.waterGoal=waterGoal;state.historicalEnabled=false;state.scheduleDate=todayISO();state.nextEventType='workout';if(startWeight)state.weights[todayISO()]={am:startWeight};
+ await photoDeleteAll();state=JSON.parse(JSON.stringify(base));state.profile={name};state.goals={cal,p,c,f};state.goalHistory={[todayISO()]:{cal,p,c,f}};state.bmr=bmr;state.tdee=tdee;state.waterGoal=waterGoal;state.historicalEnabled=false;state.photoCheckins=[];state.photoDays={};state.scheduleDate=todayISO();state.nextEventType='workout';if(startWeight)state.weights[todayISO()]={am:startWeight};
  save();closeNewUser();renderAll();showScreen('today');
 }
 
@@ -1923,7 +1948,7 @@ function exportFullBackup(){
 }
 
 async function resetForNewUser(){
-  const ok=confirm('Reset this app for a new user? This permanently clears all saved workout, nutrition, weight, activity, checklist, water and progress-photo tracking data on this device.');
+  const ok=confirm('Reset this app for a new user? This permanently clears all saved workout, nutrition, weight, activity, checklist, water, progress-photo tracking, historical charts, checkpoints and historical session data on this device.');
   if(!ok)return;
   try{
     localStorage.removeItem('mfState');
@@ -1933,7 +1958,13 @@ async function resetForNewUser(){
     }
   }catch(e){}
   state=JSON.parse(JSON.stringify(base));
+  state.profile={name:'User'};
+  state.historicalEnabled=false;
   state.photoDays={};
+  state.photoCheckins=[];
+  state.scheduleDate=todayISO();
+  state.nextEventType='workout';
+  sessionStorage.removeItem('mfRestTimerEndsAt');
   save();
   calendarCursor=new Date();
   calendarCursor.setDate(1);

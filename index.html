@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=69">
+  <link rel="stylesheet" href="style.css?v=70">
 </head>
 <body>
 <div class="app">
@@ -210,12 +210,12 @@
     <div class="card chart-card">
       <div class="chart-head"><div><div class="eyebrow">Historical weight</div><h3>Weight over time</h3></div><span class="badge measured">2025 → now</span></div>
       <div id="weightChart" class="chart-wrap"></div>
-      <p class="tiny chart-note">Historical weekly AM averages + DEXA checkpoint + new AM weights logged in the app.</p>
+      <p class="tiny chart-note" id="weightChartNote">Historical weekly AM averages + DEXA checkpoint + new AM weights logged in the app.</p>
     </div>
     <div class="card chart-card">
       <div class="chart-head"><div><div class="eyebrow">Nutrition history</div><h3>Average daily calories by week</h3></div></div>
       <div id="calorieChart" class="chart-wrap"></div>
-      <p class="tiny chart-note">Session 1 selected weekly averages, Brazil weeks 1–10, and future weekly averages from your app.</p>
+      <p class="tiny chart-note" id="calorieChartNote">Session 1 selected weekly averages, Brazil weeks 1–10, and future weekly averages from your app.</p>
     </div>
     <div class="card chart-card">
       <div class="chart-head"><div><div class="eyebrow">Protein history</div><h3>Average protein by week</h3></div></div>
@@ -227,13 +227,13 @@
       <h3>Photo tracking</h3>
       <p class="muted">Use the checkmarks on Today to record Front, Side, Back and Flex. Any checked angle adds a 📷 to that date in History.</p>
     </div>
-    <div class="card">
+    <div class="card" id="historicalCheckpointCard">
       <div class="eyebrow">Body composition checkpoints</div>
       <div class="checkpoint"><div><b>Jan 17, 2025 · DEXA</b><small>191.1 lb · 21.9% body fat · 41.8 lb fat · 141.7 lb lean tissue</small></div><span class="badge measured">Measured</span></div>
       <div class="checkpoint"><div><b>April 2025 · Lean checkpoint</b><small>~178 lb · progress photos</small></div><span class="badge approx">Approx.</span></div>
       <div class="checkpoint"><div><b>Aug 2026 · Current</b><small>~185 lb · current visual checkpoint</small></div><span class="badge approx">Current</span></div>
     </div>
-    <div class="card">
+    <div class="card" id="historicalSessionsCard">
       <div class="eyebrow">Historical tracking sessions</div>
       <div class="history-session"><b>Session 1 · Jan–Apr 2025</b><span>~188.6 → ~178.7 lb weekly AM average</span></div>
       <div class="history-session"><b>Session 2 · Sep–Nov 2025</b><span>191.6 → 182.4 lb weekly AM average</span></div>
@@ -268,7 +268,7 @@
     <div class="card">
       <div class="eyebrow">Profile & data</div>
       <h3>New user / reset</h3>
-      <p class="muted">Start fresh on this device. This clears saved workouts, nutrition, weights, activities, checklist history, water, photo checkmarks and profile data.</p>
+      <p class="muted">Start fresh on this device. This clears saved workouts, nutrition, weights, activities, checklist history, water, photo checkmarks, profile data, historical charts, body-composition checkpoints and historical tracking sessions.</p>
       <div class="export-actions">
         <button class="secondary compact" id="exportDailyCsvBtn" type="button" onclick="exportDailyCSV()">Export daily CSV</button>
         <button class="secondary compact" id="exportFullBackupBtn" type="button" onclick="exportFullBackup()">Export full backup</button>
@@ -366,7 +366,7 @@
   <button data-screen="progress">More</button>
 </nav>
 
-<script src="data.js?v=69"></script>
-<script src="app.js?v=69"></script>
+<script src="data.js?v=70"></script>
+<script src="app.js?v=70"></script>
 </body>
 </html>
