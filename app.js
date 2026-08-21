@@ -236,9 +236,10 @@ function getDraft(){
   state.drafts=state.drafts||{};
   const key=getDraftKey();
   const d=state.drafts[key];
-  if(!d||typeof d!=='object')return {sets:{},warm:{}};
+  if(!d||typeof d!=='object')return {sets:{},warm:{},subs:{}};
   if(!d.sets||typeof d.sets!=='object')d.sets={};
   if(!d.warm||typeof d.warm!=='object')d.warm={};
+  if(!d.subs||typeof d.subs!=='object')d.subs={};
   return d;
 }
 
@@ -924,7 +925,19 @@ function renderWorkout(){
       const v=(draft.sets[i]||[])[j]||{};
       return `<div class="setrow"><div class="setnum">${j+1}</div><input data-e="${i}" data-s="${j}" data-k="weight" inputmode="decimal" placeholder="weight" value="${v.weight??''}"><input data-e="${i}" data-s="${j}" data-k="reps" inputmode="numeric" placeholder="reps · ${target}" value="${v.reps??''}"><button class="check ${v.done?'done':''}" data-e="${i}" data-s="${j}" data-rest="${rest}">✓</button></div>`;
     }).join('');
-    el.insertAdjacentHTML('beforeend',`<div class="exercise"><h3>${name}</h3><div class="rx">${sets.length} set${sets.length>1?'s':''} · ${sets.join(' / ')}${rest?` · ${rest} rest`:''}</div><div class="last">Last: ${previous}</div>${rows}</div>`);
+    const sub=(draft.subs||{})[i]||'';
+    el.insertAdjacentHTML('beforeend',`<div class="exercise" data-exercise-index="${i}">
+      <div class="exercise-title-row">
+        <h3>${name}</h3>
+        <label class="sub-toggle"><input type="checkbox" class="sub-check" data-sub-i="${i}" ${sub?'checked':''}><span>Sub?</span></label>
+      </div>
+      <div class="rx">${sets.length} set${sets.length>1?'s':''} · ${sets.join(' / ')}${rest?` · ${rest} rest`:''}</div>
+      <div class="last">Last: ${previous}</div>
+      <div class="sub-entry ${sub?'show':''}" data-sub-wrap="${i}">
+        <label>Substitute movement<input class="sub-input" data-sub-input="${i}" type="text" placeholder="Type substitute movement" value="${esc(sub)}"></label>
+      </div>
+      ${rows}
+    </div>`);
   });
   document.querySelectorAll('.warm-check').forEach((b,i)=>{
     if(draft.warm[i]){b.classList.add('done');b.closest('.warm-row').classList.add('done')}
@@ -935,6 +948,29 @@ function renderWorkout(){
       storeDraft(draft);
     });
   });
+  document.querySelectorAll('.sub-check').forEach(ch=>ch.addEventListener('change',()=>{
+    const i=+ch.dataset.subI;
+    draft.subs=draft.subs||{};
+    const wrap=document.querySelector(`[data-sub-wrap="${i}"]`);
+    const inp=document.querySelector(`[data-sub-input="${i}"]`);
+    if(ch.checked){
+      if(wrap)wrap.classList.add('show');
+      setTimeout(()=>inp?.focus(),0);
+    }else{
+      delete draft.subs[i];
+      if(wrap)wrap.classList.remove('show');
+      if(inp)inp.value='';
+    }
+    storeDraft(draft);
+  }));
+  document.querySelectorAll('.sub-input').forEach(inp=>inp.addEventListener('input',()=>{
+    const i=+inp.dataset.subInput;
+    draft.subs=draft.subs||{};
+    const value=inp.value.trim();
+    if(value)draft.subs[i]=value; else delete draft.subs[i];
+    storeDraft(draft);
+  }));
+
   document.querySelectorAll('.setrow input').forEach(inp=>inp.addEventListener('input',()=>{
     const e=+inp.dataset.e,s=+inp.dataset.s;
     draft.sets[e]=draft.sets[e]||[];
@@ -959,7 +995,7 @@ function saveWorkout(){
   w.ex.forEach((x,i)=>sets[x[0]]=(draft.sets[i]||[]).map(v=>({weight:v.weight||'',reps:v.reps||'',done:!!v.done})));
   const summary={duration:durationPickerValue('sum'),time:document.getElementById('sumTime')?.value||currentTimeHHMM(),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
   const date=new Date().toISOString(),completedPhaseIndex=state.phase;
-  state.history.unshift({date,phase:p.name,phaseIndex:state.phase,round:state.round+1,workout:w.name,sets,summary});
+  state.history.unshift({date,phase:p.name,phaseIndex:state.phase,round:state.round+1,workout:w.name,sets,substitutions:{...(draft.subs||{})},summary});
   if(summary.postWeight)state.weights[todayISO()]={...(state.weights[todayISO()]||{}),post:summary.postWeight};
   delete state.drafts[getDraftKey()];
   state.completed++;
@@ -1174,31 +1210,31 @@ function renderDayDetail(date){
   // 1 Nutrition
   if(nut){
     const t=totals(nut.foods||[]);
-    parts+=`<div class="day-detail-row"><b>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`;
+    parts+=`<div class="day-detail-row"><b><span class="history-icon">🍴</span>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`;
   }
 
   // 2 Energy
   if(totals((state.nutrition[date]?.foods)||[]).cal>0){
     const e=energyForDate(date);
     const label=e.balance<0?'Estimated deficit':e.balance>0?'Estimated surplus':'Estimated balance';
-    parts+=`<div class="day-detail-row energy-history-row"><b>Energy result</b><small>${label}: ${Math.abs(Math.round(e.balance))} kcal · ${Math.round(e.intake)} intake · ${Math.round(e.totalBurn)} estimated burn</small></div>`;
+    parts+=`<div class="day-detail-row energy-history-row"><b><span class="history-icon">⚡</span>Energy result</b><small>${label}: ${Math.abs(Math.round(e.balance))} kcal · ${Math.round(e.intake)} intake · ${Math.round(e.totalBurn)} estimated burn</small></div>`;
   }
 
   // 3 Checklist
   const cd=state.checklistDays[date];
-  if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b>Checklist</b><small>${done} of ${items.length} complete</small></div>`}
+  if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b><span class="history-icon">☑</span>Checklist</b><small>${done} of ${items.length} complete</small></div>`}
 
   // 4 Weight
-  if(wt)parts+=`<div class="day-detail-row"><b>Weight</b><small>${wt.am?`AM ${wt.am} lb · `:''}${wt.post?`Post ${wt.post} lb · `:''}${wt.pm?`PM ${wt.pm} lb`:''}</small></div>`;
+  if(wt)parts+=`<div class="day-detail-row"><b><span class="history-icon">⚖</span>Weight</b><small>${wt.am?`AM ${wt.am} lb · `:''}${wt.post?`Post ${wt.post} lb · `:''}${wt.pm?`PM ${wt.pm} lb`:''}</small></div>`;
 
   // 5 Water
-  const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b>Water</b><small>${water} oz</small></div>`;
+  const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b><span class="history-icon">💧</span>Water</b><small>${water} oz</small></div>`;
 
   // 6 Walks
-  walks.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}Walk</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
+  walks.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}🚶 Walk</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
 
   // 7 Jog/Run
-  runs.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}${esc(a.type||'Jog/Run')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
+  runs.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}🏃 ${esc(a.type||'Jog/Run')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
   otherActs.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}${esc(a.type||'Cardio')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
 
   // 8 Workout
@@ -1209,8 +1245,12 @@ function renderDayDetail(date){
     const durationText=s.duration?formatWorkoutDuration(s.duration):'';
     parts+=`<div class="day-detail-row workout-history-detail workout-history-tappable" onclick="openWorkoutEditorByDate('${date}','${safeWorkout}','${safePhase}',${Number(h.round||0)})">
       <div class="workout-history-main">
-        <b>${esc(h.workout)} · ${esc(h.phase)} · Round ${h.round}</b>
+        <b><span class="history-icon">🏋</span>${esc(h.workout)} · ${esc(h.phase)} · Round ${h.round}</b>
         <small>${workoutTime(h)?`${formatTime12(workoutTime(h))}`:''}${kcal?`${workoutTime(h)?' · ':''}${kcal} kcal`:''}${durationText?`${(workoutTime(h)||kcal)?' · ':''}${durationText}`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}</small>
+        ${h.substitutions&&Object.keys(h.substitutions).length?`<small class="history-notes">${Object.entries(h.substitutions).map(([i,v])=>{
+          const original=program[h.phaseIndex]?.workouts?.find(w=>w.name===h.workout)?.ex?.[+i]?.[0]||`Exercise ${+i+1}`;
+          return `${esc(original)} → Sub: ${esc(v)}`;
+        }).join(' · ')}</small>`:''}
         ${s.notes?`<small class="history-notes">${esc(s.notes)}</small>`:''}
       </div>
       <button class="ghost compact edit-workout-history-btn" type="button" aria-label="Edit workout" onclick="event.stopPropagation();openWorkoutEditorByDate('${date}','${safeWorkout}','${safePhase}',${Number(h.round||0)})">Edit</button>
@@ -1240,7 +1280,7 @@ function svgLineChart(points,{valueKey,labelKey='label',suffix='',minPad=2,maxPa
     const show=points.length<=10 || i===0 || i===points.length-1 || i%Math.ceil(points.length/6)===0;
     return show?`<text x="${x(i)}" y="${height-10}" text-anchor="middle" class="chart-axis">${esc(p[labelKey])}</text>`:'';
   }).join('');
-  const dots=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(+p[valueKey])}" r="5" class="chart-dot"><title>${esc(p[labelKey])}: ${p[valueKey]}${suffix}${p.session?` · ${esc(p.session)}`:''}</title></circle>`).join('');
+  const dots=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(+p[valueKey])}" r="5" class="chart-dot"><title>${esc(p[labelKey])}: ${p[valueKey]}${suffix}${p.distance?` · ${p.distance} mi`:''}${p.z3Seconds?` · Z3 ${fmtDuration(p.z3Seconds)}`:''}${p.totalSeconds?` · ${fmtDuration(p.totalSeconds)} total`:''}${p.session?` · ${esc(p.session)}`:''}</title></circle>`).join('');
   return `<svg class="trend-svg" viewBox="0 0 ${width} ${height}" role="img">${grid}<path d="${path}" class="chart-line"/>${dots}${labels}</svg>`;
 }
 function currentWeightSeries(){
@@ -1440,6 +1480,65 @@ function closeProgramWorkoutPreview(){
   modal.setAttribute('aria-hidden','true');
 }
 
+
+function parseClockSeconds(value){
+  if(value===null||value===undefined||value==='')return 0;
+  const s=String(value).trim();
+  if(!s)return 0;
+  const parts=s.split(':').map(Number);
+  if(parts.length===2&&parts.every(Number.isFinite))return parts[0]*60+parts[1];
+  if(parts.length===3&&parts.every(Number.isFinite))return parts[0]*3600+parts[1]*60+parts[2];
+  const n=Number(s);
+  return Number.isFinite(n)?n:0;
+}
+function cardioWeekSummary(weekStart){
+  const dates=Array.from({length:7},(_,i)=>plusDays(weekStart,i));
+  let walk=0,run=0;
+  dates.forEach(date=>(state.activities[date]||[]).forEach(a=>{
+    const d=+a.distance||0;
+    const type=String(a.type||'').toLowerCase();
+    if(type==='walk')walk+=d;
+    else if(type==='jog'||type==='run')run+=d;
+  }));
+  return {walk,run,total:walk+run};
+}
+function renderCardioSummary(){
+  const box=document.getElementById('cardioSummary');
+  if(!box)return;
+  const thisStart=mondayOf(todayISO()),lastStart=plusDays(thisStart,-7);
+  const a=cardioWeekSummary(thisStart),b=cardioWeekSummary(lastStart);
+  const block=(label,x)=>`<div class="cardio-summary-col"><small>${label}</small><strong>${x.total.toFixed(2)} mi</strong><span>${x.walk.toFixed(2)} walk · ${x.run.toFixed(2)} run/jog</span></div>`;
+  box.innerHTML=`<div class="cardio-summary-grid">${block('This Week',a)}${block('Last Week',b)}</div>`;
+}
+function zone3RunSeries(){
+  const rows=[];
+  Object.entries(state.activities||{}).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,acts])=>{
+    acts.forEach(a=>{
+      const type=String(a.type||'').toLowerCase();
+      if(type!=='jog'&&type!=='run')return;
+      const total=activitySeconds(a),z3=parseClockSeconds(a.z3);
+      if(total<=0||z3<=0)return;
+      rows.push({
+        date,
+        label:new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}),
+        pct:+((z3/total)*100).toFixed(1),
+        distance:+a.distance||0,
+        totalSeconds:total,
+        z3Seconds:z3
+      });
+    });
+  });
+  return rows;
+}
+function renderZone3Chart(){
+  const box=document.getElementById('zone3Chart');
+  if(!box)return;
+  const rows=zone3RunSeries();
+  box.innerHTML=rows.length
+    ? svgLineChart(rows,{valueKey:'pct',suffix:'%',minPad:5,maxPad:5})
+    : '<p class="notice">Add Jog/Run heart-rate zone data to build this trend.</p>';
+}
+
 function renderProgress(){
   const entries=Object.entries(state.weights).filter(([,v])=>v.am||v.pm).sort((a,b)=>a[0].localeCompare(b[0]));
   const ams=entries.filter(([,v])=>v.am).map(([d,v])=>({d,v:+v.am}));
@@ -1475,6 +1574,9 @@ function renderProgress(){
       <div class="weekly-cardio-legend"><span>Walk</span><span>Run/Jog</span></div>`;
     }
   }
+
+  renderCardioSummary();
+  renderZone3Chart();
 
   const energy=dailyEnergySeries();
   document.getElementById('energyChart').innerHTML=energy.length?svgLineChart(energy,{valueKey:'energy',suffix:'',minPad:150,maxPad:150}):'<p class="notice">Your energy graph will appear after you log nutrition.</p>';

@@ -808,3 +808,20 @@ input[type="time"]{color-scheme:dark}
   z-index:2;
   white-space:nowrap;
 }
+
+/* V64 additions */
+.exercise-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.exercise-title-row h3{margin:0}
+.sub-toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap}
+.sub-toggle input{width:18px;height:18px}
+.sub-entry{display:none;margin:10px 0 12px}
+.sub-entry.show{display:block}
+.sub-entry input{width:100%;margin-top:6px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px}
+.history-icon{display:inline-block;width:26px;margin-right:8px;text-align:center}
+.cardio-summary-grid{display:grid;grid-template-columns:1fr 1fr}
+.cardio-summary-col{display:flex;flex-direction:column;gap:5px;padding:6px 14px 6px 0}
+.cardio-summary-col+.cardio-summary-col{border-left:1px solid var(--line);padding-left:18px}
+.cardio-summary-col small{color:var(--muted)}
+.cardio-summary-col strong{font-size:27px}
+.cardio-summary-col span{color:var(--muted);font-size:13px}
+@media(max-width:430px){.cardio-summary-col strong{font-size:24px}}
