@@ -825,3 +825,66 @@ input[type="time"]{color-scheme:dark}
 .cardio-summary-col strong{font-size:27px}
 .cardio-summary-col span{color:var(--muted);font-size:13px}
 @media(max-width:430px){.cardio-summary-col strong{font-size:24px}}
+
+/* V65 — compact macro/energy tables + line point labels */
+.compact-macro-table{
+  min-width:0 !important;
+  width:100%;
+}
+.compact-macro-table .weekly-row{
+  grid-template-columns:minmax(76px,1.25fr) .72fr .52fr .52fr .48fr .72fr .92fr !important;
+  gap:4px !important;
+  padding:11px 0 !important;
+  align-items:center;
+}
+.compact-macro-table .weekly-head{
+  padding-top:6px !important;
+  padding-bottom:8px !important;
+}
+.compact-macro-table .weekly-row>span{
+  min-width:0;
+  font-size:12px;
+  text-align:right;
+  white-space:nowrap;
+}
+.compact-macro-table .weekly-row>span:first-child{
+  text-align:left;
+}
+.compact-macro-table .weekly-head>span{
+  font-size:10px;
+  letter-spacing:.06em;
+}
+.compact-macro-table .weekly-row>span:first-child b{
+  font-size:14px;
+  line-height:1.1;
+}
+.compact-macro-table .weekly-row>span:first-child small{
+  display:block;
+  font-size:10px;
+  margin-top:2px;
+  line-height:1.1;
+}
+.current-week-table .weekly-row>span:first-child{
+  font-size:11px;
+}
+.chart-point-value{
+  fill:var(--text);
+  font-size:12px;
+  font-weight:700;
+}
+@media(max-width:430px){
+  .weekly-table-wrap,
+  .daily-log-table-wrap{
+    overflow-x:hidden !important;
+  }
+  .compact-macro-table .weekly-row{
+    grid-template-columns:minmax(70px,1.2fr) .68fr .48fr .48fr .44fr .68fr .88fr !important;
+    gap:3px !important;
+  }
+  .compact-macro-table .weekly-row>span{
+    font-size:11px;
+  }
+  .compact-macro-table .weekly-head>span{
+    font-size:9px;
+  }
+}

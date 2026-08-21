@@ -1281,7 +1281,25 @@ function svgLineChart(points,{valueKey,labelKey='label',suffix='',minPad=2,maxPa
     return show?`<text x="${x(i)}" y="${height-10}" text-anchor="middle" class="chart-axis">${esc(p[labelKey])}</text>`:'';
   }).join('');
   const dots=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(+p[valueKey])}" r="5" class="chart-dot"><title>${esc(p[labelKey])}: ${p[valueKey]}${suffix}${p.distance?` · ${p.distance} mi`:''}${p.z3Seconds?` · Z3 ${fmtDuration(p.z3Seconds)}`:''}${p.totalSeconds?` · ${fmtDuration(p.totalSeconds)} total`:''}${p.session?` · ${esc(p.session)}`:''}</title></circle>`).join('');
-  return `<svg class="trend-svg" viewBox="0 0 ${width} ${height}" role="img">${grid}<path d="${path}" class="chart-line"/>${dots}${labels}</svg>`;
+  const pointValues=points.length<=8
+    ? points.map((p,i)=>{
+        const raw=+p[valueKey];
+        const text=Number.isFinite(raw)
+          ? `${Number.isInteger(raw)?raw:raw.toFixed(1)}${suffix}`
+          : '';
+        if(!text)return '';
+        const yy=Math.max(12,y(raw)-10);
+        return `<text x="${x(i)}" y="${yy}" text-anchor="middle" class="chart-point-value">${esc(text)}</text>`;
+      }).join('')
+    : points.map((p,i)=>{
+        const show=i===0||i===points.length-1||i%Math.ceil(points.length/6)===0;
+        if(!show)return '';
+        const raw=+p[valueKey],text=Number.isFinite(raw)?`${Number.isInteger(raw)?raw:raw.toFixed(1)}${suffix}`:'';
+        const yy=Math.max(12,y(raw)-10);
+        return text?`<text x="${x(i)}" y="${yy}" text-anchor="middle" class="chart-point-value">${esc(text)}</text>`:'';
+      }).join('');
+
+  return `<svg class="trend-svg" viewBox="0 0 ${width} ${height}" role="img">${grid}<path d="${path}" class="chart-line"/>${dots}${pointValues}${labels}</svg>`;
 }
 function currentWeightSeries(){
   return Object.entries(state.weights).filter(([,v])=>v.am).map(([date,v])=>({date,label:new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}),weight:+v.am,session:'Current'})).sort((a,b)=>a.date.localeCompare(b.date));
@@ -1598,7 +1616,7 @@ function renderProgress(){
     exerciseCalories:logged.reduce((s,x)=>s+(x.exerciseCalories||0),0)/logged.length,
     energy:logged.reduce((s,x)=>s+x.energy,0)/logged.length
   }:null;
-  document.getElementById('currentWeekSnapshot').innerHTML=`<div class="weekly-table current-week-table">
+  document.getElementById('currentWeekSnapshot').innerHTML=`<div class="weekly-table current-week-table compact-macro-table">
     <div class="weekly-row weekly-head"><span>Day</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span>Ex Cal</span><span>Energy</span></div>
     ${rows.map(x=>`<div class="weekly-row"><span>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})} (${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'numeric',day:'numeric'})})</span><span>${x.cal?Math.round(x.cal):'—'}</span><span>${x.cal?Math.round(x.p):'—'}</span><span>${x.cal?Math.round(x.c):'—'}</span><span>${x.cal?Math.round(x.f):'—'}</span><span>${Math.round(x.exerciseCalories||0)}</span><span>${x.cal?signedKcal(x.energy):'—'}</span></div>`).join('')}
     <div class="weekly-row weekly-average"><span>Average</span><span>${avg?Math.round(avg.cal):'—'}</span><span>${avg?Math.round(avg.p):'—'}</span><span>${avg?Math.round(avg.c):'—'}</span><span>${avg?Math.round(avg.f):'—'}</span><span>${avg?Math.round(avg.exerciseCalories):'—'}</span><span>${avg?signedKcal(avg.energy):'—'}</span></div>
@@ -1613,7 +1631,7 @@ function renderProgress(){
     exerciseCalories:weeks.reduce((s,x)=>s+(x.exerciseCalories||0),0)/weeks.length,
     energy:weeks.reduce((s,x)=>s+x.energy,0)/weeks.length
   }:null;
-  document.getElementById('weeklyAverageHistory').innerHTML=weeks.length?`<div class="weekly-table weekly-history-table history-exercise-table">
+  document.getElementById('weeklyAverageHistory').innerHTML=weeks.length?`<div class="weekly-table weekly-history-table history-exercise-table compact-macro-table">
     <div class="weekly-row weekly-head"><span>Week</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span>Ex Cal</span><span>Energy</span></div>
     ${weeks.map(x=>`<div class="weekly-row"><span><b>${x.label}</b><small>${x.range} · ${x.days}d</small></span><span>${Math.round(x.cal)}</span><span>${Math.round(x.p)}</span><span>${Math.round(x.c)}</span><span>${Math.round(x.f)}</span><span>${Math.round(x.exerciseCalories||0)}</span><span>${signedKcal(x.energy)}</span></div>`).join('')}
     <div class="weekly-row weekly-average"><span>All weeks avg</span><span>${Math.round(all.cal)}</span><span>${Math.round(all.p)}</span><span>${Math.round(all.c)}</span><span>${Math.round(all.f)}</span><span>${Math.round(all.exerciseCalories||0)}</span><span>${signedKcal(all.energy)}</span></div>
@@ -1633,7 +1651,7 @@ function renderProgress(){
     exerciseCalories:dailyRows.reduce((s,x)=>s+(x.exerciseCalories||0),0)/dailyRows.length,
     energy:dailyRows.reduce((s,x)=>s+x.energy,0)/dailyRows.length
   }:null;
-  document.getElementById('dailyMacroEnergyHistory').innerHTML=dailyRows.length?`<div class="weekly-table daily-history-table history-exercise-table">
+  document.getElementById('dailyMacroEnergyHistory').innerHTML=dailyRows.length?`<div class="weekly-table daily-history-table history-exercise-table compact-macro-table">
     <div class="weekly-row weekly-head"><span>Date</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span>Ex Cal</span><span>Energy</span></div>
     ${dailyRows.map(x=>`<div class="weekly-row"><span><b>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</b><small>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'numeric',day:'numeric',year:'2-digit'})}</small></span><span>${Math.round(x.cal)}</span><span>${Math.round(x.p)}</span><span>${Math.round(x.c)}</span><span>${Math.round(x.f)}</span><span>${Math.round(x.exerciseCalories||0)}</span><span>${signedKcal(x.energy)}</span></div>`).join('')}
     <div class="weekly-row weekly-average"><span>Average</span><span>${Math.round(dailyAvg.cal)}</span><span>${Math.round(dailyAvg.p)}</span><span>${Math.round(dailyAvg.c)}</span><span>${Math.round(dailyAvg.f)}</span><span>${Math.round(dailyAvg.exerciseCalories||0)}</span><span>${signedKcal(dailyAvg.energy)}</span></div>
