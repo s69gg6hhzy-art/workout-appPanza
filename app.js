@@ -203,7 +203,7 @@ function projectSchedule(startDate,endDate){
   const items=[];
   let date=state.scheduleDate,type=state.nextEventType;
   let pIndex=state.phase,r=state.round,wIndex=state.workout;
-  let phaseCount=phaseWorkoutCount(pIndex);
+  let phaseCount=programOrdinal(pIndex,r,wIndex);
 
   while(date<=endDate){
     if(date>=startDate)items.push({date,type,phaseIndex:pIndex,round:r,workoutIndex:wIndex});
@@ -1033,8 +1033,8 @@ function saveWorkout(){
   if(summary.postWeight)state.weights[todayISO()]={...(state.weights[todayISO()]||{}),post:summary.postWeight};
   delete state.drafts[getDraftKey()];
   state.completed++;
-  const completedCount=state.history.filter(h=>(h.phaseIndex??-1)===completedPhaseIndex).length;
-  const restNext=completedCount%(program[completedPhaseIndex]?.on||1)===0;
+  const completedCountFromProgramStart=programOrdinal(completedPhaseIndex,state.round,state.workout)+1;
+  const restNext=completedCountFromProgramStart%(program[completedPhaseIndex]?.on||1)===0;
   advanceProgram();
   state.scheduleDate=plusDays(todayISO(),1);
   state.nextEventType=restNext?'rest':'workout';
@@ -1449,6 +1449,76 @@ function weeklyCardioMiles(){
   }));
 }
 
+
+function programOrdinal(phaseIndex,roundIndex,workoutIndex){
+  const p=program?.[phaseIndex];
+  if(!p)return 0;
+  return (Math.max(0,+roundIndex||0)*(p.workouts?.length||0))+Math.max(0,+workoutIndex||0);
+}
+function refreshProgramStartOptions(){
+  const phaseSel=document.getElementById('programStartPhase');
+  const roundSel=document.getElementById('programStartRound');
+  const workoutSel=document.getElementById('programStartWorkout');
+  if(!phaseSel||!roundSel||!workoutSel||!Array.isArray(program))return;
+
+  if(!phaseSel.options.length){
+    phaseSel.innerHTML=program.map((p,i)=>`<option value="${i}">Phase ${i+1} · ${esc(p.name||`Phase ${i+1}`)}</option>`).join('');
+  }
+
+  const pi=Math.min(program.length-1,Math.max(0,+phaseSel.value||0));
+  const p=program[pi];
+  const previousRound=roundSel.value;
+  const previousWorkout=workoutSel.value;
+
+  roundSel.innerHTML=Array.from({length:Math.max(1,+p.rounds||1)},(_,i)=>`<option value="${i}">Round ${i+1}</option>`).join('');
+  workoutSel.innerHTML=(p.workouts||[]).map((w,i)=>`<option value="${i}">${esc(w.name||`Workout ${i+1}`)}</option>`).join('');
+
+  if(previousRound!=='' && +previousRound < roundSel.options.length)roundSel.value=previousRound;
+  if(previousWorkout!=='' && +previousWorkout < workoutSel.options.length)workoutSel.value=previousWorkout;
+}
+function renderProgramStartControls(){
+  const phaseSel=document.getElementById('programStartPhase');
+  const roundSel=document.getElementById('programStartRound');
+  const workoutSel=document.getElementById('programStartWorkout');
+  const currentEl=document.getElementById('programStartCurrent');
+  if(!phaseSel||!roundSel||!workoutSel)return;
+
+  refreshProgramStartOptions();
+  phaseSel.value=String(Math.max(0,state.phase||0));
+  refreshProgramStartOptions();
+  roundSel.value=String(Math.max(0,state.round||0));
+  workoutSel.value=String(Math.max(0,state.workout||0));
+
+  const p=program?.[state.phase],w=p?.workouts?.[state.workout];
+  if(currentEl&&p&&w){
+    currentEl.textContent=`Current starting position: ${p.name} · Round ${state.round+1} · ${w.name}`;
+  }
+}
+function applyProgramStartingPoint(){
+  const pi=+document.getElementById('programStartPhase')?.value;
+  const ri=+document.getElementById('programStartRound')?.value;
+  const wi=+document.getElementById('programStartWorkout')?.value;
+  const p=program?.[pi],w=p?.workouts?.[wi];
+  if(!p||!w)return;
+
+  const round=Math.min(Math.max(0,ri||0),Math.max(0,(+p.rounds||1)-1));
+  const workout=Math.min(Math.max(0,wi||0),Math.max(0,(p.workouts||[]).length-1));
+  const label=`${p.name} · Round ${round+1} · ${w.name}`;
+  if(!confirm(`Start the program from ${label}? Your existing history and tracking data will be kept.`))return;
+
+  stopTimer();
+  state.phase=pi;
+  state.round=round;
+  state.workout=workout;
+  state.scheduleDate=todayISO();
+  state.nextEventType='workout';
+  state.drafts={};
+  save();
+  renderAll();
+  renderProgramStartControls();
+  alert(`Program starting point updated to ${label}.`);
+}
+
 function showMoreSection(section){
   const progress=document.getElementById('moreProgressSection');
   const workouts=document.getElementById('moreWorkoutsSection');
@@ -1459,7 +1529,7 @@ function showMoreSection(section){
   if(workouts)workouts.style.display=isWorkouts?'block':'none';
   if(pTab)pTab.classList.toggle('on',!isWorkouts);
   if(wTab)wTab.classList.toggle('on',isWorkouts);
-  if(isWorkouts)renderProgramWorkoutLibrary();
+  if(isWorkouts){renderProgramStartControls();renderProgramWorkoutLibrary();}
 }
 
 function workoutExerciseList(workout){
@@ -1873,7 +1943,7 @@ async function resetForNewUser(){
   alert('App reset complete. Ready for a new user.');
 }
 
-function renderAll(){renderToday();renderWorkout();renderNutrition();renderChecklist();renderHistory();renderProgress()}
+function renderAll(){renderToday();renderWorkout();renderNutrition();renderChecklist();renderHistory();renderProgress();renderProgramStartControls()}
 function num(id){return parseFloat(document.getElementById(id).value)||0}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.go)));document.getElementById('startBtn').addEventListener('click',()=>showScreen('workout'));

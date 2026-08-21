@@ -963,3 +963,41 @@ input[type="time"]{color-scheme:dark}
   .exercise.superset-exercise::before,
   .exercise.superset-exercise::after{left:-12px}
 }
+
+/* V69 — photo note + selectable program starting point */
+.photo-storage-note{
+  margin-top:-4px;
+  margin-bottom:14px;
+  line-height:1.4;
+}
+.program-start-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin:16px 0;
+}
+.program-start-grid label:last-child{
+  grid-column:1 / -1;
+}
+.program-start-grid label{
+  color:var(--muted);
+  font-size:13px;
+}
+.program-start-grid select{
+  width:100%;
+  margin-top:6px;
+  min-height:48px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel2);
+  color:var(--text);
+  padding:0 12px;
+  font-size:15px;
+}
+.program-start-current{
+  margin-top:12px;
+  line-height:1.4;
+}
+#applyProgramStartBtn{
+  width:100%;
+}
