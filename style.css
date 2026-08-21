@@ -888,3 +888,32 @@ input[type="time"]{color-scheme:dark}
     font-size:9px;
   }
 }
+
+/* V66 — all-time weekly cardio average */
+.cardio-summary-grid-3{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.cardio-summary-grid-3 .cardio-summary-col{
+  min-width:0;
+  padding-right:10px;
+}
+.cardio-summary-grid-3 .cardio-summary-col+.cardio-summary-col{
+  padding-left:12px;
+}
+.cardio-summary-grid-3 .cardio-summary-col strong{
+  font-size:clamp(20px,5.6vw,27px);
+  white-space:nowrap;
+}
+.cardio-summary-grid-3 .cardio-summary-col span{
+  line-height:1.35;
+}
+.cardio-average-note{
+  margin:14px 0 0;
+  text-align:center;
+}
+@media(max-width:430px){
+  .cardio-summary-grid-3 .cardio-summary-col small{font-size:11px}
+  .cardio-summary-grid-3 .cardio-summary-col span{font-size:10px}
+  .cardio-summary-grid-3 .cardio-summary-col+.cardio-summary-col{padding-left:8px}
+  .cardio-summary-grid-3 .cardio-summary-col{padding-right:6px}
+}

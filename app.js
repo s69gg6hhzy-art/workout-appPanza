@@ -1524,9 +1524,44 @@ function renderCardioSummary(){
   const box=document.getElementById('cardioSummary');
   if(!box)return;
   const thisStart=mondayOf(todayISO()),lastStart=plusDays(thisStart,-7);
-  const a=cardioWeekSummary(thisStart),b=cardioWeekSummary(lastStart);
-  const block=(label,x)=>`<div class="cardio-summary-col"><small>${label}</small><strong>${x.total.toFixed(2)} mi</strong><span>${x.walk.toFixed(2)} walk · ${x.run.toFixed(2)} run/jog</span></div>`;
-  box.innerHTML=`<div class="cardio-summary-grid">${block('This Week',a)}${block('Last Week',b)}</div>`;
+  const current=cardioWeekSummary(thisStart),last=cardioWeekSummary(lastStart);
+
+  // All-time weekly average: include only weeks that actually contain recorded cardio.
+  const cardioDates=Object.entries(state.activities||{})
+    .filter(([,acts])=>(acts||[]).some(a=>{
+      const type=String(a.type||'').toLowerCase();
+      return (type==='walk'||type==='jog'||type==='run') && (+a.distance||0)>0;
+    }))
+    .map(([date])=>date);
+
+  const weekStarts=[...new Set(cardioDates.map(mondayOf))].sort();
+  const weeks=weekStarts.map(cardioWeekSummary).filter(w=>w.total>0);
+  const avg=weeks.length
+    ? weeks.reduce((sum,w)=>({
+        walk:sum.walk+w.walk,
+        run:sum.run+w.run,
+        total:sum.total+w.total
+      }),{walk:0,run:0,total:0})
+    : {walk:0,run:0,total:0};
+
+  if(weeks.length){
+    avg.walk/=weeks.length;
+    avg.run/=weeks.length;
+    avg.total/=weeks.length;
+  }
+
+  const block=(label,x)=>`<div class="cardio-summary-col">
+    <small>${label}</small>
+    <strong>${x.total.toFixed(2)} mi</strong>
+    <span>${x.walk.toFixed(2)} walk · ${x.run.toFixed(2)} run/jog</span>
+  </div>`;
+
+  box.innerHTML=`<div class="cardio-summary-grid cardio-summary-grid-3">
+    ${block('This Week',current)}
+    ${block('Last Week',last)}
+    ${block('Weekly Avg',avg)}
+  </div>
+  <p class="tiny cardio-average-note">Average includes every week with recorded cardio.</p>`;
 }
 function zone3RunSeries(){
   const rows=[];
