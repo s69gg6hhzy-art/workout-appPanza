@@ -516,20 +516,30 @@ function parseWorkoutDuration(value){
 function formatWorkoutDuration(value){
   if(value===null||value===undefined||value==='')return '';
   const raw=String(value).trim();
-  if(/^\d+:\d{1,2}:\d{1,2}$/.test(raw)){
-    let [h,m,s]=raw.split(':').map(Number);
-    if(![h,m,s].every(Number.isFinite))return raw;
+
+  // Legacy six-digit entries came from the old HHMMSS number field.
+  if(/^\d{5,6}$/.test(raw)){
+    const d=raw.padStart(6,'0');
+    const h=+d.slice(0,2),m=+d.slice(2,4),s=+d.slice(4,6);
     const total=Math.max(0,h*3600+m*60+s);
-    const hh=Math.floor(total/3600);
-    const mm=Math.floor((total%3600)/60);
-    const ss=total%60;
+    const hh=Math.floor(total/3600),mm=Math.floor((total%3600)/60),ss=total%60;
     return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
   }
-  const digits=raw.replace(/\D/g,'');
-  if(!digits)return '';
-  if(digits.length<=2)return `00:00:${digits.padStart(2,'0')}`;
-  if(digits.length<=4)return `00:${digits.slice(0,-2).padStart(2,'0')}:${digits.slice(-2)}`;
-  return `${digits.slice(0,-4).padStart(2,'0')}:${digits.slice(-4,-2)}:${digits.slice(-2)}`;
+
+  if(/^\d+:\d{1,2}:\d{1,2}$/.test(raw)){
+    const [h,m,s]=raw.split(':').map(Number);
+    const total=Math.max(0,h*3600+m*60+s);
+    const hh=Math.floor(total/3600),mm=Math.floor((total%3600)/60),ss=total%60;
+    return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  }
+
+  // Historical plain numbers were stored as workout minutes.
+  if(/^\d+(\.\d+)?$/.test(raw)){
+    const total=Math.max(0,Math.round((+raw)*60));
+    const hh=Math.floor(total/3600),mm=Math.floor((total%3600)/60),ss=total%60;
+    return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  }
+  return '';
 }
 function exerciseTotalsForDate(date){
   const workoutEntries=state.history.filter(h=>isoDate(h.date)===date);
@@ -1343,23 +1353,16 @@ function showMoreSection(section){
 }
 
 function workoutExerciseList(workout){
-  const exercises=workout?.exercises||[];
+  const exercises=workout?.ex||[];
   if(!exercises.length)return '<p class="notice">No exercises listed for this workout.</p>';
   return exercises.map((ex,i)=>{
-    const name=ex.name||`Exercise ${i+1}`;
-    const sets=ex.sets??'—';
-    const reps=ex.reps??ex.repRange??'—';
-    const rest=ex.rest??'—';
-    const note=ex.note||ex.notes||'';
+    const [name,targets,rest,last]=ex;
+    const sets=Array.isArray(targets)?targets:[];
     return `<div class="program-exercise-row">
       <div class="program-exercise-name">
-        <b>${esc(name)}</b>
-        ${note?`<small>${esc(String(note))}</small>`:''}
-      </div>
-      <div class="program-exercise-meta">
-        <span>${esc(String(sets))} sets</span>
-        <span>${esc(String(reps))} reps</span>
-        <span>${esc(String(rest))} rest</span>
+        <b>${esc(name||`Exercise ${i+1}`)}</b>
+        <small>${sets.length} set${sets.length===1?'':'s'} · ${sets.map(esc).join(' / ')}${rest?` · ${esc(rest)} rest`:''}</small>
+        ${last?`<small class="program-last">Last: ${esc(last)}</small>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1372,7 +1375,6 @@ function renderProgramWorkoutLibrary(){
     box.innerHTML='<div class="card"><p class="notice">No program data found.</p></div>';
     return;
   }
-
   box.innerHTML=program.map((phase,pi)=>{
     const workouts=phase.workouts||[];
     return `<div class="card program-phase-card">
@@ -1382,7 +1384,7 @@ function renderProgramWorkoutLibrary(){
         ${workouts.map((w,wi)=>`<button class="program-workout-row" type="button" onclick="openProgramWorkoutPreview(${pi},${wi})">
           <div>
             <b>${esc(w.name||`Workout ${wi+1}`)}</b>
-            <small>${(w.exercises||[]).length} exercises</small>
+            <small>${(w.ex||[]).length} exercises</small>
           </div>
           <span>View ›</span>
         </button>`).join('')}
@@ -1397,19 +1399,13 @@ function openProgramWorkoutPreview(phaseIndex,workoutIndex){
   if(!workout)return;
 
   document.getElementById('programWorkoutTitle').textContent=workout.name||`Workout ${workoutIndex+1}`;
-  document.getElementById('programWorkoutMeta').textContent=`Phase ${phaseIndex+1}${phase?.name?` · ${phase.name}`:''}`;
+  document.getElementById('programWorkoutMeta').textContent=`${phase?.name||`Phase ${phaseIndex+1}`} · ${(workout.ex||[]).length} exercises`;
 
-  const warm=workout.warmup||workout.warmUp||[];
-  const warmRows=Array.isArray(warm)&&warm.length
-    ? `<div class="program-preview-section">
-        <div class="eyebrow">Warm-up</div>
-        ${warm.map(x=>{
-          const label=typeof x==='string'?x:(x?.name||x?.title||'Warm-up item');
-          const note=typeof x==='object'?(x?.note||x?.notes||''):'';
-          return `<div class="program-warm-row"><b>${esc(String(label))}</b>${note?`<small>${esc(String(note))}</small>`:''}</div>`;
-        }).join('')}
-      </div>`
-    : '';
+  const warm=workoutType(workout.name)==='lower'?lowerWarmup:upperWarmup;
+  const warmRows=`<div class="program-preview-section">
+    <div class="eyebrow">Warm-up</div>
+    ${warm.map(x=>`<div class="program-warm-row"><b>${esc(x[0])}</b><small>${esc(x[1])}${x[2]?` · ${esc(x[2])}`:''}</small></div>`).join('')}
+  </div>`;
 
   document.getElementById('programWorkoutPreview').innerHTML=
     `${warmRows}<div class="program-preview-section"><div class="eyebrow">Exercises</div>${workoutExerciseList(workout)}</div>`;

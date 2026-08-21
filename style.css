@@ -767,3 +767,25 @@ input[type="time"]{color-scheme:dark}
   color:var(--muted);
   font-size:12px;
 }
+
+/* V62 — workout library uses real program exercises */
+.program-exercise-row{
+  display:block;
+}
+.program-exercise-name small{
+  display:block;
+  margin-top:5px;
+  color:var(--muted);
+}
+.program-exercise-name .program-last{
+  color:var(--text);
+  opacity:.78;
+}
+.program-warm-row small{
+  display:block;
+  margin-top:4px;
+}
+.edit-duration-field>span{
+  display:block;
+  margin-bottom:8px;
+}
