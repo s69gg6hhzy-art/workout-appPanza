@@ -582,12 +582,23 @@ function formatWorkoutDuration(value){
 }
 function exerciseTotalsForDate(date){
   const workoutEntries=state.history.filter(h=>isoDate(h.date)===date);
-  const workoutMinutes=workoutEntries.reduce((s,h)=>s+parseWorkoutDuration(h.summary?.duration),0);
-  const workoutCalories=workoutEntries.reduce((s,h)=>s+(+(h.summary?.totalCalories ?? h.summary?.activeCalories)||0),0);
+  const kneeEntries=(state.kneeHistory||[]).filter(h=>isoDate(h.date)===date);
+
+  const liftingMinutes=workoutEntries.reduce((s,h)=>s+parseWorkoutDuration(h.summary?.duration),0);
+  const liftingCalories=workoutEntries.reduce((s,h)=>s+(+(h.summary?.totalCalories ?? h.summary?.activeCalories)||0),0);
+
+  const kneeMinutes=kneeEntries.reduce((s,h)=>s+parseWorkoutDuration(h.summary?.duration),0);
+  const kneeCalories=kneeEntries.reduce((s,h)=>s+(+(h.summary?.totalCalories ?? h.summary?.activeCalories)||0),0);
+
+  const workoutMinutes=liftingMinutes+kneeMinutes;
+  const workoutCalories=liftingCalories+kneeCalories;
+
   const acts=state.activities[date]||[];
   const activityMinutes=acts.reduce((s,a)=>s+(+a.minutes||0)+((+a.seconds||0)/60),0);
   const activityCalories=acts.reduce((s,a)=>s+(+a.calories||0),0);
+
   return {
+    liftingMinutes,liftingCalories,kneeMinutes,kneeCalories,
     workoutMinutes,workoutCalories,activityMinutes,activityCalories,
     minutes:workoutMinutes+activityMinutes,
     calories:workoutCalories+activityCalories
