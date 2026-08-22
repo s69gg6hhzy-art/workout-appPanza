@@ -38,10 +38,9 @@ const historicalCalories=[
 const isoDate=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)};
 const todayISO=()=>isoDate(new Date());
 const defaultChecklistItems=[{"id":"am-brush-floss","text":"AM Brush & Floss"},{"id":"make-bed","text":"Make Bed"},{"id":"gum","text":"Gum"},{"id":"portuguese-1","text":"Portuguese #1"},{"id":"walk-dogs","text":"Walk Dogs"},{"id":"jog-run","text":"Jog/Run"},{"id":"pushups-1","text":"30 Push Ups #1"},{"id":"stretch","text":"Stretch"},{"id":"creatine-bcaas","text":"Creatine & BCAAs"},{"id":"coconut-oil-brush","text":"Gargle Coconut Oil & Brush"},{"id":"wash-face-guasha","text":"Wash Face & Guasha"},{"id":"fast-until-2","text":"Fast Until 2pm"},{"id":"portuguese-2","text":"Portuguese #2"},{"id":"pushups-2","text":"30 Push Ups #2"},{"id":"pm-brush-floss","text":"PM Brush & Floss"},{"id":"portuguese-3","text":"Portuguese #3"},{"id":"ab-roller","text":"10 Ab Roller"},{"id":"ab-twists","text":"30 Ab Twists"}];
-const old=JSON.parse(localStorage.getItem('mwState')||'null');
+const PUBLIC_STATE_KEY='mfPublicStateV1';
 const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},goalHistory:{},drafts:{},water:{},waterGoal:96,checklistItems:JSON.parse(JSON.stringify(defaultChecklistItems)),checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'User'},historicalEnabled:false,photoSettings:{weekly:false},photoCheckins:[],photoDays:{}};
-let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
-if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
+let state=JSON.parse(localStorage.getItem(PUBLIC_STATE_KEY)||'null')||JSON.parse(JSON.stringify(base));
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
 if(!Array.isArray(state.history))state.history=[];
 ['workoutLogs','weights','nutrition','goalHistory','drafts','water','checklistDays','activities','restDays','photoDays'].forEach(k=>{
@@ -133,7 +132,7 @@ function renderLogWeights(){
 }
 function save(){
   try{
-    localStorage.setItem('mfState',JSON.stringify(state));
+    localStorage.setItem(PUBLIC_STATE_KEY,JSON.stringify(state));
     return true;
   }catch(err){
     console.error('Could not save app state',err);
@@ -1825,9 +1824,9 @@ function renderProgress(){
 }
 
 function downloadBackup(){
- const payload={app:'Workout App Panza',version:12,exportedAt:new Date().toISOString(),state};
+ const payload={app:'Matt Fitness Public',version:12,exportedAt:new Date().toISOString(),state};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download=`workout-app-backup-${todayISO()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ a.href=url;a.download=`matt-fitness-public-backup-${todayISO()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function restoreBackupFile(file){
  if(!file)return;const r=new FileReader();
@@ -1951,8 +1950,8 @@ async function resetForNewUser(){
   const ok=confirm('Reset this app for a new user? This permanently clears all saved workout, nutrition, weight, activity, checklist, water, progress-photo tracking, historical charts, checkpoints and historical session data on this device.');
   if(!ok)return;
   try{
-    localStorage.removeItem('mfState');
-    localStorage.removeItem('mwState');
+    localStorage.removeItem(PUBLIC_STATE_KEY);
+    
     if(typeof photoClear==='function'){
       try{await photoClear()}catch(e){}
     }

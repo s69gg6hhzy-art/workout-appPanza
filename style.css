@@ -1001,3 +1001,20 @@ input[type="time"]{color-scheme:dark}
 #applyProgramStartBtn{
   width:100%;
 }
+
+/* Public V1 fork marker */
+.public-build-badge{
+  position:fixed;
+  top:max(8px, env(safe-area-inset-top));
+  right:10px;
+  z-index:9999;
+  padding:4px 7px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:rgba(12,13,16,.82);
+  color:var(--muted);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.12em;
+  pointer-events:none;
+}
