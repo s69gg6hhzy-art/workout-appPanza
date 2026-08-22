@@ -1002,19 +1002,6 @@ input[type="time"]{color-scheme:dark}
   width:100%;
 }
 
-/* Public V1 fork marker */
-.public-build-badge{
-  position:fixed;
-  top:max(8px, env(safe-area-inset-top));
-  right:10px;
-  z-index:9999;
-  padding:4px 7px;
-  border:1px solid var(--line);
-  border-radius:999px;
-  background:rgba(12,13,16,.82);
-  color:var(--muted);
-  font-size:9px;
-  font-weight:800;
-  letter-spacing:.12em;
-  pointer-events:none;
-}
+
+/* Personal v1: Phase 1 off-day knee circuit */
+.knee-overview-sheet{max-height:94vh}.knee-progression-table{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:12px 0}.knee-progression-head,.knee-progression-table>div{display:grid;grid-template-columns:.55fr 1fr 1fr 1.35fr;align-items:stretch}.knee-progression-table>div>span,.knee-progression-head>b{padding:10px 6px;border-right:1px solid var(--line);border-top:1px solid var(--line);font-size:11px;text-align:center;display:flex;align-items:center;justify-content:center}.knee-progression-head>b{border-top:0;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em}.knee-progression-table>div>*:last-child{border-right:0}.knee-progression-copy{line-height:1.45;font-size:14px}.knee-progression-copy ul{margin:8px 0 12px;padding-left:22px}.knee-session-badge{margin-top:14px;padding:10px 12px;border:1px solid var(--blue);color:var(--blue);border-radius:12px;text-align:center;font-weight:800;font-size:13px}.knee-workout-note{padding:11px 12px;margin-bottom:14px;border:1px solid var(--line);border-radius:12px;color:var(--muted);font-size:12px;line-height:1.4}.knee-note{margin:8px 0 12px}.knee-circuit-head,.knee-circuit-row{display:grid;grid-template-columns:1fr 42px 42px;gap:8px;align-items:center}.knee-circuit-head{padding:5px 0 9px}.knee-circuit-head>b{text-align:center;color:var(--muted);font-size:11px}.knee-circuit-row{padding:10px 0;border-top:1px solid var(--line)}.knee-circuit-row b{display:block;font-size:14px}.knee-circuit-row small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.knee-check,.knee-warm-check,.knee-finish-check{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:18px}.knee-check.done,.knee-warm-check.done,.knee-finish-check.done{background:#fff;color:#0b0c0f}.knee-finish{margin-top:16px}.knee-finish .warm-row:last-child{border-bottom:0}@media(max-width:390px){.knee-progression-head,.knee-progression-table>div{grid-template-columns:.45fr .95fr .95fr 1.35fr}.knee-progression-table>div>span,.knee-progression-head>b{padding:9px 4px;font-size:10px}}

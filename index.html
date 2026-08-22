@@ -4,11 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
-  <title>Matt Fitness Public</title>
-  <link rel="stylesheet" href="style.css?v=public-1">
+  <title>Matt Fitness</title>
+  <link rel="stylesheet" href="style.css?v=personal-knee-1">
 </head>
 <body>
-<div class="public-build-badge">PUBLIC V1</div>
 <div class="app">
   <section id="today" class="screen active">
     <div class="top"><div class="title">Today</div><div class="pill" id="todayLabel"></div></div>
@@ -279,6 +278,21 @@
 </section>
 </div>
 
+<div class="modal" id="kneeOverviewModal" aria-hidden="true">
+  <div class="modal-sheet knee-overview-sheet">
+    <div class="modal-head"><div><div class="eyebrow">Phase 1 · Off-day knee circuit</div><h2>Three-week progression</h2></div><button class="ghost" type="button" onclick="closeKneeOverview()">✕</button></div>
+    <div class="knee-progression-table">
+      <div class="knee-progression-head"><b>Week</b><b>Step-down</b><b>Split squat</b><b>Other exercises</b></div>
+      <div><span>1</span><span>2 × 8/leg</span><span>2 × 5/leg</span><span>As listed</span></div>
+      <div><span>2</span><span>2 × 10/leg</span><span>2 × 6/leg</span><span>Add 2–3 reps if easy</span></div>
+      <div><span>3</span><span>2 × 12/leg</span><span>3 × 5/leg</span><span>Slower 3-second lowering</span></div>
+    </div>
+    <div class="knee-progression-copy"><p>Progress only <b>one variable at a time:</b></p><ul><li>More repetitions</li><li>Less hand assistance</li><li>Lower front-foot elevation</li><li>Slightly greater knee travel/depth</li></ul><p class="tiny">Don’t increase all four simultaneously. For these three weeks, control and symptom response matter more than making the circuit exhausting.</p></div>
+    <div class="knee-session-badge" id="kneeSessionBadge"></div>
+    <button class="primary" type="button" onclick="beginKneeCircuit()">Start knee circuit</button>
+  </div>
+</div>
+
 <div class="modal" id="finishModal" aria-hidden="true">
   <div class="modal-sheet">
     <div class="modal-head"><div><div class="eyebrow">Workout complete</div><h2 id="finishWorkoutName"></h2></div><button class="ghost" id="closeFinish">✕</button></div>
@@ -367,7 +381,7 @@
   <button data-screen="progress">More</button>
 </nav>
 
-<script src="data.js?v=public-1"></script>
-<script src="app.js?v=public-1"></script>
+<script src="data.js?v=70"></script>
+<script src="app.js?v=personal-knee-1"></script>
 </body>
 </html>

@@ -38,11 +38,13 @@ const historicalCalories=[
 const isoDate=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)};
 const todayISO=()=>isoDate(new Date());
 const defaultChecklistItems=[{"id":"am-brush-floss","text":"AM Brush & Floss"},{"id":"make-bed","text":"Make Bed"},{"id":"gum","text":"Gum"},{"id":"portuguese-1","text":"Portuguese #1"},{"id":"walk-dogs","text":"Walk Dogs"},{"id":"jog-run","text":"Jog/Run"},{"id":"pushups-1","text":"30 Push Ups #1"},{"id":"stretch","text":"Stretch"},{"id":"creatine-bcaas","text":"Creatine & BCAAs"},{"id":"coconut-oil-brush","text":"Gargle Coconut Oil & Brush"},{"id":"wash-face-guasha","text":"Wash Face & Guasha"},{"id":"fast-until-2","text":"Fast Until 2pm"},{"id":"portuguese-2","text":"Portuguese #2"},{"id":"pushups-2","text":"30 Push Ups #2"},{"id":"pm-brush-floss","text":"PM Brush & Floss"},{"id":"portuguese-3","text":"Portuguese #3"},{"id":"ab-roller","text":"10 Ab Roller"},{"id":"ab-twists","text":"30 Ab Twists"}];
-const PUBLIC_STATE_KEY='mfPublicStateV1';
-const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},goalHistory:{},drafts:{},water:{},waterGoal:96,checklistItems:JSON.parse(JSON.stringify(defaultChecklistItems)),checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'User'},historicalEnabled:false,photoSettings:{weekly:false},photoCheckins:[],photoDays:{}};
-let state=JSON.parse(localStorage.getItem(PUBLIC_STATE_KEY)||'null')||JSON.parse(JSON.stringify(base));
+const old=JSON.parse(localStorage.getItem('mwState')||'null');
+const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},goalHistory:{},drafts:{},water:{},waterGoal:96,checklistItems:JSON.parse(JSON.stringify(defaultChecklistItems)),checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'User'},historicalEnabled:false,photoSettings:{weekly:false},photoCheckins:[],photoDays:{},kneeHistory:[]};
+let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
+if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
 if(!Array.isArray(state.history))state.history=[];
+if(!Array.isArray(state.kneeHistory))state.kneeHistory=[];
 ['workoutLogs','weights','nutrition','goalHistory','drafts','water','checklistDays','activities','restDays','photoDays'].forEach(k=>{
   if(!state[k]||typeof state[k]!=='object'||Array.isArray(state[k]))state[k]={};
 });
@@ -132,7 +134,7 @@ function renderLogWeights(){
 }
 function save(){
   try{
-    localStorage.setItem(PUBLIC_STATE_KEY,JSON.stringify(state));
+    localStorage.setItem('mfState',JSON.stringify(state));
     return true;
   }catch(err){
     console.error('Could not save app state',err);
@@ -281,6 +283,37 @@ function savePhotoTracker(){
   renderHistory();
 }
 
+const kneeCircuit={
+  warmup:[['Backward walking','5 minutes'],['Easy ankle circles','10 each direction'],['Bodyweight quarter squats','10']],
+  circuit:[['Wall tibialis raise','20 reps'],['Straight-knee calf raise','15 reps'],['Bent-knee calf raise','15 reps'],['Patrick step-down','8 each leg'],['Assisted, front-foot-elevated ATG split squat','5 each leg'],['Single-leg glute bridge','10 each leg'],['Side-lying hip abduction','12 each leg']],
+  finish:[['Elephant walks','10 each leg'],['Couch stretch','45 seconds each leg'],['Calf stretch','45 seconds each leg']]
+};
+function kneeCircuitAvailable(){ensureScheduleState();return state.phase===0&&state.nextEventType==='rest'&&state.scheduleDate===todayISO()&&!state.restDays[todayISO()];}
+function kneeSessionNumber(){return Math.min(6,(state.kneeHistory||[]).length+1)}
+function kneeWeek(){return Math.min(3,Math.ceil(kneeSessionNumber()/2))}
+function openKneeOverview(){
+  const modal=document.getElementById('kneeOverviewModal');if(!modal)return;
+  const n=kneeSessionNumber(),w=kneeWeek();
+  const badge=document.getElementById('kneeSessionBadge');if(badge)badge.textContent=`Knee session ${n} of 6 · Week ${w} of 3`;
+  modal.classList.add('show');modal.setAttribute('aria-hidden','false');
+}
+function closeKneeOverview(){const m=document.getElementById('kneeOverviewModal');if(m){m.classList.remove('show');m.setAttribute('aria-hidden','true')}}
+function beginKneeCircuit(){closeKneeOverview();showScreen('workout')}
+function kneeDraft(){state.drafts=state.drafts||{};const key=`knee-${todayISO()}`;if(!state.drafts[key])state.drafts[key]={warm:{},rounds:{},finish:{}};return state.drafts[key]}
+function renderKneeCircuit(){
+  const d=kneeDraft(),week=kneeWeek(),n=kneeSessionNumber();
+  document.getElementById('workoutPhase').textContent=`Phase 1 · Knee ${n}/6`;
+  document.getElementById('workoutTitle').textContent='Off-day knee circuit';
+  document.getElementById('workoutMeta').textContent=`Week ${week} · 2 rounds · approximately 25 minutes`;
+  const step=week===1?'8 each leg':week===2?'10 each leg':'12 each leg';
+  const split=week===1?'5 each leg':week===2?'6 each leg':'5 each leg';
+  const rows=kneeCircuit.circuit.map((x,i)=>{let target=x[1];if(i===3)target=step;if(i===4)target=split;return `<div class="knee-circuit-row"><div><b>${i+1}. ${x[0]}</b><small>${target}${week===3&&i===4?' · 3 sets total':''}</small></div><button class="knee-check ${d.rounds[i]?.[0]?'done':''}" data-ki="${i}" data-kr="0">✓</button><button class="knee-check ${d.rounds[i]?.[1]?'done':''}" data-ki="${i}" data-kr="1">✓</button></div>`}).join('');
+  document.getElementById('exerciseList').innerHTML=`<div class="knee-workout-note">Do it after your morning jog while you’re warm, or separate it by at least 4 hours.</div><div class="warmup"><div class="warmup-title">Warm-up</div>${kneeCircuit.warmup.map((x,i)=>`<div class="warm-row"><div class="warm-copy"><b>${x[0]}</b><small>${x[1]}</small></div><button class="knee-warm-check ${d.warm[i]?'done':''}" data-kwi="${i}">✓</button></div>`).join('')}<p class="tiny knee-note">Your normal walk and jog already provide substantial warm-up, so you don’t need the full 10 minutes of backward walking.</p></div><div class="knee-circuit-head"><div><div class="warmup-title">Circuit — 2 rounds</div><p class="tiny">Rest minimally between exercises and 60–90 seconds between rounds.</p></div><b>R1</b><b>R2</b></div>${rows}<div class="warmup knee-finish"><div class="warmup-title">Finish with</div>${kneeCircuit.finish.map((x,i)=>`<div class="warm-row"><div class="warm-copy"><b>${x[0]}</b><small>${x[1]}</small></div><button class="knee-finish-check ${d.finish[i]?'done':''}" data-kfi="${i}">✓</button></div>`).join('')}</div>`;
+  document.querySelectorAll('.knee-warm-check').forEach(b=>b.onclick=()=>{d.warm[+b.dataset.kwi]=!d.warm[+b.dataset.kwi];b.classList.toggle('done');save()});
+  document.querySelectorAll('.knee-check').forEach(b=>b.onclick=()=>{const i=+b.dataset.ki,r=+b.dataset.kr;d.rounds[i]=d.rounds[i]||{};d.rounds[i][r]=!d.rounds[i][r];b.classList.toggle('done');save()});
+  document.querySelectorAll('.knee-finish-check').forEach(b=>b.onclick=()=>{d.finish[+b.dataset.kfi]=!d.finish[+b.dataset.kfi];b.classList.toggle('done');save()});
+}
+
 function renderToday(){
   ensureScheduleState();
   const p=phase(),w=current(),today=todayISO();
@@ -308,14 +341,20 @@ function renderToday(){
     document.getElementById('sessionLabel').textContent='Rest day acknowledged';
   }else if(isRest){
     document.getElementById('phaseLabel').textContent=`${p.name} · Round ${state.round+1} of ${p.rounds}`;
-    document.getElementById('nextWorkout').textContent='Rest day';
-    document.getElementById('sessionLabel').textContent='No workout planned today';
-    restBtn.style.display='block';
+    if(state.phase===0){
+      document.getElementById('nextWorkout').textContent='Off-day knee circuit';
+      document.getElementById('sessionLabel').textContent=`Knee session ${kneeSessionNumber()} of 6 · Week ${kneeWeek()} of 3`;
+      startBtn.textContent='View knee circuit';startBtn.style.display='block';
+    }else{
+      document.getElementById('nextWorkout').textContent='Rest day';
+      document.getElementById('sessionLabel').textContent='No workout planned today';
+      restBtn.style.display='block';
+    }
   }else{
     document.getElementById('phaseLabel').textContent=`${p.name} · Round ${state.round+1} of ${p.rounds}`;
     document.getElementById('nextWorkout').textContent=w.name;
     document.getElementById('sessionLabel').textContent=`Workout ${Math.min(state.completed+1,total)} of ${total} · scheduled today`;
-    startBtn.style.display='block';
+    startBtn.textContent='Start workout';startBtn.style.display='block';
   }
   renderDailyLogDate();
   renderDailyLogSections();
@@ -900,6 +939,7 @@ function syncDurationPicker(prefix){
 function openFinish(){
   const modal=document.getElementById('finishModal');
   if(!modal)return;
+  const finishName=document.getElementById('finishWorkoutName');if(finishName)finishName.textContent=kneeCircuitAvailable()?'Off-day knee circuit':current().name;
   const time=document.getElementById('sumTime');
   if(time&&!time.value)time.value=currentTimeHHMM();
   setDurationPicker('sum',document.getElementById('sumDuration')?.value||'00:00:00');
@@ -918,6 +958,12 @@ function renderWorkout(){
   const metaEl=document.getElementById('workoutMeta');
   const listEl=document.getElementById('exerciseList');
   const finishBtn=document.getElementById('finishBtn');
+
+  if(isRestToday&&state.phase===0){
+    if(finishBtn)finishBtn.style.display='';
+    renderKneeCircuit();
+    return;
+  }
 
   if(isRestToday){
     if(phaseEl)phaseEl.textContent='Rest day';
@@ -1024,6 +1070,15 @@ function renderWorkout(){
 function closeFinish(){document.getElementById('finishModal').classList.remove('show');document.getElementById('finishModal').setAttribute('aria-hidden','true')}
 function saveWorkout(){
   ensureScheduleState();
+  if(kneeCircuitAvailable()){
+    const today=todayISO(),d=kneeDraft();
+    const summary={duration:durationPickerValue('sum'),time:document.getElementById('sumTime')?.value||currentTimeHHMM(),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
+    state.kneeHistory=state.kneeHistory||[];
+    state.kneeHistory.unshift({date:new Date().toISOString(),workout:'Off-day knee circuit',phase:'Phase 1',session:kneeSessionNumber(),week:kneeWeek(),checks:JSON.parse(JSON.stringify(d)),summary});
+    if(summary.postWeight)state.weights[today]={...(state.weights[today]||{}),post:summary.postWeight};
+    state.restDays[today]=true;delete state.drafts[`knee-${today}`];state.scheduleDate=plusDays(today,1);state.nextEventType='workout';
+    save();clearSummary();closeFinish();renderAll();showScreen('today');return;
+  }
   const w=current(),p=phase(),draft=getDraft(),sets={};
   w.ex.forEach((x,i)=>sets[x[0]]=(draft.sets[i]||[]).map(v=>({weight:v.weight||'',reps:v.reps||'',done:!!v.done})));
   const summary={duration:durationPickerValue('sum'),time:document.getElementById('sumTime')?.value||currentTimeHHMM(),totalCalories:num('sumTotalCal'),avgHr:num('sumAvgHr'),postWeight:num('sumWeight'),notes:document.getElementById('sumNotes').value.trim()};
@@ -1824,9 +1879,9 @@ function renderProgress(){
 }
 
 function downloadBackup(){
- const payload={app:'Matt Fitness Public',version:12,exportedAt:new Date().toISOString(),state};
+ const payload={app:'Workout App Panza',version:12,exportedAt:new Date().toISOString(),state};
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download=`matt-fitness-public-backup-${todayISO()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ a.href=url;a.download=`workout-app-backup-${todayISO()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function restoreBackupFile(file){
  if(!file)return;const r=new FileReader();
@@ -1950,8 +2005,8 @@ async function resetForNewUser(){
   const ok=confirm('Reset this app for a new user? This permanently clears all saved workout, nutrition, weight, activity, checklist, water, progress-photo tracking, historical charts, checkpoints and historical session data on this device.');
   if(!ok)return;
   try{
-    localStorage.removeItem(PUBLIC_STATE_KEY);
-    
+    localStorage.removeItem('mfState');
+    localStorage.removeItem('mwState');
     if(typeof photoClear==='function'){
       try{await photoClear()}catch(e){}
     }
@@ -1976,7 +2031,7 @@ async function resetForNewUser(){
 function renderAll(){renderToday();renderWorkout();renderNutrition();renderChecklist();renderHistory();renderProgress();renderProgramStartControls()}
 function num(id){return parseFloat(document.getElementById(id).value)||0}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.go)));document.getElementById('startBtn').addEventListener('click',()=>showScreen('workout'));
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.go)));document.getElementById('startBtn').addEventListener('click',()=>{if(kneeCircuitAvailable())openKneeOverview();else showScreen('workout')});
 document.getElementById('ackRestBtn').addEventListener('click',acknowledgeRest);document.getElementById('closeFinish').addEventListener('click',closeFinish);document.getElementById('saveWorkoutBtn').addEventListener('click',saveWorkout);document.getElementById('skipTimer').addEventListener('click',stopTimer);document.getElementById('saveWeightBtn').addEventListener('click',saveWeights);document.getElementById('nutritionDate').addEventListener('change',renderNutrition);document.getElementById('saveGoalsBtn').addEventListener('click',saveGoals);document.getElementById('prevMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderHistory()});document.getElementById('nextMonth').addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderHistory()});document.getElementById('activityType').addEventListener('change',setHrDefaultsForType);
 
 
