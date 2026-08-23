@@ -615,6 +615,31 @@ function energyForDate(date){
   const totalBurn=nonExerciseBurn+ex.calories;
   return {date,intake,ex,bmr,tdee,nonExerciseMinutes,nonExerciseBurn,totalBurn,balance:intake-totalBurn};
 }
+
+function programStartDate(){
+  const phase1=(state.history||[])
+    .filter(h=>(h.phaseIndex??-1)===0)
+    .map(h=>isoDate(h.date))
+    .sort();
+  if(phase1.length)return phase1[0];
+  if(state.phase===0 && state.scheduleDate)return state.scheduleDate;
+  return todayISO();
+}
+function programWeekStart(date=todayISO()){
+  const start=programStartDate();
+  const d=new Date(date+'T12:00:00');
+  const s=new Date(start+'T12:00:00');
+  const diff=Math.floor((d-s)/86400000);
+  return plusDays(start,Math.floor(diff/7)*7);
+}
+function programWeekNumber(date=todayISO()){
+  const start=programStartDate();
+  const d=new Date(date+'T12:00:00');
+  const s=new Date(start+'T12:00:00');
+  const diff=Math.floor((d-s)/86400000);
+  return Math.floor(diff/7)+1;
+}
+
 function mondayOf(date){
   const d=new Date(date+'T12:00:00'),day=(d.getDay()+6)%7;
   d.setDate(d.getDate()-day);
@@ -1516,7 +1541,7 @@ function toggleWeeklyPhotos(){state.photoSettings=state.photoSettings||{};state.
 function weeklyCardioMiles(){
   const byWeek={};
   Object.entries(state.activities||{}).forEach(([date,acts])=>{
-    const week=mondayOf(date);
+    const week=programWeekStart(date);
     byWeek[week]=byWeek[week]||{walk:0,run:0};
     (acts||[]).forEach(a=>{
       const miles=+a.distance||0;
@@ -1730,7 +1755,7 @@ function cardioWeekSummary(weekStart){
 function renderCardioSummary(){
   const box=document.getElementById('cardioSummary');
   if(!box)return;
-  const thisStart=mondayOf(todayISO()),lastStart=plusDays(thisStart,-7);
+  const thisStart=programWeekStart(todayISO()),lastStart=plusDays(thisStart,-7);
   const current=cardioWeekSummary(thisStart),last=cardioWeekSummary(lastStart);
 
   // All-time weekly average: include only weeks that actually contain recorded cardio.
