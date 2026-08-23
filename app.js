@@ -1639,21 +1639,31 @@ function renderProgramWorkoutLibrary(){
     box.innerHTML='<div class="card"><p class="notice">No program data found.</p></div>';
     return;
   }
+
   box.innerHTML=program.map((phase,pi)=>{
     const workouts=phase.workouts||[];
+    const normalRows=workouts.map((w,wi)=>`<button class="program-workout-row" type="button" onclick="openProgramWorkoutPreview(${pi},${wi})">
+      <div>
+        <b>${esc(w.name||`Workout ${wi+1}`)}</b>
+        <small>${(w.ex||[]).length} exercises</small>
+      </div>
+      <span>View ›</span>
+    </button>`).join('');
+
+    const kneeRow=pi===0?`<button class="program-workout-row knee-library-row" type="button" onclick="openKneeLibraryPreview()">
+      <div>
+        <b>Off-day knee circuit</b>
+        <small>6 Phase 1 off-day sessions · 2 rounds</small>
+      </div>
+      <span>View ›</span>
+    </button>`:'';
+
     return `<div class="card program-phase-card">
       <div class="eyebrow">Phase ${pi+1}</div>
       <h3>${esc(phase.name||`Phase ${pi+1}`)}</h3>
       <div class="program-workout-list">
-        ${workouts.map((w,wi)=>`<button class="program-workout-row" type="button" onclick="openProgramWorkoutPreview(${pi},${wi})">
-          <div>
-            <b>${esc(w.name||`Workout ${wi+1}`)}</b>
-            <small>${(w.ex||[]).length} exercises</small>
-    
-        ${pi===0?`<button class="program-workout-row knee-library-row" type="button" onclick="openKneeLibraryPreview()"><div><b>Off-day knee circuit</b><small>6 Phase 1 off-day sessions · 2 rounds</small></div><span>View ›</span></button>`:''}
-      </div>
-          <span>View ›</span>
-        </button>`).join('')}
+        ${normalRows}
+        ${kneeRow}
       </div>
     </div>`;
   }).join('');
