@@ -50,7 +50,7 @@ if(!Array.isArray(state.kneeHistory))state.kneeHistory=[];
 });
 if(!Array.isArray(state.checklistItems))state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
 if(!Array.isArray(state.checklistItems)||state.checklistItems.length===0)state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
-let timerInterval=null,timerLeft=0,timerEndsAt=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null,selectedLogDate=todayISO();
+let timerInterval=null,timerLeft=0,timerEndsAt=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null,kneeWorkoutEditIndex=null,selectedLogDate=todayISO();
 function currentTimeHHMM(){
   const d=new Date();
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -1145,6 +1145,48 @@ function saveGoals(){
 }
 
 
+
+function openKneeWorkoutEditor(index){
+  const h=(state.kneeHistory||[])[index];
+  if(!h)return;
+  workoutEditIndex=null;kneeWorkoutEditIndex=index;
+  const s=h.summary||{};
+  document.getElementById('editWorkoutName').textContent=`Off-day knee circuit · Session ${h.session||index+1} of 6`;
+  const meta=document.getElementById('editWorkoutMeta');
+  if(meta){
+    const d=isoDate(h.date);
+    meta.textContent=`${new Date(d+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric',year:'numeric'})}${workoutTime(h)?' · '+formatTime12(workoutTime(h)):''} · Week ${h.week||Math.ceil((h.session||1)/2)}`;
+  }
+  setDurationPicker('editWorkout',s.duration);
+  document.getElementById('editWorkoutTime').value=workoutTime(h);
+  document.getElementById('editWorkoutCalories').value=(s.totalCalories ?? s.activeCalories ?? '')||'';
+  document.getElementById('editWorkoutAvgHr').value=s.avgHr||'';
+  document.getElementById('editWorkoutWeight').value=s.postWeight||'';
+  document.getElementById('editWorkoutNotes').value=s.notes||'';
+
+  const checks=h.checks||{},box=document.getElementById('editWorkoutSets');
+  const warmDone=Object.values(checks.warm||{}).filter(Boolean).length;
+  const roundDone=Object.values(checks.rounds||{}).reduce((n,row)=>n+Object.values(row||{}).filter(Boolean).length,0);
+  const finishDone=Object.values(checks.finish||{}).filter(Boolean).length;
+  box.innerHTML=`<div class="knee-edit-summary">
+    <div><b>${warmDone} / ${kneeCircuit.warmup.length}</b><span>Warm-up</span></div>
+    <div><b>${roundDone} / ${kneeCircuit.circuit.length*2}</b><span>Circuit checks</span></div>
+    <div><b>${finishDone} / ${kneeCircuit.finish.length}</b><span>Finish</span></div>
+  </div><p class="tiny knee-edit-note">Exercise checkmarks are preserved. Edit the workout summary data above as needed.</p>`;
+  const modal=document.getElementById('editWorkoutModal');
+  modal.classList.add('show');modal.setAttribute('aria-hidden','false');
+}
+function openKneeWorkoutEditorByDate(date,session){
+  const history=state.kneeHistory||[];
+  let index=history.findIndex(h=>isoDate(h.date)===date&&Number(h.session||0)===Number(session||0));
+  if(index<0){
+    const sameDay=history.map((h,i)=>({h,i})).filter(x=>isoDate(x.h.date)===date);
+    if(sameDay.length===1)index=sameDay[0].i;
+  }
+  if(index<0){alert('Could not find this completed knee workout. Please refresh and try again.');return;}
+  openKneeWorkoutEditor(index);
+}
+
 function openWorkoutEditorByDate(date,workout,phase,round){
   const history=state.history||[];
   let index=history.findIndex(h=>
@@ -1217,12 +1259,32 @@ function toggleEditSetDone(btn){
 
 function closeWorkoutEditor(){
   workoutEditIndex=null;
+  kneeWorkoutEditIndex=null;
   const modal=document.getElementById('editWorkoutModal');
   if(!modal)return;
   modal.classList.remove('show');
   modal.setAttribute('aria-hidden','true');
 }
 function saveEditedWorkout(){
+  if(kneeWorkoutEditIndex!==null){
+    const h=(state.kneeHistory||[])[kneeWorkoutEditIndex];
+    if(!h)return;
+    const oldPost=+(h.summary?.postWeight||0),oldDate=isoDate(h.date);
+    h.summary={
+      ...(h.summary||{}),
+      duration:durationPickerValue('editWorkout'),
+      time:document.getElementById('editWorkoutTime')?.value||workoutTime(h),
+      totalCalories:num('editWorkoutCalories'),
+      avgHr:num('editWorkoutAvgHr'),
+      postWeight:num('editWorkoutWeight'),
+      notes:document.getElementById('editWorkoutNotes').value.trim()
+    };
+    delete h.summary.activeCalories;
+    state.weights[oldDate]=state.weights[oldDate]||{};
+    if(h.summary.postWeight)state.weights[oldDate].post=h.summary.postWeight;
+    else if(oldPost&&state.weights[oldDate].post==oldPost)delete state.weights[oldDate].post;
+    save();closeWorkoutEditor();renderAll();renderDayDetail(oldDate);return;
+  }
   if(workoutEditIndex===null)return;
   const h=state.history[workoutEditIndex];
   if(!h)return;
@@ -1274,6 +1336,7 @@ function renderHistory(){
   projected.forEach(x=>plan[x.date]=x);
   const byDate={};
   state.history.forEach(h=>{const d=isoDate(h.date);(byDate[d]=byDate[d]||[]).push(h)});
+  (state.kneeHistory||[]).forEach(h=>{const d=isoDate(h.date);(byDate[d]=byDate[d]||[]).push(h)});
   let html='';
   for(let i=0;i<offset;i++)html+='<div class="day blank"></div>';
   for(let d=1;d<=days;d++){
@@ -1297,67 +1360,23 @@ function renderHistory(){
   }
 }
 function renderDayDetail(date){
-  const hs=state.history.filter(h=>isoDate(h.date)===date),wt=state.weights[date],nut=state.nutrition[date];
-  const acts=state.activities[date]||[];
-  const walks=acts.filter(a=>String(a.type||'').toLowerCase()==='walk');
-  const runs=acts.filter(a=>['jog','run','run/jog','jog/run'].includes(String(a.type||'').toLowerCase()));
-  const otherActs=acts.filter(a=>!walks.includes(a)&&!runs.includes(a));
+  const hs=state.history.filter(h=>isoDate(h.date)===date),kneeHs=(state.kneeHistory||[]).filter(h=>isoDate(h.date)===date),wt=state.weights[date],nut=state.nutrition[date];
+  const acts=state.activities[date]||[],walks=acts.filter(a=>String(a.type||'').toLowerCase()==='walk'),runs=acts.filter(a=>['jog','run','run/jog','jog/run'].includes(String(a.type||'').toLowerCase())),otherActs=acts.filter(a=>!walks.includes(a)&&!runs.includes(a));
   let parts=`<div class="eyebrow">${new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</div>`;
-
   if(state.restDays[date])parts+=`<div class="day-detail-row"><b>Rest day complete</b><small>Acknowledged</small></div>`;
-
-  // 1 Nutrition
-  if(nut){
-    const t=totals(nut.foods||[]);
-    parts+=`<div class="day-detail-row"><b><span class="history-icon">🍴</span>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`;
-  }
-
-  // 2 Energy
-  if(totals((state.nutrition[date]?.foods)||[]).cal>0){
-    const e=energyForDate(date);
-    const label=e.balance<0?'Estimated deficit':e.balance>0?'Estimated surplus':'Estimated balance';
-    parts+=`<div class="day-detail-row energy-history-row"><b><span class="history-icon">⚡</span>Energy result</b><small>${label}: ${Math.abs(Math.round(e.balance))} kcal · ${Math.round(e.intake)} intake · ${Math.round(e.totalBurn)} estimated burn</small></div>`;
-  }
-
-  // 3 Checklist
-  const cd=state.checklistDays[date];
-  if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b><span class="history-icon">☑</span>Checklist</b><small>${done} of ${items.length} complete</small></div>`}
-
-  // 4 Weight
+  if(nut){const t=totals(nut.foods||[]);parts+=`<div class="day-detail-row"><b><span class="history-icon">🍴</span>Nutrition</b><small>${Math.round(t.cal)} kcal · ${Math.round(t.p)} P · ${Math.round(t.c)} C · ${Math.round(t.f)} F</small></div>`}
+  if(totals((state.nutrition[date]?.foods)||[]).cal>0){const x=energyForDate(date),label=x.balance<0?'Estimated deficit':x.balance>0?'Estimated surplus':'Estimated balance';parts+=`<div class="day-detail-row energy-history-row"><b><span class="history-icon">⚡</span>Energy result</b><small>${label}: ${Math.abs(Math.round(x.balance))} kcal · ${Math.round(x.intake)} intake · ${Math.round(x.totalBurn)} estimated burn</small></div>`}
+  const cd=state.checklistDays[date];if(cd){const items=state.checklistItems||[],done=items.filter(x=>cd[x.id]).length;parts+=`<div class="day-detail-row"><b><span class="history-icon">☑</span>Checklist</b><small>${done} of ${items.length} complete</small></div>`}
   if(wt)parts+=`<div class="day-detail-row"><b><span class="history-icon">⚖</span>Weight</b><small>${wt.am?`AM ${wt.am} lb · `:''}${wt.post?`Post ${wt.post} lb · `:''}${wt.pm?`PM ${wt.pm} lb`:''}</small></div>`;
-
-  // 5 Water
   const water=state.water[date];if(water)parts+=`<div class="day-detail-row"><b><span class="history-icon">💧</span>Water</b><small>${water} oz</small></div>`;
-
-  // 6 Walks
   walks.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}🚶 Walk</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
-
-  // 7 Jog/Run
   runs.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}🏃 ${esc(a.type||'Jog/Run')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
   otherActs.forEach(a=>parts+=`<div class="day-detail-row"><b>${a.time?formatTime12(a.time)+' · ':''}${esc(a.type||'Cardio')}</b><small>${a.distance?`${a.distance} mi · `:''}${Math.round((+a.minutes||0)+((+a.seconds||0)/60))} min${a.calories?` · ${a.calories} kcal`:''}</small></div>`);
-
-  // 8 Workout
-  if(hs.length)hs.forEach(h=>{
-    const s=h.summary||{},kcal=(s.totalCalories ?? s.activeCalories ?? 0);
-    const safeWorkout=String(h.workout||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    const safePhase=String(h.phase||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    const durationText=s.duration?formatWorkoutDuration(s.duration):'';
-    parts+=`<div class="day-detail-row workout-history-detail workout-history-tappable" onclick="openWorkoutEditorByDate('${date}','${safeWorkout}','${safePhase}',${Number(h.round||0)})">
-      <div class="workout-history-main">
-        <b><span class="history-icon">🏋</span>${esc(h.workout)} · ${esc(h.phase)} · Round ${h.round}</b>
-        <small>${workoutTime(h)?`${formatTime12(workoutTime(h))}`:''}${kcal?`${workoutTime(h)?' · ':''}${kcal} kcal`:''}${durationText?`${(workoutTime(h)||kcal)?' · ':''}${durationText}`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}</small>
-        ${h.substitutions&&Object.keys(h.substitutions).length?`<small class="history-notes">${Object.entries(h.substitutions).map(([i,v])=>{
-          const original=program[h.phaseIndex]?.workouts?.find(w=>w.name===h.workout)?.ex?.[+i]?.[0]||`Exercise ${+i+1}`;
-          return `${esc(original)} → Sub: ${esc(v)}`;
-        }).join(' · ')}</small>`:''}
-        ${s.notes?`<small class="history-notes">${esc(s.notes)}</small>`:''}
-      </div>
-      <button class="ghost compact edit-workout-history-btn" type="button" aria-label="Edit workout" onclick="event.stopPropagation();openWorkoutEditorByDate('${date}','${safeWorkout}','${safePhase}',${Number(h.round||0)})">Edit</button>
-    </div>`;
-  });
-
   const pd=(state.photoDays||{})[date];if(pd&&Object.values(pd).some(Boolean)){const taken=Object.entries(pd).filter(([,v])=>v).map(([k])=>k[0].toUpperCase()+k.slice(1)).join(' · ');parts+=`<div class="day-detail-row"><b>📷 Progress photos</b><small>${taken}</small></div>`}
-  if(!hs.length&&!state.restDays[date]&&!wt&&!nut&&!acts.length&&!water&&!cd&&!anyPhotoTaken(date))parts+='<p class="notice">No saved data for this day.</p>';
+
+  hs.forEach(h=>{const s=h.summary||{},kcal=(s.totalCalories??s.activeCalories??0),safeWorkout=String(h.workout||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"),safePhase=String(h.phase||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"),durationText=s.duration?formatWorkoutDuration(s.duration):'';parts+=`<div class="day-detail-row workout-history-detail workout-history-tappable" onclick="openWorkoutEditorByDate('${date}','${safeWorkout}','${safePhase}',${Number(h.round||0)})"><div class="workout-history-main"><b><span class="history-icon">🏋</span>${esc(h.workout)} · ${esc(h.phase)} · Round ${h.round}</b><small>${workoutTime(h)?formatTime12(workoutTime(h)):''}${kcal?`${workoutTime(h)?' · ':''}${kcal} kcal`:''}${durationText?`${(workoutTime(h)||kcal)?' · ':''}${durationText}`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}</small>${s.notes?`<small class="history-notes">${esc(s.notes)}</small>`:''}</div><button class="ghost compact edit-workout-history-btn" type="button" onclick="event.stopPropagation();openWorkoutEditorByDate('${date}','${safeWorkout}','${safePhase}',${Number(h.round||0)})">Edit</button></div>`});
+  kneeHs.forEach(h=>{const s=h.summary||{},kcal=(s.totalCalories??s.activeCalories??0),durationText=s.duration?formatWorkoutDuration(s.duration):'';parts+=`<div class="day-detail-row workout-history-detail workout-history-tappable knee-history-detail" onclick="openKneeWorkoutEditorByDate('${date}',${Number(h.session||0)})"><div class="workout-history-main"><b><span class="history-icon">🦵</span>Off-day knee circuit · Phase 1 · Session ${h.session||'—'}/6</b><small>${workoutTime(h)?formatTime12(workoutTime(h)):''}${kcal?`${workoutTime(h)?' · ':''}${kcal} kcal`:''}${durationText?`${(workoutTime(h)||kcal)?' · ':''}${durationText}`:''}${s.avgHr?` · ${s.avgHr} avg HR`:''}${s.postWeight?` · ${s.postWeight} lb post`:''}${h.week?` · Week ${h.week}`:''}</small>${s.notes?`<small class="history-notes">${esc(s.notes)}</small>`:''}</div><button class="ghost compact edit-workout-history-btn" type="button" onclick="event.stopPropagation();openKneeWorkoutEditorByDate('${date}',${Number(h.session||0)})">Edit</button></div>`});
+  if(!hs.length&&!kneeHs.length&&!state.restDays[date]&&!wt&&!nut&&!acts.length&&!water&&!cd&&!anyPhotoTaken(date))parts+='<p class="notice">No saved data for this day.</p>';
   document.getElementById('dayDetail').innerHTML=parts;
 }
 
@@ -1630,12 +1649,21 @@ function renderProgramWorkoutLibrary(){
           <div>
             <b>${esc(w.name||`Workout ${wi+1}`)}</b>
             <small>${(w.ex||[]).length} exercises</small>
-          </div>
+    
+        ${pi===0?`<button class="program-workout-row knee-library-row" type="button" onclick="openKneeLibraryPreview()"><div><b>Off-day knee circuit</b><small>6 Phase 1 off-day sessions · 2 rounds</small></div><span>View ›</span></button>`:''}
+      </div>
           <span>View ›</span>
         </button>`).join('')}
       </div>
     </div>`;
   }).join('');
+}
+
+function openKneeLibraryPreview(){
+  document.getElementById('programWorkoutTitle').textContent='Off-day knee circuit';
+  document.getElementById('programWorkoutMeta').textContent='Phase 1 only · 6 off-day sessions · 3-week progression';
+  document.getElementById('programWorkoutPreview').innerHTML=`<div class="program-preview-section"><div class="eyebrow">Three-week progression</div><div class="knee-library-progression"><div><b>Week 1</b><span>Step-down 8/leg · Split squat 5/leg</span></div><div><b>Week 2</b><span>Step-down 10/leg · Split squat 6/leg</span></div><div><b>Week 3</b><span>Step-down 12/leg · Split squat 5/leg · 3 sets total</span></div></div></div><div class="program-preview-section"><div class="eyebrow">Warm-up</div>${kneeCircuit.warmup.map(x=>`<div class="program-warm-row"><b>${esc(x[0])}</b><small>${esc(x[1])}</small></div>`).join('')}</div><div class="program-preview-section"><div class="eyebrow">Circuit · 2 rounds</div>${kneeCircuit.circuit.map((x,i)=>`<div class="program-warm-row"><b>${i+1}. ${esc(x[0])}</b><small>${esc(x[1])}</small></div>`).join('')}<p class="tiny">Rest minimally between exercises and 60–90 seconds between rounds.</p></div><div class="program-preview-section"><div class="eyebrow">Finish with</div>${kneeCircuit.finish.map(x=>`<div class="program-warm-row"><b>${esc(x[0])}</b><small>${esc(x[1])}</small></div>`).join('')}</div>`;
+  const modal=document.getElementById('programWorkoutModal');modal.classList.add('show');modal.setAttribute('aria-hidden','false');
 }
 
 function openProgramWorkoutPreview(phaseIndex,workoutIndex){
