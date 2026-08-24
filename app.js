@@ -1153,7 +1153,16 @@ function setGoalsFromDate(date,goals){
   if(latest)state.goals={...state.goalHistory[latest]};
 }
 function renderNutrition(){const d=document.getElementById('nutritionDate').value||logDate();document.getElementById('nutritionDate').value=d;const g=goalsForDate(d);[['goalCal','cal'],['goalP','p'],['goalC','c'],['goalF','f']].forEach(([id,k])=>document.getElementById(id).value=g[k]);state.nutrition[d]=state.nutrition[d]||{foods:[]};const foods=state.nutrition[d].foods;document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);document.getElementById('foodList').innerHTML=foods.length?foods.map((f,i)=>foodRow(f,i)).join(''):'<p class="notice">No foods logged yet.</p>';document.querySelectorAll('.food-row input').forEach(inp=>inp.addEventListener('blur',foodChanged));document.querySelectorAll('.food-row button').forEach(b=>b.addEventListener('click',()=>{foods.splice(+b.dataset.i,1);save();renderNutrition();renderTodayMacros()}));}
-function foodRow(f,i){return `<div class="food-row"><label class="food-name">Food<input data-i="${i}" data-k="name" value="${esc(f.name||'')}"></label><label>Wt(g)<input inputmode="decimal" data-i="${i}" data-k="weight" value="${f.weight||''}"></label><label>Cal<input inputmode="numeric" data-i="${i}" data-k="cal" value="${f.cal||''}"></label><label>P<input inputmode="decimal" data-i="${i}" data-k="p" value="${f.p||''}"></label><label>C<input inputmode="decimal" data-i="${i}" data-k="c" value="${f.c||''}"></label><label>F<input inputmode="decimal" data-i="${i}" data-k="f" value="${f.f||''}"></label><label>Time<input type="time" data-i="${i}" data-k="time" value="${f.time||''}"></label><button data-i="${i}">×</button></div>`}
+function foodRow(f,i){return `<div class="food-row">
+  <label class="food-name">Food<input data-i="${i}" data-k="name" value="${esc(f.name||'')}"></label>
+  <label class="food-weight">Wt(g)<input inputmode="decimal" data-i="${i}" data-k="weight" value="${f.weight||''}"></label>
+  <label class="food-time">Time<input type="time" data-i="${i}" data-k="time" value="${f.time||''}"></label>
+  <label class="food-cal">Cal<input inputmode="numeric" data-i="${i}" data-k="cal" value="${f.cal||''}"></label>
+  <label class="food-p">P<input inputmode="decimal" data-i="${i}" data-k="p" value="${f.p||''}"></label>
+  <label class="food-c">C<input inputmode="decimal" data-i="${i}" data-k="c" value="${f.c||''}"></label>
+  <label class="food-f">F<input inputmode="decimal" data-i="${i}" data-k="f" value="${f.f||''}"></label>
+  <button class="food-delete" data-i="${i}" aria-label="Delete food">×</button>
+</div>`}
 function refreshNutritionTotals(d){const foods=(state.nutrition[d]?.foods)||[],g=goalsForDate(d);document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);if(d===logDate()){renderTodayMacros();renderEnergyBalance();}}
 function foodChanged(e){const d=document.getElementById('nutritionDate').value,foods=state.nutrition[d].foods,i=+e.target.dataset.i,k=e.target.dataset.k;foods[i][k]=(k==='name'||k==='time')?e.target.value:(parseFloat(e.target.value)||0);save();refreshNutritionTotals(d)}
 function addFood(){const d=document.getElementById('nutritionDate')?.value||logDate();state.nutrition[d]=state.nutrition[d]||{foods:[]};state.nutrition[d].foods.push({name:'',weight:0,cal:0,p:0,c:0,f:0,time:currentTimeHHMM()});save();renderNutrition();renderTodayMacros();setTimeout(()=>{const inputs=document.querySelectorAll('.food-name input');inputs[inputs.length-1]?.focus()},0)}

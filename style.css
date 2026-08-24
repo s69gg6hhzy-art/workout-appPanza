@@ -1150,3 +1150,81 @@ input[type="time"]{color-scheme:dark}
     margin-bottom: 8px !important;
   }
 }
+
+
+/* ===== Personal V9 — mobile food entry layout ===== */
+@media (max-width:700px){
+  #nutrition .card{
+    padding-left:12px !important;
+    padding-right:12px !important;
+  }
+
+  #foodList{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    overflow-x:hidden !important;
+  }
+
+  #foodList .food-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) 68px 104px 32px !important;
+    grid-template-areas:
+      "name weight time del"
+      "cal p c f" !important;
+    gap:6px !important;
+    align-items:end !important;
+    width:100% !important;
+    min-width:0 !important;
+    padding:10px 0 12px !important;
+    margin:0 !important;
+    border-bottom:1px solid var(--line) !important;
+  }
+
+  #foodList .food-name{grid-area:name}
+  #foodList .food-weight{grid-area:weight}
+  #foodList .food-time{grid-area:time}
+  #foodList .food-cal{grid-area:cal}
+  #foodList .food-p{grid-area:p}
+  #foodList .food-c{grid-area:c}
+  #foodList .food-f{grid-area:f}
+  #foodList .food-delete{grid-area:del}
+
+  #foodList .food-row label{
+    min-width:0 !important;
+    width:100% !important;
+    font-size:10px !important;
+    line-height:1.1 !important;
+    color:var(--muted) !important;
+  }
+
+  #foodList .food-row input{
+    width:100% !important;
+    min-width:0 !important;
+    height:39px !important;
+    margin-top:4px !important;
+    padding:7px 7px !important;
+    font-size:14px !important;
+    border-radius:9px !important;
+  }
+
+  #foodList .food-name input{
+    font-size:15px !important;
+    padding-left:9px !important;
+  }
+
+  #foodList .food-time input{
+    font-size:13px !important;
+    padding-left:4px !important;
+    padding-right:4px !important;
+  }
+
+  #foodList .food-delete{
+    width:32px !important;
+    height:39px !important;
+    min-width:32px !important;
+    padding:0 !important;
+    margin:0 !important;
+    align-self:end !important;
+  }
+}
