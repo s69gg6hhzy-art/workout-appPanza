@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=personal-12">
+  <link rel="stylesheet" href="style.css?v=personal-13">
 </head>
 <body class="personal-version">
 <div class="app">
@@ -164,6 +164,7 @@
 
     <div class="more-tabs">
       <button class="secondary compact on" id="moreProgressTab" type="button" onclick="showMoreSection('progress')">Progress</button>
+      <button class="secondary compact" id="moreCardioTab" type="button" onclick="showMoreSection('cardio')">Cardio</button>
       <button class="secondary compact" id="moreWorkoutsTab" type="button" onclick="showMoreSection('workouts')">Workouts</button>
     </div>
 
@@ -178,54 +179,29 @@
       <div class="metric-row"><div><strong id="latestWeight">—</strong><span>latest AM</span></div><div><strong id="avg7Weight">—</strong><span>7-day AM avg</span></div><div><strong id="dailySwing">—</strong><span>avg AM→PM</span></div></div>
       <div id="weightHistory" class="weight-history"></div>
     </div>
-    <div class="card chart-card">
-      <div class="chart-head"><div><div class="eyebrow">Energy trend</div><h3>Daily energy balance</h3></div></div>
-      <div id="energyChart" class="chart-wrap"></div>
-      <p class="tiny chart-note">Negative = estimated deficit · Positive = estimated surplus.</p>
-    </div>
-    <div class="card chart-card">
-      <div class="chart-head"><div><div class="eyebrow">Cardio progress</div><h3>Weekly miles</h3></div></div>
-      <div id="cardioChart" class="chart-wrap"></div>
-      <p class="tiny chart-note">Walk miles and Run/Jog miles are grouped by week.</p>
-    </div>
-    <div class="card cardio-summary-card">
-      <div class="eyebrow">Cardio summary</div>
-      <div id="cardioSummary"></div>
-    </div>
-    <div class="card chart-card">
-      <div class="chart-head"><div><div class="eyebrow">Running heart rate</div><h3>Zone 3 % by run</h3></div></div>
-      <div id="zone3Chart" class="chart-wrap"></div>
-      <p class="tiny chart-note">Percent of each Jog/Run spent in Zone 3. Sessions with no recorded Zone 3 time are omitted.</p>
-    </div>
     <div class="card">
       <div class="eyebrow">Weekly history</div>
       <h3>Weekly averages</h3>
       <div class="weekly-table-wrap"><div id="weeklyAverageHistory"></div></div>
     </div>
-    <div class="card">
-      <div class="eyebrow">Daily log history</div>
-      <h3>Macros + energy by day</h3>
-      <div class="weekly-table-wrap daily-log-table-wrap"><div id="dailyMacroEnergyHistory"></div></div>
-    </div>
     <div class="card chart-card">
-      <div class="chart-head"><div><div class="eyebrow">Historical weight</div><h3>Weight over time</h3></div><span class="badge measured">2025 → now</span></div>
-      <div id="weightChart" class="chart-wrap"></div>
-      <p class="tiny chart-note" id="weightChartNote">Historical weekly AM averages + DEXA checkpoint + new AM weights logged in the app.</p>
+      <div class="chart-head"><div><div class="eyebrow">Energy trend</div><h3>Weekly average energy balance</h3></div></div>
+      <div id="energyChart" class="chart-wrap"></div>
+      <p class="tiny chart-note">Weekly average · Negative = estimated deficit · Positive = estimated surplus.</p>
     </div>
     <div class="card chart-card">
       <div class="chart-head"><div><div class="eyebrow">Nutrition history</div><h3>Average daily calories by week</h3></div></div>
       <div id="calorieChart" class="chart-wrap"></div>
-      <p class="tiny chart-note" id="calorieChartNote">Session 1 selected weekly averages, Brazil weeks 1–10, and future weekly averages from your app.</p>
+      <p class="tiny chart-note" id="calorieChartNote">Current session only.</p>
     </div>
     <div class="card chart-card">
       <div class="chart-head"><div><div class="eyebrow">Protein history</div><h3>Average protein by week</h3></div></div>
       <div id="proteinChart" class="chart-wrap"></div>
     </div>
-
-    <div class="card">
-      <div class="eyebrow">Progress photos</div>
-      <h3>Photo tracking</h3>
-      <p class="muted">Use the checkmarks on Today to record Front, Side, Back and Flex. Any checked angle adds a 📷 to that date in History.</p>
+    <div class="card chart-card">
+      <div class="chart-head"><div><div class="eyebrow">Historical weight</div><h3>Average AM vs PM weight by week</h3></div></div>
+      <div id="weightChart" class="chart-wrap"></div>
+      <p class="tiny chart-note" id="weightChartNote">Current session weekly averages only.</p>
     </div>
     <div class="card" id="historicalCheckpointCard">
       <div class="eyebrow">Body composition checkpoints</div>
@@ -239,7 +215,20 @@
       <div class="history-session"><b>Session 2 · Sep–Nov 2025</b><span>191.6 → 182.4 lb weekly AM average</span></div>
       <div class="history-session"><b>Brazil · May 4–Jul 12, 2026</b><span>10-week avg: 2,995 kcal · 179 P · 247 C · 100 F</span></div>
     </div>
-  
+    </div>
+
+    <div id="moreCardioSection" style="display:none">
+      <div class="card chart-card">
+        <div class="chart-head"><div><div class="eyebrow">Cardio progress</div><h3>Weekly miles</h3></div></div>
+        <div id="cardioChart" class="chart-wrap"></div>
+        <p class="tiny chart-note">Walk miles and Run/Jog miles are grouped by week.</p>
+      </div>
+      <div class="card cardio-summary-card"><div class="eyebrow">Cardio summary</div><div id="cardioSummary"></div></div>
+      <div class="card chart-card">
+        <div class="chart-head"><div><div class="eyebrow">Running heart rate</div><h3>Zone 3 % by run</h3></div></div>
+        <div id="zone3Chart" class="chart-wrap"></div>
+        <p class="tiny chart-note">Percent of each Jog/Run spent in Zone 3.</p>
+      </div>
     </div>
 
     <div id="moreWorkoutsSection" style="display:none">
@@ -382,6 +371,6 @@
 </nav>
 
 <script src="data.js?v=70"></script>
-<script src="app.js?v=personal-12"></script>
+<script src="app.js?v=personal-13"></script>
 </body>
 </html>

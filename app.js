@@ -1453,24 +1453,35 @@ function svgLineChart(points,{valueKey,labelKey='label',suffix='',minPad=2,maxPa
 
   return `<svg class="trend-svg" viewBox="0 0 ${width} ${height}" role="img">${grid}<path d="${path}" class="chart-line"/>${dots}${pointValues}${labels}</svg>`;
 }
+function svgDualLineChart(points,{keyA,keyB,labelA='AM average',labelB='PM average',suffix='',minPad=2,maxPad=2,height=220}={}){
+  if(!points.length)return '<p class="notice">No data yet.</p>';
+  const width=760,padL=42,padR=18,padT=28,padB=38,plotW=width-padL-padR,plotH=height-padT-padB;
+  const vals=points.flatMap(p=>[+p[keyA],+p[keyB]]).filter(Number.isFinite);
+  if(!vals.length)return '<p class="notice">No data yet.</p>';
+  let min=Math.min(...vals),max=Math.max(...vals); if(min===max){min-=1;max+=1} min-=minPad;max+=maxPad;
+  const x=i=>padL+(points.length===1?plotW/2:(i/(points.length-1))*plotW), y=v=>padT+((max-v)/(max-min))*plotH;
+  const path=k=>points.map((p,i)=>Number.isFinite(+p[k])?`${i?'L':'M'} ${x(i).toFixed(1)} ${y(+p[k]).toFixed(1)}`:'').filter(Boolean).join(' ');
+  const dots=(k,cls)=>points.map((p,i)=>Number.isFinite(+p[k])?`<circle cx="${x(i)}" cy="${y(+p[k])}" r="5" class="${cls}"><title>${esc(p.label)}: ${(+p[k]).toFixed(1)}${suffix}</title></circle>`:'').join('');
+  const labels=points.map((p,i)=>`<text x="${x(i)}" y="${height-10}" text-anchor="middle" class="chart-axis">${esc(p.label)}</text>`).join('');
+  return `<div class="dual-chart-legend"><span><i class="legend-a"></i>${labelA}</span><span><i class="legend-b"></i>${labelB}</span></div><svg class="trend-svg dual-trend-svg" viewBox="0 0 ${width} ${height}"><path d="${path(keyA)}" class="chart-line dual-a"/>${dots(keyA,'chart-dot dual-dot-a')}<path d="${path(keyB)}" class="chart-line dual-b"/>${dots(keyB,'chart-dot dual-dot-b')}${labels}</svg>`;
+}
+function currentWeeklyWeight(){
+  const groups={};
+  Object.entries(state.weights||{}).sort().forEach(([date,v])=>{
+    if(!v.am&&!v.pm)return;
+    const key=programWeekStart(date);
+    (groups[key]||(groups[key]=[])).push({date,am:+v.am||NaN,pm:+v.pm||NaN});
+  });
+  return Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,arr])=>{
+    const am=arr.map(x=>x.am).filter(Number.isFinite),pm=arr.map(x=>x.pm).filter(Number.isFinite);
+    return {date,label:`Week ${programWeekNumber(date)}`,am:am.length?am.reduce((a,b)=>a+b,0)/am.length:NaN,pm:pm.length?pm.reduce((a,b)=>a+b,0)/pm.length:NaN};
+  });
+}
 function currentWeightSeries(){
   return Object.entries(state.weights).filter(([,v])=>v.am).map(([date,v])=>({date,label:new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}),weight:+v.am,session:'Current'})).sort((a,b)=>a.date.localeCompare(b.date));
 }
 function currentWeeklyNutrition(){
-  const rows=Object.entries(state.nutrition).map(([date,n])=>({date,...totals(n.foods||[])})).filter(x=>x.cal>0).sort((a,b)=>a.date.localeCompare(b.date));
-  if(!rows.length)return[];
-  const weeks={};
-  rows.forEach(r=>{
-    const d=new Date(r.date+'T12:00:00'),day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);
-    const key=isoDate(d);weeks[key]=weeks[key]||[];
-    weeks[key].push(r);
-  });
-  return Object.entries(weeks).map(([date,arr])=>({
-    date,label:new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}),
-    cal:arr.reduce((s,x)=>s+x.cal,0)/arr.length,
-    protein:arr.reduce((s,x)=>s+x.p,0)/arr.length,
-    session:'Current'
-  })).sort((a,b)=>a.date.localeCompare(b.date));
+  return currentWeeklyMacroEnergy().map(x=>({date:x.date,label:x.label,cal:x.cal,protein:x.p,session:'Current'}));
 }
 function currentCardioSeries(){
   const out=[];
@@ -1639,15 +1650,18 @@ function applyProgramStartingPoint(){
 
 function showMoreSection(section){
   const progress=document.getElementById('moreProgressSection');
+  const cardio=document.getElementById('moreCardioSection');
   const workouts=document.getElementById('moreWorkoutsSection');
   const pTab=document.getElementById('moreProgressTab');
+  const cTab=document.getElementById('moreCardioTab');
   const wTab=document.getElementById('moreWorkoutsTab');
-  const isWorkouts=section==='workouts';
-  if(progress)progress.style.display=isWorkouts?'none':'block';
-  if(workouts)workouts.style.display=isWorkouts?'block':'none';
-  if(pTab)pTab.classList.toggle('on',!isWorkouts);
-  if(wTab)wTab.classList.toggle('on',isWorkouts);
-  if(isWorkouts){renderProgramStartControls();renderProgramWorkoutLibrary();}
+  if(progress)progress.style.display=section==='progress'?'block':'none';
+  if(cardio)cardio.style.display=section==='cardio'?'block':'none';
+  if(workouts)workouts.style.display=section==='workouts'?'block':'none';
+  if(pTab)pTab.classList.toggle('on',section==='progress');
+  if(cTab)cTab.classList.toggle('on',section==='cardio');
+  if(wTab)wTab.classList.toggle('on',section==='workouts');
+  if(section==='workouts'){renderProgramStartControls();renderProgramWorkoutLibrary();}
 }
 
 function workoutExerciseList(workout){
@@ -1861,11 +1875,11 @@ function renderProgress(){
   const swings=entries.filter(([,v])=>v.am&&v.pm).map(([,v])=>+v.pm-+v.am);
   document.getElementById('dailySwing').textContent=swings.length?`${(swings.reduce((a,b)=>a+b,0)/swings.length).toFixed(1)} lb`:'—';
 
-  const allWeights=[...(state.historicalEnabled===false?[]:historicalWeight),...currentWeightSeries()].sort((a,b)=>a.date.localeCompare(b.date));
+  const allWeights=currentWeeklyWeight();
   document.getElementById('weightChart').innerHTML=allWeights.length
-    ? svgLineChart(allWeights,{valueKey:'weight',suffix:'',minPad:2,maxPad:2})
+    ? svgDualLineChart(allWeights,{keyA:'am',keyB:'pm',labelA:'AM average',labelB:'PM average',suffix:' lb',minPad:2,maxPad:2})
     : '<p class="notice">Log morning weights to build your weight trend.</p>';
-  const histNut=[...(state.historicalEnabled===false?[]:historicalCalories),...currentWeeklyNutrition()].sort((a,b)=>a.date.localeCompare(b.date));
+  const histNut=currentWeeklyNutrition();
   document.getElementById('calorieChart').innerHTML=histNut.length
     ? svgLineChart(histNut,{valueKey:'cal',minPad:150,maxPad:150})
     : '<p class="notice">Log nutrition to build weekly calorie history.</p>';
@@ -1897,8 +1911,8 @@ function renderProgress(){
   renderCardioSummary();
   renderZone3Chart();
 
-  const energy=dailyEnergySeries();
-  document.getElementById('energyChart').innerHTML=energy.length?svgLineChart(energy,{valueKey:'energy',suffix:'',minPad:150,maxPad:150}):'<p class="notice">Your energy graph will appear after you log nutrition.</p>';
+  const energy=currentWeeklyMacroEnergy().map(x=>({date:x.date,label:x.label,energy:Math.round(x.energy)}));
+  document.getElementById('energyChart').innerHTML=energy.length?svgLineChart(energy,{valueKey:'energy',suffix:' kcal',minPad:150,maxPad:150}):'<p class="notice">Your energy graph will appear after you log nutrition.</p>';
 
   const today=todayISO(),weekStart=programWeekStart(today);
   const weekDays=Array.from({length:7},(_,i)=>plusDays(weekStart,i));

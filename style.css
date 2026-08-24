@@ -1559,3 +1559,11 @@ input[type="time"]{color-scheme:dark}
     font-weight:500 !important;
   }
 }
+
+/* Personal V13 */
+.more-tabs{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.dual-chart-legend{display:flex;gap:18px;align-items:center;margin:0 0 4px 4px;color:var(--muted);font-size:11px}
+.dual-chart-legend span{display:flex;gap:6px;align-items:center}.dual-chart-legend i{width:16px;height:3px;border-radius:4px;display:inline-block}
+.legend-a{background:#79aefc}.legend-b{background:#f1f1f1}
+.chart-line.dual-a{stroke:#79aefc}.chart-line.dual-b{stroke:#f1f1f1}
+.chart-dot.dual-dot-a{fill:#79aefc}.chart-dot.dual-dot-b{fill:#f1f1f1}
