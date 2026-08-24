@@ -1431,3 +1431,131 @@ input[type="time"]{color-scheme:dark}
   #macroTotals .macro-dial b{font-size:10px !important}
   #macroTotals .macro-dial small{font-size:7.5px !important}
 }
+
+
+/* ===== Personal V12 — final food log proportions ===== */
+@media (max-width:700px){
+
+  #foodList{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:12px !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    overflow-x:hidden !important;
+  }
+
+  #foodList .food-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,2.2fr) 72px 96px 40px !important;
+    grid-template-areas:
+      "name weight time del"
+      "cal p c f" !important;
+    column-gap:7px !important;
+    row-gap:12px !important;
+    align-items:end !important;
+
+    width:100% !important;
+    min-width:0 !important;
+    margin:0 !important;
+    padding:12px !important;
+
+    border:1px solid var(--line) !important;
+    border-radius:15px !important;
+    background:rgba(255,255,255,.012) !important;
+  }
+
+  #foodList .food-row::after{
+    content:"";
+    grid-column:1 / -1;
+    grid-row:1;
+    align-self:end;
+    height:1px;
+    background:var(--line);
+    transform:translateY(9px);
+    pointer-events:none;
+  }
+
+  #foodList .food-name{grid-area:name}
+  #foodList .food-weight{grid-area:weight}
+  #foodList .food-time{grid-area:time}
+  #foodList .food-cal{grid-area:cal}
+  #foodList .food-p{grid-area:p}
+  #foodList .food-c{grid-area:c}
+  #foodList .food-f{grid-area:f}
+  #foodList .food-delete{grid-area:del}
+
+  #foodList .food-row label{
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    font-size:10px !important;
+    line-height:1.1 !important;
+    color:var(--muted) !important;
+  }
+
+  #foodList .food-row input{
+    width:100% !important;
+    min-width:0 !important;
+    height:40px !important;
+    margin-top:4px !important;
+    padding:7px 8px !important;
+    box-sizing:border-box !important;
+    border-radius:9px !important;
+  }
+
+  /* Top row hierarchy */
+  #foodList .food-name input{
+    text-align:left !important;
+    font-size:16px !important;
+    font-weight:500 !important;
+    padding-left:9px !important;
+  }
+
+  #foodList .food-weight input{
+    text-align:center !important;
+    font-size:15px !important;
+  }
+
+  #foodList .food-time input{
+    text-align:center !important;
+    font-size:13px !important;
+    padding-left:3px !important;
+    padding-right:3px !important;
+  }
+
+  #foodList .food-delete{
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+    margin:0 !important;
+    padding:0 !important;
+    border:1px solid var(--line) !important;
+    border-radius:10px !important;
+    background:var(--card2) !important;
+    color:var(--muted) !important;
+    font-size:18px !important;
+    line-height:1 !important;
+    align-self:end !important;
+  }
+
+  /* Second row: four perfectly equal macro boxes */
+  #foodList .food-cal,
+  #foodList .food-p,
+  #foodList .food-c,
+  #foodList .food-f{
+    width:100% !important;
+    min-width:0 !important;
+  }
+
+  #foodList .food-cal input,
+  #foodList .food-p input,
+  #foodList .food-c input,
+  #foodList .food-f input{
+    width:100% !important;
+    text-align:center !important;
+    font-size:15px !important;
+    font-weight:500 !important;
+  }
+}
