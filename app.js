@@ -1161,7 +1161,7 @@ function foodRow(f,i){return `<div class="food-row">
   <label class="food-p">P<input inputmode="decimal" data-i="${i}" data-k="p" value="${f.p||''}"></label>
   <label class="food-c">C<input inputmode="decimal" data-i="${i}" data-k="c" value="${f.c||''}"></label>
   <label class="food-f">F<input inputmode="decimal" data-i="${i}" data-k="f" value="${f.f||''}"></label>
-  <button class="food-delete" data-i="${i}" aria-label="Delete food">×</button>
+  <button class="food-delete" data-i="${i}" aria-label="Delete food">⌫</button>
 </div>`}
 function refreshNutritionTotals(d){const foods=(state.nutrition[d]?.foods)||[],g=goalsForDate(d);document.getElementById('macroTotals').innerHTML=macroBoxes(totals(foods),g);if(d===logDate()){renderTodayMacros();renderEnergyBalance();}}
 function foodChanged(e){const d=document.getElementById('nutritionDate').value,foods=state.nutrition[d].foods,i=+e.target.dataset.i,k=e.target.dataset.k;foods[i][k]=(k==='name'||k==='time')?e.target.value:(parseFloat(e.target.value)||0);save();refreshNutritionTotals(d)}
