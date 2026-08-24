@@ -650,7 +650,7 @@ function currentWeeklyMacroEnergy(){
   if(!dates.length)return[];
   const weeks={};
   dates.forEach(date=>{
-    const key=mondayOf(date);
+    const key=programWeekStart(date);
     const n=totals(state.nutrition[date]?.foods||[]);
     const e=energyForDate(date);
     const ex=exerciseTotalsForDate(date);
@@ -658,7 +658,7 @@ function currentWeeklyMacroEnergy(){
   });
   return Object.entries(weeks).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,days],idx)=>({
     date,
-    label:`Week ${idx+1}`,
+    label:`Week ${programWeekNumber(date)}`,
     range:`${new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}`,
     days:days.length,
     cal:days.reduce((s,x)=>s+x.cal,0)/days.length,
@@ -1891,7 +1891,7 @@ function renderProgress(){
   const energy=dailyEnergySeries();
   document.getElementById('energyChart').innerHTML=energy.length?svgLineChart(energy,{valueKey:'energy',suffix:'',minPad:150,maxPad:150}):'<p class="notice">Your energy graph will appear after you log nutrition.</p>';
 
-  const today=todayISO(),weekStart=mondayOf(today);
+  const today=todayISO(),weekStart=programWeekStart(today);
   const weekDays=Array.from({length:7},(_,i)=>plusDays(weekStart,i));
   const rows=weekDays.map(date=>{
     const n=totals(state.nutrition[date]?.foods||[]);
