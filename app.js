@@ -1463,7 +1463,13 @@ function svgDualLineChart(points,{keyA,keyB,labelA='AM average',labelB='PM avera
   const path=k=>points.map((p,i)=>Number.isFinite(+p[k])?`${i?'L':'M'} ${x(i).toFixed(1)} ${y(+p[k]).toFixed(1)}`:'').filter(Boolean).join(' ');
   const dots=(k,cls)=>points.map((p,i)=>Number.isFinite(+p[k])?`<circle cx="${x(i)}" cy="${y(+p[k])}" r="5" class="${cls}"><title>${esc(p.label)}: ${(+p[k]).toFixed(1)}${suffix}</title></circle>`:'').join('');
   const labels=points.map((p,i)=>`<text x="${x(i)}" y="${height-10}" text-anchor="middle" class="chart-axis">${esc(p.label)}</text>`).join('');
-  return `<div class="dual-chart-legend"><span><i class="legend-a"></i>${labelA}</span><span><i class="legend-b"></i>${labelB}</span></div><svg class="trend-svg dual-trend-svg" viewBox="0 0 ${width} ${height}"><path d="${path(keyA)}" class="chart-line dual-a"/>${dots(keyA,'chart-dot dual-dot-a')}<path d="${path(keyB)}" class="chart-line dual-b"/>${dots(keyB,'chart-dot dual-dot-b')}${labels}</svg>`;
+  const pointValues=(k,cls,offset)=>points.map((p,i)=>{
+    const raw=+p[k];
+    if(!Number.isFinite(raw))return '';
+    const yy=Math.max(13,y(raw)+offset);
+    return `<text x="${x(i)}" y="${yy}" text-anchor="middle" class="chart-point-value ${cls}">${raw.toFixed(1)}${suffix}</text>`;
+  }).join('');
+  return `<div class="dual-chart-legend"><span><i class="legend-a"></i>${labelA}</span><span><i class="legend-b"></i>${labelB}</span></div><svg class="trend-svg dual-trend-svg" viewBox="0 0 ${width} ${height}"><path d="${path(keyA)}" class="chart-line dual-a"/>${dots(keyA,'chart-dot dual-dot-a')}${pointValues(keyA,'dual-value-a',-10)}<path d="${path(keyB)}" class="chart-line dual-b"/>${dots(keyB,'chart-dot dual-dot-b')}${pointValues(keyB,'dual-value-b',18)}${labels}</svg>`;
 }
 function currentWeeklyWeight(){
   const groups={};
