@@ -1709,3 +1709,109 @@ input[type="time"]{color-scheme:dark}
 .zone-pace-data th:first-child,.zone-pace-data td:first-child{text-align:left}
 .zone-pace-data th{font-size:10px;color:var(--muted);font-weight:600}
 .zone-pace-data td{color:var(--text)}
+
+/* Personal V16 — Progress weight layout + data table */
+.weight-point-value{font-size:11px;font-weight:800;paint-order:stroke;stroke:#0c0d10;stroke-width:3px;stroke-linejoin:round}
+.weight-value-a{fill:#79aefc}.weight-value-b{fill:#f1f1f1}
+.weight-data-table-wrap{margin-top:12px;overflow-x:auto}
+.weight-data-table{min-width:440px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.weight-data-row{display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;align-items:center;border-top:1px solid var(--line)}
+.weight-data-row:first-child{border-top:0}.weight-data-row span{padding:9px 8px;font-size:11px;text-align:center}.weight-data-row span:first-child{text-align:left}
+.weight-data-head{background:var(--card2);color:var(--muted);font-weight:700}.weight-data-row:not(.weight-data-head) span:nth-child(2){color:#79aefc}
+
+
+/* Personal V17 — tighter Cardio chart + full daily-data table on mobile */
+.zone-pace-chart-wrap{
+  overflow-x:hidden !important;
+  width:100% !important;
+  max-width:100% !important;
+}
+
+.zone-pace-svg{
+  width:100% !important;
+  min-width:0 !important;
+  height:auto !important;
+  display:block !important;
+}
+
+.zone-pace-legend{
+  gap:7px 10px !important;
+  font-size:9px !important;
+  margin-bottom:4px !important;
+}
+
+.zone-pace-value{
+  font-size:9px !important;
+}
+
+.zone-pace-svg .chart-axis{
+  font-size:9px !important;
+}
+
+.pace-axis{
+  font-size:9px !important;
+}
+
+/* The daily running table should show Date + Z2 + Z3 + Z4 + Avg pace together */
+#zone3Chart + .run-data-table-wrap,
+.run-data-table-wrap,
+.zone-data-table-wrap{
+  width:100% !important;
+  max-width:100% !important;
+  overflow-x:hidden !important;
+}
+
+.run-data-table,
+.zone-data-table{
+  width:100% !important;
+  min-width:0 !important;
+  table-layout:fixed !important;
+}
+
+.run-data-row,
+.zone-data-row{
+  display:grid !important;
+  grid-template-columns:1.1fr .9fr .9fr .9fr 1.15fr !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+
+.run-data-row span,
+.zone-data-row span{
+  min-width:0 !important;
+  padding:8px 3px !important;
+  font-size:10px !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+}
+
+.run-data-row span:first-child,
+.zone-data-row span:first-child{
+  text-align:left !important;
+  padding-left:7px !important;
+}
+
+/* Catch older daily-data markup that used a generic table */
+.cardio-daily-table{
+  width:100% !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+}
+.cardio-daily-table .weekly-row{
+  grid-template-columns:1.1fr .9fr .9fr .9fr 1.15fr !important;
+}
+.cardio-daily-table .weekly-row span{
+  font-size:10px !important;
+  padding:8px 3px !important;
+  white-space:nowrap !important;
+}
+
+@media(max-width:430px){
+  .zone-pace-svg{
+    min-width:0 !important;
+  }
+  .zone-pace-legend{
+    font-size:8.5px !important;
+    gap:6px 8px !important;
+  }
+}

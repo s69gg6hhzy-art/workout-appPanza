@@ -1455,22 +1455,18 @@ function svgLineChart(points,{valueKey,labelKey='label',suffix='',minPad=2,maxPa
 }
 function svgDualLineChart(points,{keyA,keyB,labelA='AM average',labelB='PM average',suffix='',minPad=2,maxPad=2,height=220}={}){
   if(!points.length)return '<p class="notice">No data yet.</p>';
-  const width=760,padL=42,padR=18,padT=28,padB=38,plotW=width-padL-padR,plotH=height-padT-padB;
+  const width=760,padL=42,padR=18,padT=38,padB=38,plotW=width-padL-padR,plotH=height-padT-padB;
   const vals=points.flatMap(p=>[+p[keyA],+p[keyB]]).filter(Number.isFinite);
   if(!vals.length)return '<p class="notice">No data yet.</p>';
-  let min=Math.min(...vals),max=Math.max(...vals); if(min===max){min-=1;max+=1} min-=minPad;max+=maxPad;
-  const x=i=>padL+(points.length===1?plotW/2:(i/(points.length-1))*plotW), y=v=>padT+((max-v)/(max-min))*plotH;
+  let min=Math.min(...vals),max=Math.max(...vals);if(min===max){min-=1;max+=1}min-=minPad;max+=maxPad;
+  const x=i=>padL+(points.length===1?plotW/2:(i/(points.length-1))*plotW),y=v=>padT+((max-v)/(max-min))*plotH;
   const path=k=>points.map((p,i)=>Number.isFinite(+p[k])?`${i?'L':'M'} ${x(i).toFixed(1)} ${y(+p[k]).toFixed(1)}`:'').filter(Boolean).join(' ');
   const dots=(k,cls)=>points.map((p,i)=>Number.isFinite(+p[k])?`<circle cx="${x(i)}" cy="${y(+p[k])}" r="5" class="${cls}"><title>${esc(p.label)}: ${(+p[k]).toFixed(1)}${suffix}</title></circle>`:'').join('');
+  const values=(k,cls,offset)=>points.map((p,i)=>{const v=+p[k];return Number.isFinite(v)?`<text x="${x(i)}" y="${Math.max(14,y(v)+offset)}" text-anchor="middle" class="weight-point-value ${cls}">${v.toFixed(1)}${suffix}</text>`:''}).join('');
   const labels=points.map((p,i)=>`<text x="${x(i)}" y="${height-10}" text-anchor="middle" class="chart-axis">${esc(p.label)}</text>`).join('');
-  const pointValues=(k,cls,offset)=>points.map((p,i)=>{
-    const raw=+p[k];
-    if(!Number.isFinite(raw))return '';
-    const yy=Math.max(13,y(raw)+offset);
-    return `<text x="${x(i)}" y="${yy}" text-anchor="middle" class="chart-point-value ${cls}">${raw.toFixed(1)}${suffix}</text>`;
-  }).join('');
-  return `<div class="dual-chart-legend"><span><i class="legend-a"></i>${labelA}</span><span><i class="legend-b"></i>${labelB}</span></div><svg class="trend-svg dual-trend-svg" viewBox="0 0 ${width} ${height}"><path d="${path(keyA)}" class="chart-line dual-a"/>${dots(keyA,'chart-dot dual-dot-a')}${pointValues(keyA,'dual-value-a',-10)}<path d="${path(keyB)}" class="chart-line dual-b"/>${dots(keyB,'chart-dot dual-dot-b')}${pointValues(keyB,'dual-value-b',18)}${labels}</svg>`;
+  return `<div class="dual-chart-legend"><span><i class="legend-a"></i>${labelA}</span><span><i class="legend-b"></i>${labelB}</span></div><svg class="trend-svg dual-trend-svg" viewBox="0 0 ${width} ${height}"><path d="${path(keyA)}" class="chart-line dual-a"/>${dots(keyA,'chart-dot dual-dot-a')}${values(keyA,'weight-value-a',18)}<path d="${path(keyB)}" class="chart-line dual-b"/>${dots(keyB,'chart-dot dual-dot-b')}${values(keyB,'weight-value-b',-12)}${labels}</svg>`;
 }
+
 function currentWeeklyWeight(){
   const groups={};
   Object.entries(state.weights||{}).sort().forEach(([date,v])=>{
@@ -1853,7 +1849,7 @@ function fmtPaceMinutes(v){
 }
 function svgZonePaceChart(points){
   if(!points.length)return '<p class="notice">Add Jog/Run heart-rate zone data to build this trend.</p>';
-  const W=760,H=260,L=46,R=58,T=34,B=46,PW=W-L-R,PH=H-T-B;
+  const W=620,H=250,L=42,R=48,T=34,B=44,PW=W-L-R,PH=H-T-B;
   const x=i=>L+(points.length===1?PW/2:(i/(points.length-1))*PW);
   const yp=v=>T+((100-Math.max(0,Math.min(100,+v||0)))/100)*PH;
   const pv=points.map(p=>+p.pace).filter(Number.isFinite);
@@ -1911,6 +1907,13 @@ function renderProgress(){
   document.getElementById('weightChart').innerHTML=allWeights.length
     ? svgDualLineChart(allWeights,{keyA:'am',keyB:'pm',labelA:'AM average',labelB:'PM average',suffix:' lb',minPad:2,maxPad:2})
     : '<p class="notice">Log morning weights to build your weight trend.</p>';
+  const weightTable=document.getElementById('weightDataTable');
+  if(weightTable){
+    weightTable.innerHTML=allWeights.length?`<div class="weight-data-table">
+      <div class="weight-data-row weight-data-head"><span>Week</span><span>AM avg</span><span>PM avg</span><span>PM − AM</span></div>
+      ${allWeights.map(x=>{const am=Number.isFinite(+x.am)?+x.am:NaN,pm=Number.isFinite(+x.pm)?+x.pm:NaN,diff=Number.isFinite(am)&&Number.isFinite(pm)?pm-am:NaN;return `<div class="weight-data-row"><span>${esc(x.label)}</span><span>${Number.isFinite(am)?am.toFixed(1)+' lb':'—'}</span><span>${Number.isFinite(pm)?pm.toFixed(1)+' lb':'—'}</span><span>${Number.isFinite(diff)?diff.toFixed(1)+' lb':'—'}</span></div>`}).join('')}
+    </div>`:'';
+  }
   const histNut=currentWeeklyNutrition();
   document.getElementById('calorieChart').innerHTML=histNut.length
     ? svgLineChart(histNut,{valueKey:'cal',minPad:150,maxPad:150})
