@@ -1818,33 +1818,56 @@ function renderCardioSummary(){
   </div>
   <p class="tiny cardio-average-note">Average includes every week with recorded cardio.</p>`;
 }
-function zone3RunSeries(){
+function zonePaceRunSeries(){
   const rows=[];
   Object.entries(state.activities||{}).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,acts])=>{
     acts.forEach(a=>{
       const type=String(a.type||'').toLowerCase();
       if(type!=='jog'&&type!=='run')return;
-      const total=activitySeconds(a),z3=parseClockSeconds(a.z3);
-      if(total<=0||z3<=0)return;
+      const total=activitySeconds(a),distance=+a.distance||0;
+      if(total<=0||distance<=0)return;
+      const z1=parseClockSeconds(a.z1),z2=parseClockSeconds(a.z2),z3=parseClockSeconds(a.z3),z4=parseClockSeconds(a.z4),z5=parseClockSeconds(a.z5);
+      const denom=(z1+z2+z3+z4+z5)||total;
       rows.push({
         date,
         label:new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}),
-        pct:+((z3/total)*100).toFixed(1),
-        distance:+a.distance||0,
-        totalSeconds:total,
-        z3Seconds:z3
+        z2pct:+((z2/denom)*100).toFixed(1),
+        z3pct:+((z3/denom)*100).toFixed(1),
+        z4pct:+((z4/denom)*100).toFixed(1),
+        pace:total/distance/60
       });
     });
   });
   return rows;
 }
+function fmtPaceMinutes(v){
+  if(!Number.isFinite(+v))return '—';
+  let m=Math.floor(+v),s=Math.round((+v-m)*60);if(s===60){m++;s=0}
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+function svgZonePaceChart(points){
+  if(!points.length)return '<p class="notice">Add Jog/Run heart-rate zone data to build this trend.</p>';
+  const W=760,H=260,L=46,R=58,T=34,B=46,PW=W-L-R,PH=H-T-B;
+  const x=i=>L+(points.length===1?PW/2:(i/(points.length-1))*PW);
+  const yp=v=>T+((100-Math.max(0,Math.min(100,+v||0)))/100)*PH;
+  const pv=points.map(p=>+p.pace).filter(Number.isFinite);
+  let pmin=Math.min(...pv),pmax=Math.max(...pv);if(pmin===pmax){pmin-=.5;pmax+=.5}
+  const pp=Math.max(.25,(pmax-pmin)*.18);pmin=Math.max(0,pmin-pp);pmax+=pp;
+  const ypace=v=>T+((+v-pmin)/(pmax-pmin))*PH;
+  const path=(k,yf)=>points.map((p,i)=>`${i?'L':'M'} ${x(i).toFixed(1)} ${yf(p[k]).toFixed(1)}`).join(' ');
+  const vals=(k,yf,cls,fmt)=>points.map((p,i)=>{
+    const raw=+p[k],txt=fmt?fmt(raw):`${Number.isInteger(raw)?raw:raw.toFixed(1)}%`,yy=yf(raw);
+    return `<circle cx="${x(i)}" cy="${yy}" r="5" class="zone-pace-dot ${cls}"></circle><text x="${x(i)}" y="${Math.max(14,yy-9)}" text-anchor="middle" class="zone-pace-value ${cls}-text">${txt}</text>`;
+  }).join('');
+  const grid=[0,25,50,75,100].map(v=>`<line x1="${L}" y1="${yp(v)}" x2="${W-R}" y2="${yp(v)}" class="chart-grid"/><text x="${L-8}" y="${yp(v)+4}" text-anchor="end" class="chart-axis">${v}%</text>`).join('');
+  const right=[0,.25,.5,.75,1].map(f=>{const v=pmin+(pmax-pmin)*f;return `<text x="${W-R+8}" y="${ypace(v)+4}" class="chart-axis pace-axis">${fmtPaceMinutes(v)}</text>`}).join('');
+  const labels=points.map((p,i)=>`<text x="${x(i)}" y="${H-12}" text-anchor="middle" class="chart-axis">${esc(p.label)}</text>`).join('');
+  return `<div class="zone-pace-legend"><span><i class="z2"></i>Zone 2 %</span><span><i class="z3"></i>Zone 3 %</span><span><i class="z4"></i>Zone 4 %</span><span><i class="pace"></i>Avg pace</span></div>
+  <svg class="trend-svg zone-pace-svg" viewBox="0 0 ${W} ${H}">${grid}${right}<path d="${path('z2pct',yp)}" class="zone-pace-line z2-line"/><path d="${path('z3pct',yp)}" class="zone-pace-line z3-line"/><path d="${path('z4pct',yp)}" class="zone-pace-line z4-line"/><path d="${path('pace',ypace)}" class="zone-pace-line pace-line"/>${vals('z2pct',yp,'z2')}${vals('z3pct',yp,'z3')}${vals('z4pct',yp,'z4')}${vals('pace',ypace,'pace',fmtPaceMinutes)}${labels}</svg>`;
+}
 function renderZone3Chart(){
-  const box=document.getElementById('zone3Chart');
-  if(!box)return;
-  const rows=zone3RunSeries();
-  box.innerHTML=rows.length
-    ? svgLineChart(rows,{valueKey:'pct',suffix:'%',minPad:5,maxPad:5})
-    : '<p class="notice">Add Jog/Run heart-rate zone data to build this trend.</p>';
+  const box=document.getElementById('zone3Chart');if(!box)return;
+  box.innerHTML=svgZonePaceChart(zonePaceRunSeries());
 }
 
 function renderHistoricalProgressVisibility(){

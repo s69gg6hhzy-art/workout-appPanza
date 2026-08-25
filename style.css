@@ -1691,3 +1691,12 @@ input[type="time"]{color-scheme:dark}
     padding-right:5px !important;
   }
 }
+
+/* Personal V15 — zone + pace */
+.zone-pace-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin:0 0 6px 4px;font-size:10px;color:var(--muted)}
+.zone-pace-legend span{display:flex;align-items:center;gap:5px}.zone-pace-legend i{width:16px;height:3px;border-radius:4px;display:inline-block}
+.zone-pace-legend .z2{background:#9ad66d}.zone-pace-legend .z3{background:#5aa2ff}.zone-pace-legend .z4{background:#ff9b31}.zone-pace-legend .pace{background:#b16be8}
+.zone-pace-line{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.z2-line{stroke:#9ad66d}.z3-line{stroke:#5aa2ff}.z4-line{stroke:#ff9b31}.pace-line{stroke:#b16be8}
+.zone-pace-dot{stroke:#0c0d10;stroke-width:2}.zone-pace-dot.z2{fill:#9ad66d}.zone-pace-dot.z3{fill:#5aa2ff}.zone-pace-dot.z4{fill:#ff9b31}.zone-pace-dot.pace{fill:#b16be8}
+.zone-pace-value{font-size:11px;font-weight:800;paint-order:stroke;stroke:#0c0d10;stroke-width:3px}.z2-text{fill:#9ad66d}.z3-text{fill:#5aa2ff}.z4-text{fill:#ff9b31}.pace-text,.pace-axis{fill:#b16be8}
+@media(max-width:430px){.zone-pace-svg{min-width:680px}.zone-pace-chart-wrap{overflow-x:auto}}
