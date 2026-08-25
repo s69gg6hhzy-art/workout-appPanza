@@ -1859,7 +1859,7 @@ function svgZonePaceChart(points){
   const pv=points.map(p=>+p.pace).filter(Number.isFinite);
   let pmin=Math.min(...pv),pmax=Math.max(...pv);if(pmin===pmax){pmin-=.5;pmax+=.5}
   const pp=Math.max(.25,(pmax-pmin)*.18);pmin=Math.max(0,pmin-pp);pmax+=pp;
-  const ypace=v=>T+((+v-pmin)/(pmax-pmin))*PH;
+  const ypace=v=>T+((pmax-(+v))/(pmax-pmin))*PH;
   const path=(k,yf)=>points.map((p,i)=>`${i?'L':'M'} ${x(i).toFixed(1)} ${yf(p[k]).toFixed(1)}`).join(' ');
   const vals=(k,yf,cls,fmt)=>points.map((p,i)=>{
     const raw=+p[k],txt=fmt?fmt(raw):`${Number.isInteger(raw)?raw:raw.toFixed(1)}%`,yy=yf(raw);
