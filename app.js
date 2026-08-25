@@ -1873,7 +1873,10 @@ function svgZonePaceChart(points){
 }
 function renderZone3Chart(){
   const box=document.getElementById('zone3Chart');if(!box)return;
-  box.innerHTML=svgZonePaceChart(zonePaceRunSeries());
+  const points=zonePaceRunSeries();
+  box.innerHTML=svgZonePaceChart(points);
+  const table=document.getElementById('zonePaceDataTable');
+  if(table) table.innerHTML=points.length?`<div class="zone-pace-data"><div class="zone-pace-data-title">Daily data</div><div class="zone-pace-table-scroll"><table><thead><tr><th>Date</th><th>Zone 2</th><th>Zone 3</th><th>Zone 4</th><th>Avg pace</th></tr></thead><tbody>${points.map(p=>`<tr><td>${esc(p.label)}</td><td>${p.z2pct.toFixed(1)}%</td><td>${p.z3pct.toFixed(1)}%</td><td>${p.z4pct.toFixed(1)}%</td><td>${fmtPaceMinutes(p.pace)}/mi</td></tr>`).join('')}</tbody></table></div></div>`:'';
 }
 
 function renderHistoricalProgressVisibility(){

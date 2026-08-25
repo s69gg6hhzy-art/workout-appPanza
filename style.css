@@ -1700,3 +1700,12 @@ input[type="time"]{color-scheme:dark}
 .zone-pace-dot{stroke:#0c0d10;stroke-width:2}.zone-pace-dot.z2{fill:#9ad66d}.zone-pace-dot.z3{fill:#5aa2ff}.zone-pace-dot.z4{fill:#ff9b31}.zone-pace-dot.pace{fill:#b16be8}
 .zone-pace-value{font-size:11px;font-weight:800;paint-order:stroke;stroke:#0c0d10;stroke-width:3px}.z2-text{fill:#9ad66d}.z3-text{fill:#5aa2ff}.z4-text{fill:#ff9b31}.pace-text,.pace-axis{fill:#b16be8}
 @media(max-width:430px){.zone-pace-svg{min-width:680px}.zone-pace-chart-wrap{overflow-x:auto}}
+
+.zone-pace-data{margin:14px 0 2px;padding-top:12px;border-top:1px solid var(--line)}
+.zone-pace-data-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px 2px}
+.zone-pace-table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.zone-pace-data table{width:100%;min-width:430px;border-collapse:collapse;font-size:11px}
+.zone-pace-data th,.zone-pace-data td{padding:8px 7px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.zone-pace-data th:first-child,.zone-pace-data td:first-child{text-align:left}
+.zone-pace-data th{font-size:10px;color:var(--muted);font-weight:600}
+.zone-pace-data td{color:var(--text)}
