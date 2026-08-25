@@ -1815,3 +1815,98 @@ input[type="time"]{color-scheme:dark}
     gap:6px 8px !important;
   }
 }
+
+
+/* Personal V18 — keep all Cardio + Weight table columns on one phone screen */
+
+/* CARDIO daily data */
+.zone-pace-table-scroll{
+  overflow-x:hidden !important;
+  width:100% !important;
+  max-width:100% !important;
+}
+
+.zone-pace-data table{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  table-layout:fixed !important;
+  border-collapse:collapse !important;
+}
+
+.zone-pace-data th,
+.zone-pace-data td{
+  padding:8px 2px !important;
+  font-size:10px !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:clip !important;
+}
+
+.zone-pace-data th:first-child,
+.zone-pace-data td:first-child{
+  width:18% !important;
+  text-align:left !important;
+  padding-left:6px !important;
+}
+
+.zone-pace-data th:nth-child(2),
+.zone-pace-data td:nth-child(2),
+.zone-pace-data th:nth-child(3),
+.zone-pace-data td:nth-child(3),
+.zone-pace-data th:nth-child(4),
+.zone-pace-data td:nth-child(4){
+  width:17% !important;
+}
+
+.zone-pace-data th:nth-child(5),
+.zone-pace-data td:nth-child(5){
+  width:31% !important;
+}
+
+/* WEIGHT weekly data */
+.weight-data-table-wrap{
+  overflow-x:hidden !important;
+  width:100% !important;
+  max-width:100% !important;
+}
+
+.weight-data-table{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+
+.weight-data-row{
+  grid-template-columns:1.05fr 1fr 1fr 1.12fr !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+
+.weight-data-row span{
+  min-width:0 !important;
+  padding:9px 3px !important;
+  font-size:10px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:clip !important;
+}
+
+.weight-data-row span:first-child{
+  padding-left:6px !important;
+}
+
+@media(max-width:390px){
+  .zone-pace-data th,
+  .zone-pace-data td,
+  .weight-data-row span{
+    font-size:9px !important;
+  }
+
+  .zone-pace-data th,
+  .zone-pace-data td{
+    padding-left:1px !important;
+    padding-right:1px !important;
+  }
+}
