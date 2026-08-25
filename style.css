@@ -1567,3 +1567,127 @@ input[type="time"]{color-scheme:dark}
 .legend-a{background:#79aefc}.legend-b{background:#f1f1f1}
 .chart-line.dual-a{stroke:#79aefc}.chart-line.dual-b{stroke:#f1f1f1}
 .chart-dot.dual-dot-a{fill:#79aefc}.chart-dot.dual-dot-b{fill:#f1f1f1}
+
+
+/* ===== Personal V14 — Today nutrition one-row layout ===== */
+#todayMacros{
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:6px !important;
+  align-items:start !important;
+}
+#todayMacros .macro-dial{min-width:0 !important;text-align:center !important;padding:2px 0 !important}
+#todayMacros .macro-dial svg{display:block !important;width:68px !important;height:68px !important;max-width:100% !important;margin:0 auto 3px !important}
+#todayMacros .macro-dial b{display:block !important;margin-top:2px !important;font-size:11px !important;line-height:1.05 !important;white-space:nowrap !important}
+#todayMacros .macro-dial small{display:block !important;margin-top:3px !important;font-size:8px !important;line-height:1.1 !important;color:var(--muted) !important;white-space:nowrap !important}
+#todayMacros .macro-dial-value{fill:var(--text) !important;font-size:24px !important;font-weight:800 !important}
+#todayMacros .macro-dial-percent{fill:var(--muted) !important;font-size:12px !important;font-weight:700 !important}
+
+@media(max-width:430px){
+  #todayMacros{gap:4px !important}
+  #todayMacros .macro-dial svg{width:60px !important;height:60px !important}
+  #todayMacros .macro-dial b{font-size:10px !important}
+  #todayMacros .macro-dial small{font-size:7.5px !important}
+}
+
+/* ===== Personal V14 — Food Log cleanup ===== */
+@media(max-width:700px){
+  #foodList{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:12px !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    overflow-x:hidden !important;
+  }
+  #foodList .food-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,2.45fr) 70px 92px 40px !important;
+    grid-template-areas:
+      "name weight time del"
+      "cal p c f" !important;
+    column-gap:8px !important;
+    row-gap:13px !important;
+    align-items:end !important;
+    width:100% !important;
+    min-width:0 !important;
+    margin:0 !important;
+    padding:12px !important;
+    border:1px solid var(--line) !important;
+    border-radius:15px !important;
+    background:rgba(255,255,255,.012) !important;
+  }
+  #foodList .food-row::after{
+    content:"";
+    grid-column:1 / -1;
+    grid-row:1;
+    align-self:end;
+    height:1px;
+    background:var(--line);
+    transform:translateY(9px);
+    pointer-events:none;
+  }
+  #foodList .food-name{grid-area:name}
+  #foodList .food-weight{grid-area:weight}
+  #foodList .food-time{grid-area:time}
+  #foodList .food-cal{grid-area:cal}
+  #foodList .food-p{grid-area:p}
+  #foodList .food-c{grid-area:c}
+  #foodList .food-f{grid-area:f}
+  #foodList .food-delete{grid-area:del}
+
+  #foodList .food-row label{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:4px !important;
+    width:100% !important;
+    min-width:0 !important;
+    margin:0 !important;
+    font-size:10px !important;
+    line-height:1 !important;
+    color:var(--muted) !important;
+  }
+  #foodList .food-row input{
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    height:40px !important;
+    margin:0 !important;
+    box-sizing:border-box !important;
+    border-radius:9px !important;
+    padding:7px 8px !important;
+  }
+  #foodList .food-name input{text-align:left !important;font-size:16px !important;font-weight:500 !important;padding-left:9px !important}
+  #foodList .food-weight input{text-align:center !important;font-size:15px !important;padding-left:4px !important;padding-right:4px !important}
+  #foodList .food-time input{text-align:center !important;font-size:13px !important;padding-left:2px !important;padding-right:2px !important}
+  #foodList .food-delete{
+    width:40px !important;
+    min-width:40px !important;
+    height:40px !important;
+    margin:0 !important;
+    padding:0 !important;
+    align-self:end !important;
+    border:1px solid var(--line) !important;
+    border-radius:10px !important;
+    background:var(--card2) !important;
+    color:var(--muted) !important;
+    font-size:18px !important;
+    line-height:1 !important;
+  }
+  #foodList .food-cal,
+  #foodList .food-p,
+  #foodList .food-c,
+  #foodList .food-f{width:100% !important;min-width:0 !important}
+  #foodList .food-cal input,
+  #foodList .food-p input,
+  #foodList .food-c input,
+  #foodList .food-f input{
+    width:100% !important;
+    text-align:center !important;
+    font-size:15px !important;
+    font-weight:500 !important;
+    padding-left:5px !important;
+    padding-right:5px !important;
+  }
+}
