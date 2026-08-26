@@ -1938,3 +1938,78 @@ input[type="time"]{color-scheme:dark}
   .simple-log-row span{font-size:11px;padding:9px 5px}
   .wide-log-row span{font-size:10px;padding:9px 6px}
 }
+
+
+/* Personal V20 — Run Log + Workout Log fit phone width */
+.wide-log-scroll{
+  width:100% !important;
+  max-width:100% !important;
+  overflow-x:hidden !important;
+}
+
+.wide-log-table{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+
+.run-log-table .wide-log-row{
+  grid-template-columns:1fr 1fr 1.1fr .9fr .9fr .95fr !important;
+  width:100% !important;
+}
+
+.workout-log-table{
+  min-width:0 !important;
+}
+
+.workout-log-table .wide-log-row{
+  grid-template-columns:1.55fr .95fr .8fr .95fr .9fr !important;
+  width:100% !important;
+}
+
+.wide-log-row span{
+  min-width:0 !important;
+  padding:8px 3px !important;
+  font-size:9.5px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:clip !important;
+}
+
+.run-log-table .wide-log-row span:first-child{
+  text-align:left !important;
+  padding-left:5px !important;
+}
+
+.workout-log-table .wide-log-row span:first-child{
+  text-align:left !important;
+  padding-left:5px !important;
+  white-space:normal !important;
+  line-height:1.15 !important;
+  word-break:break-word !important;
+}
+
+.wide-log-head span{
+  font-size:8.5px !important;
+  font-weight:800 !important;
+}
+
+@media(max-width:390px){
+  .wide-log-row span{
+    font-size:8.5px !important;
+    padding-left:2px !important;
+    padding-right:2px !important;
+  }
+
+  .wide-log-head span{
+    font-size:8px !important;
+  }
+
+  .run-log-table .wide-log-row{
+    grid-template-columns:.95fr .9fr 1fr .8fr .85fr .9fr !important;
+  }
+
+  .workout-log-table .wide-log-row{
+    grid-template-columns:1.45fr .9fr .75fr .9fr .85fr !important;
+  }
+}
