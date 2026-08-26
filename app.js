@@ -1663,7 +1663,7 @@ function showMoreSection(section){
   if(pTab)pTab.classList.toggle('on',section==='progress');
   if(cTab)cTab.classList.toggle('on',section==='cardio');
   if(wTab)wTab.classList.toggle('on',section==='workouts');
-  if(section==='workouts'){renderProgramStartControls();renderProgramWorkoutLibrary();}
+  if(section==='workouts'){renderProgramStartControls();renderProgramWorkoutLibrary();renderWorkoutLog();}
 }
 
 function workoutExerciseList(workout){
@@ -1755,6 +1755,70 @@ function closeProgramWorkoutPreview(){
   modal.setAttribute('aria-hidden','true');
 }
 
+
+function thisWeekCardioRows(){
+  const start=programWeekStart(todayISO());
+  return Array.from({length:7},(_,i)=>{
+    const date=plusDays(start,i);
+    let walk=0,run=0;
+    (state.activities[date]||[]).forEach(a=>{
+      const miles=+a.distance||0;
+      const type=String(a.type||'').toLowerCase();
+      if(type==='walk')walk+=miles;
+      else if(type==='jog'||type==='run')run+=miles;
+    });
+    return {date,walk,run};
+  });
+}
+function renderCardioDailyTable(){
+  const box=document.getElementById('cardioDailyTable');if(!box)return;
+  const rows=thisWeekCardioRows();
+  const totals=rows.reduce((s,x)=>({walk:s.walk+x.walk,run:s.run+x.run}),{walk:0,run:0});
+  box.innerHTML=`<div class="simple-log-table cardio-day-table">
+    <div class="simple-log-row cardio-day-head"><span>Day</span><span>Walk (mi)</span><span>Run/Jog (mi)</span></div>
+    ${rows.map(x=>`<div class="simple-log-row"><span><b>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</b><small>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</small></span><span>${x.walk.toFixed(2)}</span><span>${x.run.toFixed(2)}</span></div>`).join('')}
+    <div class="simple-log-row simple-log-total"><span>Weekly total</span><span>${totals.walk.toFixed(2)}</span><span>${totals.run.toFixed(2)}</span></div>
+  </div>`;
+}
+function runLogRows(){
+  const rows=[];
+  Object.entries(state.activities||{}).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([date,acts])=>{
+    (acts||[]).forEach((a,index)=>{
+      const type=String(a.type||'').toLowerCase();
+      if(type!=='jog'&&type!=='run')return;
+      const total=activitySeconds(a),distance=+a.distance||0;
+      const z1=parseClockSeconds(a.z1),z2=parseClockSeconds(a.z2),z3=parseClockSeconds(a.z3),z4=parseClockSeconds(a.z4),z5=parseClockSeconds(a.z5);
+      const zoneTotal=z1+z2+z3+z4+z5;
+      rows.push({date,index,distance,pace:(total>0&&distance>0)?total/distance/60:NaN,avgHr:+a.avgHr||0,z3pct:(zoneTotal>0)?z3/zoneTotal*100:0,calories:+a.calories||0,type:a.type||'Run'});
+    });
+  });
+  return rows;
+}
+function renderRunLog(){
+  const box=document.getElementById('runLogTable');if(!box)return;
+  const rows=runLogRows();
+  box.innerHTML=rows.length?`<div class="wide-log-scroll"><div class="wide-log-table run-log-table">
+    <div class="wide-log-row wide-log-head"><span>Date</span><span>Distance</span><span>Avg pace</span><span>Avg HR</span><span>Zone 3</span><span>Calories</span></div>
+    ${rows.map(x=>`<div class="wide-log-row"><span>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><span>${x.distance?x.distance.toFixed(2)+' mi':'—'}</span><span>${Number.isFinite(x.pace)?fmtPaceMinutes(x.pace)+'/mi':'—'}</span><span>${x.avgHr?Math.round(x.avgHr)+' bpm':'—'}</span><span>${x.z3pct?x.z3pct.toFixed(1)+'%':'0.0%'}</span><span>${x.calories?Math.round(x.calories)+' kcal':'—'}</span></div>`).join('')}
+  </div></div>`:'<p class="notice">Logged Jog/Run entries will appear here.</p>';
+}
+function workoutLogRows(){
+  const normal=(state.history||[]).map(h=>({
+    date:isoDate(h.date),stamp:h.date||'',name:h.workout||'Workout',duration:parseWorkoutDuration(h.summary?.duration),calories:+(h.summary?.totalCalories??h.summary?.activeCalories)||0,avgHr:+h.summary?.avgHr||0
+  }));
+  const knee=(state.kneeHistory||[]).map(h=>({
+    date:isoDate(h.date),stamp:h.date||'',name:'Off-day knee circuit',duration:parseWorkoutDuration(h.summary?.duration),calories:+(h.summary?.totalCalories??h.summary?.activeCalories)||0,avgHr:+h.summary?.avgHr||0
+  }));
+  return normal.concat(knee).sort((a,b)=>String(b.stamp).localeCompare(String(a.stamp)));
+}
+function renderWorkoutLog(){
+  const box=document.getElementById('workoutLogTable');if(!box)return;
+  const rows=workoutLogRows();
+  box.innerHTML=rows.length?`<div class="wide-log-scroll"><div class="wide-log-table workout-log-table">
+    <div class="wide-log-row wide-log-head"><span>Workout</span><span>Date</span><span>Minutes</span><span>Calories</span><span>Avg HR</span></div>
+    ${rows.map(x=>`<div class="wide-log-row"><span>${esc(x.name)}</span><span>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><span>${x.duration?Math.round(x.duration):'—'}</span><span>${x.calories?Math.round(x.calories)+' kcal':'—'}</span><span>${x.avgHr?Math.round(x.avgHr)+' bpm':'—'}</span></div>`).join('')}
+  </div></div>`:'<p class="notice">Completed workouts will appear here.</p>';
+}
 
 function parseClockSeconds(value){
   if(value===null||value===undefined||value==='')return 0;
@@ -1944,7 +2008,10 @@ function renderProgress(){
   }
 
   renderCardioSummary();
+  renderCardioDailyTable();
   renderZone3Chart();
+  renderRunLog();
+  renderWorkoutLog();
 
   const energy=currentWeeklyMacroEnergy().map(x=>({date:x.date,label:x.label,energy:Math.round(x.energy)}));
   document.getElementById('energyChart').innerHTML=energy.length?svgLineChart(energy,{valueKey:'energy',suffix:' kcal',minPad:150,maxPad:150}):'<p class="notice">Your energy graph will appear after you log nutrition.</p>';

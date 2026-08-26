@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=personal-18">
+  <link rel="stylesheet" href="style.css?v=personal-19">
 </head>
 <body class="personal-version">
 <div class="app">
@@ -225,6 +225,11 @@
         <div id="cardioChart" class="chart-wrap"></div>
         <p class="tiny chart-note">Walk miles and Run/Jog miles are grouped by week.</p>
       </div>
+      <div class="card cardio-daily-card">
+        <div class="eyebrow">This week's cardio by day</div>
+        <h3>Walk &amp; Run/Jog</h3>
+        <div id="cardioDailyTable"></div>
+      </div>
       <div class="card cardio-summary-card"><div class="eyebrow">Cardio summary</div><div id="cardioSummary"></div></div>
       <div class="card chart-card">
         <div class="chart-head"><div><div class="eyebrow">Running heart rate + pace</div><h3>Zone &amp; pace trend</h3></div></div>
@@ -232,9 +237,19 @@
         <div id="zonePaceDataTable"></div>
         <p class="tiny chart-note">Zone 2, Zone 3 and Zone 4 show percent of each Jog/Run. Pace uses min/mi on the right axis.</p>
       </div>
+      <div class="card run-log-card">
+        <div class="eyebrow">Running log</div>
+        <h3>Every run</h3>
+        <div id="runLogTable"></div>
+      </div>
     </div>
 
     <div id="moreWorkoutsSection" style="display:none">
+      <div class="card workout-log-card">
+        <div class="eyebrow">Workout log</div>
+        <h3>Completed workouts</h3>
+        <div id="workoutLogTable"></div>
+      </div>
       <div class="card program-start-card">
         <div class="eyebrow">Program starting point</div>
         <h3>Start anywhere in the plan</h3>
@@ -374,6 +389,6 @@
 </nav>
 
 <script src="data.js?v=70"></script>
-<script src="app.js?v=personal-18"></script>
+<script src="app.js?v=personal-19"></script>
 </body>
 </html>
