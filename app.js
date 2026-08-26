@@ -1776,7 +1776,7 @@ function renderCardioDailyTable(){
   const totals=rows.reduce((s,x)=>({walk:s.walk+x.walk,run:s.run+x.run}),{walk:0,run:0});
   box.innerHTML=`<div class="simple-log-table cardio-day-table">
     <div class="simple-log-row cardio-day-head"><span>Day</span><span>Walk (mi)</span><span>Run/Jog (mi)</span></div>
-    ${rows.map(x=>`<div class="simple-log-row"><span><b>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</b><small>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</small></span><span>${x.walk.toFixed(2)}</span><span>${x.run.toFixed(2)}</span></div>`).join('')}
+    ${rows.map(x=>`<div class="simple-log-row"><span class="cardio-day-date"><b>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</b> <small>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</small></span><span>${x.walk.toFixed(2)}</span><span>${x.run.toFixed(2)}</span></div>`).join('')}
     <div class="simple-log-row simple-log-total"><span>Weekly total</span><span>${totals.walk.toFixed(2)}</span><span>${totals.run.toFixed(2)}</span></div>
   </div>`;
 }
@@ -1798,8 +1798,8 @@ function renderRunLog(){
   const box=document.getElementById('runLogTable');if(!box)return;
   const rows=runLogRows();
   box.innerHTML=rows.length?`<div class="wide-log-scroll"><div class="wide-log-table run-log-table">
-    <div class="wide-log-row wide-log-head"><span>Date</span><span>Distance</span><span>Avg pace</span><span>Avg HR</span><span>Zone 3</span><span>Calories</span></div>
-    ${rows.map(x=>`<div class="wide-log-row"><span>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><span>${x.distance?x.distance.toFixed(2)+' mi':'—'}</span><span>${Number.isFinite(x.pace)?fmtPaceMinutes(x.pace)+'/mi':'—'}</span><span>${x.avgHr?Math.round(x.avgHr)+' bpm':'—'}</span><span>${x.z3pct?x.z3pct.toFixed(1)+'%':'0.0%'}</span><span>${x.calories?Math.round(x.calories)+' kcal':'—'}</span></div>`).join('')}
+    <div class="wide-log-row wide-log-head"><span>Date</span><span>Distance</span><span>Avg pace</span><span>Zone 3</span><span>Calories</span><span>Avg HR</span></div>
+    ${rows.map(x=>`<div class="wide-log-row"><span>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><span>${x.distance?x.distance.toFixed(2)+' mi':'—'}</span><span>${Number.isFinite(x.pace)?fmtPaceMinutes(x.pace)+'/mi':'—'}</span><span>${x.z3pct?x.z3pct.toFixed(1)+'%':'0.0%'}</span><span>${x.calories?Math.round(x.calories)+' kcal':'—'}</span><span>${x.avgHr?Math.round(x.avgHr)+' bpm':'—'}</span></div>`).join('')}
   </div></div>`:'<p class="notice">Logged Jog/Run entries will appear here.</p>';
 }
 function workoutLogRows(){
@@ -1807,7 +1807,7 @@ function workoutLogRows(){
     date:isoDate(h.date),stamp:h.date||'',name:h.workout||'Workout',duration:parseWorkoutDuration(h.summary?.duration),calories:+(h.summary?.totalCalories??h.summary?.activeCalories)||0,avgHr:+h.summary?.avgHr||0
   }));
   const knee=(state.kneeHistory||[]).map(h=>({
-    date:isoDate(h.date),stamp:h.date||'',name:'Off-day knee circuit',duration:parseWorkoutDuration(h.summary?.duration),calories:+(h.summary?.totalCalories??h.summary?.activeCalories)||0,avgHr:+h.summary?.avgHr||0
+    date:isoDate(h.date),stamp:h.date||'',name:'Knee circuit',duration:parseWorkoutDuration(h.summary?.duration),calories:+(h.summary?.totalCalories??h.summary?.activeCalories)||0,avgHr:+h.summary?.avgHr||0
   }));
   return normal.concat(knee).sort((a,b)=>String(b.stamp).localeCompare(String(a.stamp)));
 }
@@ -1815,8 +1815,8 @@ function renderWorkoutLog(){
   const box=document.getElementById('workoutLogTable');if(!box)return;
   const rows=workoutLogRows();
   box.innerHTML=rows.length?`<div class="wide-log-scroll"><div class="wide-log-table workout-log-table">
-    <div class="wide-log-row wide-log-head"><span>Workout</span><span>Date</span><span>Minutes</span><span>Calories</span><span>Avg HR</span></div>
-    ${rows.map(x=>`<div class="wide-log-row"><span>${esc(x.name)}</span><span>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><span>${x.duration?Math.round(x.duration):'—'}</span><span>${x.calories?Math.round(x.calories)+' kcal':'—'}</span><span>${x.avgHr?Math.round(x.avgHr)+' bpm':'—'}</span></div>`).join('')}
+    <div class="wide-log-row wide-log-head"><span>Date</span><span>Workout</span><span>Minutes</span><span>Calories</span><span>Avg HR</span></div>
+    ${rows.map(x=>`<div class="wide-log-row"><span>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><span>${esc(x.name)}</span><span>${x.duration?Math.round(x.duration):'—'}</span><span>${x.calories?Math.round(x.calories)+' kcal':'—'}</span><span>${x.avgHr?Math.round(x.avgHr)+' bpm':'—'}</span></div>`).join('')}
   </div></div>`:'<p class="notice">Completed workouts will appear here.</p>';
 }
 
