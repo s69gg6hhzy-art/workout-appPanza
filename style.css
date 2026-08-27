@@ -2127,3 +2127,38 @@ input[type="time"]{color-scheme:dark}
   .workout-log-table .wide-log-row{grid-template-columns:.9fr 1.45fr .75fr .9fr .85fr !important}
   .cardio-day-table .simple-log-row span{padding-top:6px !important;padding-bottom:6px !important}
 }
+
+
+/* Personal V24 — ONLY Progress page line charts fit fully on phone screen.
+   Cardio / Zone & Pace charts are intentionally untouched. */
+#energyChart,
+#calorieChart,
+#proteinChart,
+#weightChart{
+  overflow-x:hidden !important;
+  width:100% !important;
+  max-width:100% !important;
+  margin-left:0 !important;
+  margin-right:0 !important;
+}
+
+#energyChart .trend-svg,
+#calorieChart .trend-svg,
+#proteinChart .trend-svg,
+#weightChart .trend-svg{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  height:auto !important;
+}
+
+/* Give the four targeted charts a little breathing room at the edges
+   while still keeping every plotted point visible at once. */
+#energyChart,
+#calorieChart,
+#proteinChart,
+#weightChart{
+  padding-left:2px !important;
+  padding-right:2px !important;
+  box-sizing:border-box !important;
+}
