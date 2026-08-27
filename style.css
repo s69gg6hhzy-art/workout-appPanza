@@ -2015,126 +2015,115 @@ input[type="time"]{color-scheme:dark}
 }
 
 
-/* Personal V21 — cleaner Nutrition food cards */
-.food-row{
-  display:grid !important;
-  grid-template-columns:minmax(0,1.45fr) minmax(0,.9fr) minmax(0,1.15fr) 52px !important;
-  grid-template-areas:
-    "food weight time delete"
-    "cal p c f" !important;
-  gap:10px !important;
-  align-items:end !important;
-  padding:14px !important;
-}
+/* Personal V23 — repaired Nutrition food cards */
+@media(max-width:700px){
+  #foodList{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:12px !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    overflow-x:hidden !important;
+  }
 
-.food-row label{
-  min-width:0 !important;
-  margin:0 !important;
-}
-
-.food-row label > input{
-  width:100% !important;
-  min-width:0 !important;
-  box-sizing:border-box !important;
-}
-
-/* top row */
-.food-name{grid-area:food !important}
-.food-weight{grid-area:weight !important}
-.food-time{
-  grid-area:time !important;
-  align-self:end !important;
-  display:flex !important;
-  flex-direction:column !important;
-  justify-content:flex-end !important;
-}
-.food-time input{
-  margin-top:6px !important;
-}
-.food-delete{
-  grid-area:delete !important;
-  width:52px !important;
-  min-width:52px !important;
-  height:48px !important;
-  align-self:end !important;
-}
-
-/* bottom row: true equal widths */
-.food-cal{grid-area:cal !important}
-.food-p{grid-area:p !important}
-.food-c{grid-area:c !important}
-.food-f{grid-area:f !important}
-
-.food-cal,
-.food-p,
-.food-c,
-.food-f{
-  width:100% !important;
-}
-
-.food-cal input,
-.food-p input,
-.food-c input,
-.food-f input{
-  width:100% !important;
-  min-width:0 !important;
-  text-align:center !important;
-}
-
-/* force equal macro columns */
-.food-row{
-  grid-template-columns:minmax(0,1.45fr) minmax(0,.9fr) minmax(0,1.15fr) 52px !important;
-}
-.food-cal,
-.food-p,
-.food-c,
-.food-f{
-  grid-column:auto !important;
-}
-
-.food-row::before{
-  content:"";
-  grid-column:1 / -1;
-  grid-row:2;
-  height:1px;
-  background:var(--line);
-  align-self:start;
-  margin-top:-2px;
-  pointer-events:none;
-}
-
-/* use nested equal-width macro grid without changing markup */
-.food-cal{grid-column:1 !important}
-.food-p{grid-column:2 !important}
-.food-c{grid-column:3 !important}
-.food-f{grid-column:4 !important}
-
-/* labels + inputs */
-.food-row label{
-  color:var(--muted) !important;
-  font-size:12px !important;
-}
-.food-row input{
-  font-size:16px !important;
-  min-height:48px !important;
-}
-
-@media(max-width:430px){
-  .food-row{
-    grid-template-columns:minmax(0,1.35fr) minmax(0,.9fr) minmax(0,1.05fr) 48px !important;
-    gap:8px !important;
+  #foodList .food-row{
+    display:grid !important;
+    grid-template-columns:repeat(12,minmax(0,1fr)) !important;
+    grid-template-rows:auto auto !important;
+    column-gap:7px !important;
+    row-gap:14px !important;
+    align-items:end !important;
+    width:100% !important;
+    min-width:0 !important;
+    margin:0 !important;
     padding:12px !important;
+    border:1px solid var(--line) !important;
+    border-radius:15px !important;
+    background:rgba(255,255,255,.012) !important;
   }
-  .food-delete{
-    width:48px !important;
-    min-width:48px !important;
-    height:48px !important;
+
+  #foodList .food-row::after{
+    content:"" !important;
+    grid-column:1 / -1 !important;
+    grid-row:1 !important;
+    align-self:end !important;
+    height:1px !important;
+    background:var(--line) !important;
+    transform:translateY(10px) !important;
+    pointer-events:none !important;
   }
-  .food-row label{
-    font-size:11px !important;
+  #foodList .food-row::before{content:none !important}
+
+  #foodList .food-name{grid-column:1 / 6 !important;grid-row:1 !important}
+  #foodList .food-weight{grid-column:6 / 8 !important;grid-row:1 !important}
+  #foodList .food-time{grid-column:8 / 12 !important;grid-row:1 !important}
+  #foodList .food-delete{grid-column:12 / 13 !important;grid-row:1 !important}
+
+  #foodList .food-cal{grid-column:1 / 4 !important;grid-row:2 !important}
+  #foodList .food-p{grid-column:4 / 7 !important;grid-row:2 !important}
+  #foodList .food-c{grid-column:7 / 10 !important;grid-row:2 !important}
+  #foodList .food-f{grid-column:10 / 13 !important;grid-row:2 !important}
+
+  #foodList .food-row label{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:4px !important;
+    width:100% !important;
+    min-width:0 !important;
+    margin:0 !important;
+    color:var(--muted) !important;
+    font-size:10px !important;
+    line-height:1 !important;
   }
-  .food-row input{
+
+  #foodList .food-row input{
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    height:42px !important;
+    min-height:42px !important;
+    margin:0 !important;
+    padding:7px 7px !important;
+    box-sizing:border-box !important;
+    border-radius:9px !important;
     font-size:15px !important;
   }
+
+  #foodList .food-name input{text-align:left !important;font-size:15px !important;padding-left:9px !important}
+  #foodList .food-weight input,
+  #foodList .food-time input,
+  #foodList .food-cal input,
+  #foodList .food-p input,
+  #foodList .food-c input,
+  #foodList .food-f input{text-align:center !important}
+
+  #foodList .food-time input{font-size:13px !important;padding-left:2px !important;padding-right:2px !important}
+
+  #foodList .food-delete{
+    width:100% !important;
+    min-width:0 !important;
+    height:42px !important;
+    margin:0 !important;
+    padding:0 !important;
+    align-self:end !important;
+    border:1px solid var(--line) !important;
+    border-radius:10px !important;
+    background:var(--card2) !important;
+    color:var(--muted) !important;
+    font-size:17px !important;
+    line-height:1 !important;
+  }
 }
-\n\n/* Personal V22 — compact cardio rows + finalized log columns */\n.cardio-day-table .simple-log-row span{padding-top:7px !important;padding-bottom:7px !important}\n.cardio-day-date{white-space:nowrap !important}\n.cardio-day-date small{display:inline !important;margin:0 0 0 4px !important;font-size:inherit !important;color:var(--muted) !important}\n.workout-log-table .wide-log-row{grid-template-columns:.95fr 1.55fr .8fr .95fr .9fr !important}\n.workout-log-table .wide-log-row span:first-child{white-space:nowrap !important;word-break:normal !important}\n.workout-log-table .wide-log-row span:nth-child(2){white-space:normal !important;line-height:1.15 !important;text-align:left !important}\n@media(max-width:390px){\n  .workout-log-table .wide-log-row{grid-template-columns:.9fr 1.45fr .75fr .9fr .85fr !important}\n  .cardio-day-table .simple-log-row span{padding-top:6px !important;padding-bottom:6px !important}\n}\n
+
+/* Personal V23 — compact cardio rows + finalized log columns */
+.cardio-day-table .simple-log-row span{padding-top:7px !important;padding-bottom:7px !important}
+.cardio-day-date{white-space:nowrap !important}
+.cardio-day-date small{display:inline !important;margin:0 0 0 4px !important;font-size:inherit !important;color:var(--muted) !important}
+.workout-log-table .wide-log-row{grid-template-columns:.95fr 1.55fr .8fr .95fr .9fr !important}
+.workout-log-table .wide-log-row span:first-child{white-space:nowrap !important;word-break:normal !important}
+.workout-log-table .wide-log-row span:nth-child(2){white-space:normal !important;line-height:1.15 !important;text-align:left !important}
+@media(max-width:390px){
+  .workout-log-table .wide-log-row{grid-template-columns:.9fr 1.45fr .75fr .9fr .85fr !important}
+  .cardio-day-table .simple-log-row span{padding-top:6px !important;padding-bottom:6px !important}
+}
