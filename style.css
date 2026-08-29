@@ -2212,3 +2212,32 @@ input[type="time"]{color-scheme:dark}
   font-size:12px;
   color:var(--text);
 }
+
+
+/* Personal V27 — last-week cardio dropdown + collapsible zone daily data */
+.cardio-last-week-wrap{margin:0 0 10px}
+.cardio-last-week-toggle,.zone-data-toggle{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border:1px solid var(--line);background:rgba(255,255,255,.015);color:var(--text);
+  border-radius:12px;padding:11px 12px;font:inherit;text-align:left
+}
+.cardio-last-week-toggle span{font-weight:700}
+.cardio-last-week-toggle small{display:inline;margin-left:5px;color:var(--muted);font-weight:500}
+.cardio-last-week-chevron,.zone-data-chevron{
+  display:inline-block;color:var(--muted);font-style:normal;font-size:20px;line-height:1;transition:transform .16s ease
+}
+.cardio-last-week-wrap.open .cardio-last-week-chevron,.collapsible-zone-data.open .zone-data-chevron{transform:rotate(90deg)}
+.cardio-last-week-details{display:none;margin-top:8px}
+.cardio-last-week-wrap.open .cardio-last-week-details{display:block}
+.cardio-last-week-details .simple-log-table{margin-top:0}
+.collapsible-zone-data{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.zone-data-toggle{border-radius:11px;padding:10px 12px}
+.zone-data-toggle span{display:flex;flex-direction:column;gap:2px}
+.zone-data-toggle b{font-size:13px}
+.zone-data-toggle small{color:var(--muted);font-size:10px;font-weight:500}
+.zone-data-body{display:none;margin-top:10px}
+.collapsible-zone-data.open .zone-data-body{display:block}
+@media(max-width:430px){
+  .cardio-last-week-toggle,.zone-data-toggle{padding:10px}
+  .cardio-last-week-toggle{font-size:12px}
+}

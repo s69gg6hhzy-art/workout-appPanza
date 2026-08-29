@@ -1757,8 +1757,7 @@ function closeProgramWorkoutPreview(){
 }
 
 
-function thisWeekCardioRows(){
-  const start=programWeekStart(todayISO());
+function cardioRowsForWeek(start){
   return Array.from({length:7},(_,i)=>{
     const date=plusDays(start,i);
     let walk=0,run=0;
@@ -1771,16 +1770,38 @@ function thisWeekCardioRows(){
     return {date,walk,run};
   });
 }
-function renderCardioDailyTable(){
-  const box=document.getElementById('cardioDailyTable');if(!box)return;
-  const rows=thisWeekCardioRows();
+function cardioWeekTableHTML(rows,totalLabel='Weekly total'){
   const totals=rows.reduce((s,x)=>({walk:s.walk+x.walk,run:s.run+x.run}),{walk:0,run:0});
-  box.innerHTML=`<div class="simple-log-table cardio-day-table">
+  return `<div class="simple-log-table cardio-day-table">
     <div class="simple-log-row cardio-day-head"><span>Day</span><span>Walk (mi)</span><span>Run/Jog (mi)</span></div>
     ${rows.map(x=>`<div class="simple-log-row"><span class="cardio-day-date"><b>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</b> <small>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</small></span><span>${x.walk.toFixed(2)}</span><span>${x.run.toFixed(2)}</span></div>`).join('')}
-    <div class="simple-log-row simple-log-total"><span>Weekly total</span><span>${totals.walk.toFixed(2)}</span><span>${totals.run.toFixed(2)}</span></div>
+    <div class="simple-log-row simple-log-total"><span>${totalLabel}</span><span>${totals.walk.toFixed(2)}</span><span>${totals.run.toFixed(2)}</span></div>
   </div>`;
 }
+function renderCardioDailyTable(){
+  const box=document.getElementById('cardioDailyTable');if(!box)return;
+  const currentStart=programWeekStart(todayISO());
+  const lastStart=plusDays(currentStart,-7);
+  const currentRows=cardioRowsForWeek(currentStart);
+  const lastRows=cardioRowsForWeek(lastStart);
+  const lastEnd=plusDays(lastStart,6);
+  const lastLabel=`${new Date(lastStart+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})} – ${new Date(lastEnd+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;
+  box.innerHTML=`<div class="cardio-last-week-wrap">
+    <button class="cardio-last-week-toggle" type="button" onclick="toggleLastWeekCardio()" aria-expanded="false">
+      <span>Last week <small>${lastLabel}</small></span><b class="cardio-last-week-chevron">›</b>
+    </button>
+    <div class="cardio-last-week-details">${cardioWeekTableHTML(lastRows,'Last week total')}</div>
+  </div>
+  ${cardioWeekTableHTML(currentRows,'Weekly total')}`;
+}
+function toggleLastWeekCardio(){
+  const wrap=document.querySelector('.cardio-last-week-wrap');
+  if(!wrap)return;
+  const btn=wrap.querySelector('.cardio-last-week-toggle');
+  const open=wrap.classList.toggle('open');
+  if(btn)btn.setAttribute('aria-expanded',open?'true':'false');
+}
+
 function runLogRows(){
   const rows=[];
   Object.entries(state.activities||{}).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([date,acts])=>{
@@ -1937,7 +1958,21 @@ function renderZone3Chart(){
   const points=zonePaceRunSeries();
   box.innerHTML=svgZonePaceChart(points);
   const table=document.getElementById('zonePaceDataTable');
-  if(table) table.innerHTML=points.length?`<div class="zone-pace-data"><div class="zone-pace-data-title">Daily data</div><div class="zone-pace-table-scroll"><table><thead><tr><th>Date</th><th>Zone 2</th><th>Zone 3</th><th>Zone 4</th><th>Avg pace</th></tr></thead><tbody>${points.map(p=>`<tr><td>${esc(p.label)}</td><td>${p.z2pct.toFixed(1)}%</td><td>${p.z3pct.toFixed(1)}%</td><td>${p.z4pct.toFixed(1)}%</td><td>${fmtPaceMinutes(p.pace)}/mi</td></tr>`).join('')}</tbody></table></div></div>`:'';
+  if(table) table.innerHTML=points.length?`<div class="zone-pace-data collapsible-zone-data">
+    <button class="zone-data-toggle" type="button" onclick="toggleZoneDailyData()" aria-expanded="false">
+      <span><b>Daily data</b><small>View the daily breakdown numbers</small></span><i class="zone-data-chevron">›</i>
+    </button>
+    <div class="zone-data-body">
+      <div class="zone-pace-table-scroll"><table><thead><tr><th>Date</th><th>Zone 2</th><th>Zone 3</th><th>Zone 4</th><th>Avg pace</th></tr></thead><tbody>${points.map(p=>`<tr><td>${esc(p.label)}</td><td>${p.z2pct.toFixed(1)}%</td><td>${p.z3pct.toFixed(1)}%</td><td>${p.z4pct.toFixed(1)}%</td><td>${fmtPaceMinutes(p.pace)}/mi</td></tr>`).join('')}</tbody></table></div>
+    </div>
+  </div>`:'';
+}
+function toggleZoneDailyData(){
+  const wrap=document.querySelector('.collapsible-zone-data');
+  if(!wrap)return;
+  const btn=wrap.querySelector('.zone-data-toggle');
+  const open=wrap.classList.toggle('open');
+  if(btn)btn.setAttribute('aria-expanded',open?'true':'false');
 }
 
 function renderHistoricalProgressVisibility(){
