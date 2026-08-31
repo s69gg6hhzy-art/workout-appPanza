@@ -50,6 +50,7 @@ if(!Array.isArray(state.kneeHistory))state.kneeHistory=[];
 });
 if(!Array.isArray(state.checklistItems))state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
 if(!Array.isArray(state.checklistItems)||state.checklistItems.length===0)state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
+let zonePaceRangeDays=7;
 let timerInterval=null,timerLeft=0,timerEndsAt=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null,kneeWorkoutEditIndex=null,selectedLogDate=todayISO();
 function currentTimeHHMM(){
   const d=new Date();
@@ -1906,9 +1907,25 @@ function renderCardioSummary(){
   </div>
   <p class="tiny cardio-average-note">Average includes every week with recorded cardio.</p>`;
 }
+function zonePaceRangeStart(days){
+  return plusDays(todayISO(),-(Math.max(1,+days||7)-1));
+}
+function zonePaceRangeLabel(days){
+  const start=zonePaceRangeStart(days),end=todayISO();
+  const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+function setZonePaceRange(days){
+  zonePaceRangeDays=Math.max(1,+days||7);
+  renderZone3Chart();
+}
+
 function zonePaceRunSeries(){
   const rows=[];
+  const startDate=zonePaceRangeStart(zonePaceRangeDays);
+  const endDate=todayISO();
   Object.entries(state.activities||{}).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,acts])=>{
+    if(date<startDate||date>endDate)return;
     acts.forEach(a=>{
       const type=String(a.type||'').toLowerCase();
       if(type!=='jog'&&type!=='run')return;
@@ -1956,7 +1973,18 @@ function svgZonePaceChart(points){
 function renderZone3Chart(){
   const box=document.getElementById('zone3Chart');if(!box)return;
   const points=zonePaceRunSeries();
-  box.innerHTML=svgZonePaceChart(points);
+  const ranges=[
+    {days:7,label:'1 Week'},
+    {days:14,label:'2 Weeks'},
+    {days:31,label:'1 Month'},
+    {days:92,label:'3 Months'}
+  ];
+  box.innerHTML=`<div class="zone-range-selector">
+    ${ranges.map(r=>`<button type="button" class="zone-range-btn ${zonePaceRangeDays===r.days?'active':''}" onclick="setZonePaceRange(${r.days})">
+      <b>${r.label}</b><small>${zonePaceRangeLabel(r.days)}</small>
+    </button>`).join('')}
+  </div>${svgZonePaceChart(points)}`;
+
   const table=document.getElementById('zonePaceDataTable');
   if(table) table.innerHTML=points.length?`<div class="zone-pace-data collapsible-zone-data">
     <button class="zone-data-toggle" type="button" onclick="toggleZoneDailyData()" aria-expanded="false">
@@ -1965,7 +1993,7 @@ function renderZone3Chart(){
     <div class="zone-data-body">
       <div class="zone-pace-table-scroll"><table><thead><tr><th>Date</th><th>Zone 2</th><th>Zone 3</th><th>Zone 4</th><th>Avg pace</th></tr></thead><tbody>${points.map(p=>`<tr><td>${esc(p.label)}</td><td>${p.z2pct.toFixed(1)}%</td><td>${p.z3pct.toFixed(1)}%</td><td>${p.z4pct.toFixed(1)}%</td><td>${fmtPaceMinutes(p.pace)}/mi</td></tr>`).join('')}</tbody></table></div>
     </div>
-  </div>`:'';
+  </div>`:`<div class="zone-pace-data collapsible-zone-data"><button class="zone-data-toggle" type="button" aria-expanded="false"><span><b>Daily data</b><small>No runs in this selected range</small></span></button></div>`;
 }
 function toggleZoneDailyData(){
   const wrap=document.querySelector('.collapsible-zone-data');
