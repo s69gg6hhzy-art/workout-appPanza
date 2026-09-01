@@ -1,31 +1,5 @@
 const upperWarmup=[['Bar Hang','As long as possible','Wrap thumbs around bar'],['Scapular Pushups','10 reps',''],['DB Pause Bench Press','Light set of 10','Maximize stretch; inhale maximally as you lower the dumbbells'],['Suspension I Delt Fly','5 reps',''],['Suspension Y Deltoid Fly','5 reps',''],['Suspension T Delt Fly','5 reps','']];
 const lowerWarmup=[['Cardio of Choice','5 min',''],['Bench Thoracic Mobility','30 sec',''],['Supine Piriformis Stretch','15 sec each leg',''],['Superband Good Morning','30 sec',''],['Dynamic Side Lunge Stretch','30 sec',''],['Deep Squat Mobility','At least 30 sec','As long as needed'],['Bodyweight Split Squat','10 per leg','Weak leg first']];
-
-const phase2PullWarmup=[
-  ['Bar Hang','As long as possible','Wrap thumbs around bar'],
-  ['Scapular Pushups','10 reps',''],
-  ['Suspension I Delt Fly','5 reps',''],
-  ['Suspension Y Deltoid Fly','5 reps',''],
-  ['Suspension T Delt Fly','5 reps','']
-];
-
-const phase3PushWarmup=[
-  ['Cardio of Choice','5 min',''],
-  ['Bench Thoracic Mobility','30 sec',''],
-  ['Scapular Pushups','10 reps',''],
-  ['Scapular Pull Up','10 reps',''],
-  ['Dumbbell Bench Press','20 reps','VERY VERY light weight · 2 sets'],
-  ['Cable Straight Arm Pulldown','20 reps','VERY VERY light weight · 2 sets'],
-  ['Cable Tricep Pushdowns','20 reps','VERY VERY light weight · 2 sets']
-];
-
-function warmupForWorkout(phaseIndex,workout){
-  const name=workout?.name||'';
-  if(phaseIndex===1 && /^Pull [12]$/i.test(name))return {title:'Pull Warm-up',data:phase2PullWarmup};
-  if(phaseIndex===2 && /^Push [12]$/i.test(name))return {title:'Push Warm-up',data:phase3PushWarmup};
-  const type=workoutType(name);
-  return {title:type==='lower'?'Lower Warm-up':'Upper Warm-up',data:type==='lower'?lowerWarmup:upperWarmup};
-}
 const total=program.reduce((s,p)=>s+p.workouts.length*p.rounds,0);
 const historicalWeight=[
   {date:'2025-01-08',label:'S1 W1',weight:188.6,session:'Session 1'},
@@ -76,6 +50,7 @@ if(!Array.isArray(state.kneeHistory))state.kneeHistory=[];
 });
 if(!Array.isArray(state.checklistItems))state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
 if(!Array.isArray(state.checklistItems)||state.checklistItems.length===0)state.checklistItems=JSON.parse(JSON.stringify(defaultChecklistItems));
+let zonePaceRangeDays=7;
 let timerInterval=null,timerLeft=0,timerEndsAt=0,calendarCursor=new Date();calendarCursor.setDate(1),checklistReorderMode=false,activityEditIndex=null,workoutEditIndex=null,kneeWorkoutEditIndex=null,selectedLogDate=todayISO();
 function currentTimeHHMM(){
   const d=new Date();
@@ -257,7 +232,7 @@ function projectSchedule(startDate,endDate){
   return items;
 }
 
-function warmupHTML(phaseIndex,workout){const warm=warmupForWorkout(phaseIndex,workout);return `<div class="warmup"><div class="warmup-title">${warm.title}</div>${warm.data.map(x=>`<div class="warm-row"><div class="warm-copy"><b>${x[0]}</b><small>${x[1]}${x[2]?` · ${x[2]}`:''}</small></div><button class="warm-check" type="button">✓</button></div>`).join('')}</div>`}
+function warmupHTML(type){const data=type==='lower'?lowerWarmup:upperWarmup;return `<div class="warmup"><div class="warmup-title">${type==='lower'?'Lower':'Upper'} Warm-up</div>${data.map(x=>`<div class="warm-row"><div class="warm-copy"><b>${x[0]}</b><small>${x[1]}${x[2]?` · ${x[2]}`:''}</small></div><button class="warm-check" type="button">✓</button></div>`).join('')}</div>`}
 function getDraftKey(){return `${state.phase}-${state.round}-${state.workout}`}
 function getDraft(){
   state.drafts=state.drafts||{};
@@ -687,6 +662,7 @@ function currentWeeklyMacroEnergy(){
     label:`Week ${programWeekNumber(date)}`,
     range:`${new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}`,
     days:days.length,
+    dailyRows:days,
     cal:days.reduce((s,x)=>s+x.cal,0)/days.length,
     p:days.reduce((s,x)=>s+x.p,0)/days.length,
     c:days.reduce((s,x)=>s+x.c,0)/days.length,
@@ -1051,7 +1027,7 @@ function renderWorkout(){
   if(titleEl)titleEl.textContent=w.name;
   if(metaEl)metaEl.textContent=`${w.ex.length} exercises · ${p.on} days on / 1 off`;
   const el=listEl;
-  el.innerHTML=warmupHTML(state.phase,w);
+  el.innerHTML=warmupHTML(workoutType(w.name));
   w.ex.forEach((x,i)=>{
     const [name,sets,rest,last]=x;
     const previous=latestExercise(name)||last||'—';
@@ -1481,16 +1457,18 @@ function svgLineChart(points,{valueKey,labelKey='label',suffix='',minPad=2,maxPa
 }
 function svgDualLineChart(points,{keyA,keyB,labelA='AM average',labelB='PM average',suffix='',minPad=2,maxPad=2,height=220}={}){
   if(!points.length)return '<p class="notice">No data yet.</p>';
-  const width=760,padL=42,padR=18,padT=28,padB=38,plotW=width-padL-padR,plotH=height-padT-padB;
+  const width=760,padL=42,padR=18,padT=38,padB=38,plotW=width-padL-padR,plotH=height-padT-padB;
   const vals=points.flatMap(p=>[+p[keyA],+p[keyB]]).filter(Number.isFinite);
   if(!vals.length)return '<p class="notice">No data yet.</p>';
-  let min=Math.min(...vals),max=Math.max(...vals); if(min===max){min-=1;max+=1} min-=minPad;max+=maxPad;
-  const x=i=>padL+(points.length===1?plotW/2:(i/(points.length-1))*plotW), y=v=>padT+((max-v)/(max-min))*plotH;
+  let min=Math.min(...vals),max=Math.max(...vals);if(min===max){min-=1;max+=1}min-=minPad;max+=maxPad;
+  const x=i=>padL+(points.length===1?plotW/2:(i/(points.length-1))*plotW),y=v=>padT+((max-v)/(max-min))*plotH;
   const path=k=>points.map((p,i)=>Number.isFinite(+p[k])?`${i?'L':'M'} ${x(i).toFixed(1)} ${y(+p[k]).toFixed(1)}`:'').filter(Boolean).join(' ');
   const dots=(k,cls)=>points.map((p,i)=>Number.isFinite(+p[k])?`<circle cx="${x(i)}" cy="${y(+p[k])}" r="5" class="${cls}"><title>${esc(p.label)}: ${(+p[k]).toFixed(1)}${suffix}</title></circle>`:'').join('');
+  const values=(k,cls,offset)=>points.map((p,i)=>{const v=+p[k];return Number.isFinite(v)?`<text x="${x(i)}" y="${Math.max(14,y(v)+offset)}" text-anchor="middle" class="weight-point-value ${cls}">${v.toFixed(1)}${suffix}</text>`:''}).join('');
   const labels=points.map((p,i)=>`<text x="${x(i)}" y="${height-10}" text-anchor="middle" class="chart-axis">${esc(p.label)}</text>`).join('');
-  return `<div class="dual-chart-legend"><span><i class="legend-a"></i>${labelA}</span><span><i class="legend-b"></i>${labelB}</span></div><svg class="trend-svg dual-trend-svg" viewBox="0 0 ${width} ${height}"><path d="${path(keyA)}" class="chart-line dual-a"/>${dots(keyA,'chart-dot dual-dot-a')}<path d="${path(keyB)}" class="chart-line dual-b"/>${dots(keyB,'chart-dot dual-dot-b')}${labels}</svg>`;
+  return `<div class="dual-chart-legend"><span><i class="legend-a"></i>${labelA}</span><span><i class="legend-b"></i>${labelB}</span></div><svg class="trend-svg dual-trend-svg" viewBox="0 0 ${width} ${height}"><path d="${path(keyA)}" class="chart-line dual-a"/>${dots(keyA,'chart-dot dual-dot-a')}${values(keyA,'weight-value-a',18)}<path d="${path(keyB)}" class="chart-line dual-b"/>${dots(keyB,'chart-dot dual-dot-b')}${values(keyB,'weight-value-b',-12)}${labels}</svg>`;
 }
+
 function currentWeeklyWeight(){
   const groups={};
   Object.entries(state.weights||{}).sort().forEach(([date,v])=>{
@@ -1687,7 +1665,7 @@ function showMoreSection(section){
   if(pTab)pTab.classList.toggle('on',section==='progress');
   if(cTab)cTab.classList.toggle('on',section==='cardio');
   if(wTab)wTab.classList.toggle('on',section==='workouts');
-  if(section==='workouts'){renderProgramStartControls();renderProgramWorkoutLibrary();}
+  if(section==='workouts'){renderProgramStartControls();renderProgramWorkoutLibrary();renderWorkoutLog();}
 }
 
 function workoutExerciseList(workout){
@@ -1758,10 +1736,9 @@ function openProgramWorkoutPreview(phaseIndex,workoutIndex){
   document.getElementById('programWorkoutTitle').textContent=workout.name||`Workout ${workoutIndex+1}`;
   document.getElementById('programWorkoutMeta').textContent=`${phase?.name||`Phase ${phaseIndex+1}`} · ${(workout.ex||[]).length} exercises`;
 
-  const warmConfig=warmupForWorkout(phaseIndex,workout);
-  const warm=warmConfig.data;
+  const warm=workoutType(workout.name)==='lower'?lowerWarmup:upperWarmup;
   const warmRows=`<div class="program-preview-section">
-    <div class="eyebrow">${esc(warmConfig.title)}</div>
+    <div class="eyebrow">Warm-up</div>
     ${warm.map(x=>`<div class="program-warm-row"><b>${esc(x[0])}</b><small>${esc(x[1])}${x[2]?` · ${esc(x[2])}`:''}</small></div>`).join('')}
   </div>`;
 
@@ -1780,6 +1757,91 @@ function closeProgramWorkoutPreview(){
   modal.setAttribute('aria-hidden','true');
 }
 
+
+function cardioRowsForWeek(start){
+  return Array.from({length:7},(_,i)=>{
+    const date=plusDays(start,i);
+    let walk=0,run=0;
+    (state.activities[date]||[]).forEach(a=>{
+      const miles=+a.distance||0;
+      const type=String(a.type||'').toLowerCase();
+      if(type==='walk')walk+=miles;
+      else if(type==='jog'||type==='run')run+=miles;
+    });
+    return {date,walk,run};
+  });
+}
+function cardioWeekTableHTML(rows,totalLabel='Weekly total'){
+  const totals=rows.reduce((s,x)=>({walk:s.walk+x.walk,run:s.run+x.run}),{walk:0,run:0});
+  return `<div class="simple-log-table cardio-day-table">
+    <div class="simple-log-row cardio-day-head"><span>Day</span><span>Walk (mi)</span><span>Run/Jog (mi)</span></div>
+    ${rows.map(x=>`<div class="simple-log-row"><span class="cardio-day-date"><b>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</b> <small>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</small></span><span>${x.walk.toFixed(2)}</span><span>${x.run.toFixed(2)}</span></div>`).join('')}
+    <div class="simple-log-row simple-log-total"><span>${totalLabel}</span><span>${totals.walk.toFixed(2)}</span><span>${totals.run.toFixed(2)}</span></div>
+  </div>`;
+}
+function renderCardioDailyTable(){
+  const box=document.getElementById('cardioDailyTable');if(!box)return;
+  const currentStart=programWeekStart(todayISO());
+  const lastStart=plusDays(currentStart,-7);
+  const currentRows=cardioRowsForWeek(currentStart);
+  const lastRows=cardioRowsForWeek(lastStart);
+  const lastEnd=plusDays(lastStart,6);
+  const lastLabel=`${new Date(lastStart+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})} – ${new Date(lastEnd+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;
+  box.innerHTML=`<div class="cardio-last-week-wrap">
+    <button class="cardio-last-week-toggle" type="button" onclick="toggleLastWeekCardio()" aria-expanded="false">
+      <span>Last week <small>${lastLabel}</small></span><b class="cardio-last-week-chevron">›</b>
+    </button>
+    <div class="cardio-last-week-details">${cardioWeekTableHTML(lastRows,'Last week total')}</div>
+  </div>
+  ${cardioWeekTableHTML(currentRows,'Weekly total')}`;
+}
+function toggleLastWeekCardio(){
+  const wrap=document.querySelector('.cardio-last-week-wrap');
+  if(!wrap)return;
+  const btn=wrap.querySelector('.cardio-last-week-toggle');
+  const open=wrap.classList.toggle('open');
+  if(btn)btn.setAttribute('aria-expanded',open?'true':'false');
+}
+
+function runLogRows(){
+  const rows=[];
+  Object.entries(state.activities||{}).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([date,acts])=>{
+    (acts||[]).forEach((a,index)=>{
+      const type=String(a.type||'').toLowerCase();
+      if(type!=='jog'&&type!=='run')return;
+      const total=activitySeconds(a),distance=+a.distance||0;
+      const z1=parseClockSeconds(a.z1),z2=parseClockSeconds(a.z2),z3=parseClockSeconds(a.z3),z4=parseClockSeconds(a.z4),z5=parseClockSeconds(a.z5);
+      const zoneTotal=z1+z2+z3+z4+z5;
+      rows.push({date,index,distance,pace:(total>0&&distance>0)?total/distance/60:NaN,avgHr:+a.avgHr||0,z3pct:(zoneTotal>0)?z3/zoneTotal*100:0,calories:+a.calories||0,type:a.type||'Run'});
+    });
+  });
+  return rows;
+}
+function renderRunLog(){
+  const box=document.getElementById('runLogTable');if(!box)return;
+  const rows=runLogRows();
+  box.innerHTML=rows.length?`<div class="wide-log-scroll"><div class="wide-log-table run-log-table">
+    <div class="wide-log-row wide-log-head"><span>Date</span><span>Distance</span><span>Avg pace</span><span>Zone 3</span><span>Calories</span><span>Avg HR</span></div>
+    ${rows.map(x=>`<div class="wide-log-row"><span>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><span>${x.distance?x.distance.toFixed(2)+' mi':'—'}</span><span>${Number.isFinite(x.pace)?fmtPaceMinutes(x.pace)+'/mi':'—'}</span><span>${x.z3pct?x.z3pct.toFixed(1)+'%':'0.0%'}</span><span>${x.calories?Math.round(x.calories)+' kcal':'—'}</span><span>${x.avgHr?Math.round(x.avgHr)+' bpm':'—'}</span></div>`).join('')}
+  </div></div>`:'<p class="notice">Logged Jog/Run entries will appear here.</p>';
+}
+function workoutLogRows(){
+  const normal=(state.history||[]).map(h=>({
+    date:isoDate(h.date),stamp:h.date||'',name:h.workout||'Workout',duration:parseWorkoutDuration(h.summary?.duration),calories:+(h.summary?.totalCalories??h.summary?.activeCalories)||0,avgHr:+h.summary?.avgHr||0
+  }));
+  const knee=(state.kneeHistory||[]).map(h=>({
+    date:isoDate(h.date),stamp:h.date||'',name:'Knee circuit',duration:parseWorkoutDuration(h.summary?.duration),calories:+(h.summary?.totalCalories??h.summary?.activeCalories)||0,avgHr:+h.summary?.avgHr||0
+  }));
+  return normal.concat(knee).sort((a,b)=>String(b.stamp).localeCompare(String(a.stamp)));
+}
+function renderWorkoutLog(){
+  const box=document.getElementById('workoutLogTable');if(!box)return;
+  const rows=workoutLogRows();
+  box.innerHTML=rows.length?`<div class="wide-log-scroll"><div class="wide-log-table workout-log-table">
+    <div class="wide-log-row wide-log-head"><span>Date</span><span>Workout</span><span>Minutes</span><span>Calories</span><span>Avg HR</span></div>
+    ${rows.map(x=>`<div class="wide-log-row"><span>${new Date(x.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><span>${esc(x.name)}</span><span>${x.duration?Math.round(x.duration):'—'}</span><span>${x.calories?Math.round(x.calories)+' kcal':'—'}</span><span>${x.avgHr?Math.round(x.avgHr)+' bpm':'—'}</span></div>`).join('')}
+  </div></div>`:'<p class="notice">Completed workouts will appear here.</p>';
+}
 
 function parseClockSeconds(value){
   if(value===null||value===undefined||value==='')return 0;
@@ -1845,9 +1907,25 @@ function renderCardioSummary(){
   </div>
   <p class="tiny cardio-average-note">Average includes every week with recorded cardio.</p>`;
 }
+function zonePaceRangeStart(days){
+  return plusDays(todayISO(),-(Math.max(1,+days||7)-1));
+}
+function zonePaceRangeLabel(days){
+  const start=zonePaceRangeStart(days),end=todayISO();
+  const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+function setZonePaceRange(days){
+  zonePaceRangeDays=Math.max(1,+days||7);
+  renderZone3Chart();
+}
+
 function zonePaceRunSeries(){
   const rows=[];
+  const startDate=zonePaceRangeStart(zonePaceRangeDays);
+  const endDate=todayISO();
   Object.entries(state.activities||{}).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,acts])=>{
+    if(date<startDate||date>endDate)return;
     acts.forEach(a=>{
       const type=String(a.type||'').toLowerCase();
       if(type!=='jog'&&type!=='run')return;
@@ -1874,13 +1952,13 @@ function fmtPaceMinutes(v){
 }
 function svgZonePaceChart(points){
   if(!points.length)return '<p class="notice">Add Jog/Run heart-rate zone data to build this trend.</p>';
-  const W=760,H=260,L=46,R=58,T=34,B=46,PW=W-L-R,PH=H-T-B;
+  const W=620,H=250,L=42,R=48,T=34,B=44,PW=W-L-R,PH=H-T-B;
   const x=i=>L+(points.length===1?PW/2:(i/(points.length-1))*PW);
   const yp=v=>T+((100-Math.max(0,Math.min(100,+v||0)))/100)*PH;
   const pv=points.map(p=>+p.pace).filter(Number.isFinite);
   let pmin=Math.min(...pv),pmax=Math.max(...pv);if(pmin===pmax){pmin-=.5;pmax+=.5}
   const pp=Math.max(.25,(pmax-pmin)*.18);pmin=Math.max(0,pmin-pp);pmax+=pp;
-  const ypace=v=>T+((+v-pmin)/(pmax-pmin))*PH;
+  const ypace=v=>T+((pmax-(+v))/(pmax-pmin))*PH;
   const path=(k,yf)=>points.map((p,i)=>`${i?'L':'M'} ${x(i).toFixed(1)} ${yf(p[k]).toFixed(1)}`).join(' ');
   const vals=(k,yf,cls,fmt)=>points.map((p,i)=>{
     const raw=+p[k],txt=fmt?fmt(raw):`${Number.isInteger(raw)?raw:raw.toFixed(1)}%`,yy=yf(raw);
@@ -1894,7 +1972,35 @@ function svgZonePaceChart(points){
 }
 function renderZone3Chart(){
   const box=document.getElementById('zone3Chart');if(!box)return;
-  box.innerHTML=svgZonePaceChart(zonePaceRunSeries());
+  const points=zonePaceRunSeries();
+  const ranges=[
+    {days:7,label:'1 Week'},
+    {days:14,label:'2 Weeks'},
+    {days:31,label:'1 Month'},
+    {days:92,label:'3 Months'}
+  ];
+  box.innerHTML=`<div class="zone-range-selector">
+    ${ranges.map(r=>`<button type="button" class="zone-range-btn ${zonePaceRangeDays===r.days?'active':''}" onclick="setZonePaceRange(${r.days})">
+      <b>${r.label}</b><small>${zonePaceRangeLabel(r.days)}</small>
+    </button>`).join('')}
+  </div>${svgZonePaceChart(points)}`;
+
+  const table=document.getElementById('zonePaceDataTable');
+  if(table) table.innerHTML=points.length?`<div class="zone-pace-data collapsible-zone-data">
+    <button class="zone-data-toggle" type="button" onclick="toggleZoneDailyData()" aria-expanded="false">
+      <span><b>Daily data</b><small>View the daily breakdown numbers</small></span><i class="zone-data-chevron">›</i>
+    </button>
+    <div class="zone-data-body">
+      <div class="zone-pace-table-scroll"><table><thead><tr><th>Date</th><th>Zone 2</th><th>Zone 3</th><th>Zone 4</th><th>Avg pace</th></tr></thead><tbody>${points.map(p=>`<tr><td>${esc(p.label)}</td><td>${p.z2pct.toFixed(1)}%</td><td>${p.z3pct.toFixed(1)}%</td><td>${p.z4pct.toFixed(1)}%</td><td>${fmtPaceMinutes(p.pace)}/mi</td></tr>`).join('')}</tbody></table></div>
+    </div>
+  </div>`:`<div class="zone-pace-data collapsible-zone-data"><button class="zone-data-toggle" type="button" aria-expanded="false"><span><b>Daily data</b><small>No runs in this selected range</small></span></button></div>`;
+}
+function toggleZoneDailyData(){
+  const wrap=document.querySelector('.collapsible-zone-data');
+  if(!wrap)return;
+  const btn=wrap.querySelector('.zone-data-toggle');
+  const open=wrap.classList.toggle('open');
+  if(btn)btn.setAttribute('aria-expanded',open?'true':'false');
 }
 
 function renderHistoricalProgressVisibility(){
@@ -1929,6 +2035,13 @@ function renderProgress(){
   document.getElementById('weightChart').innerHTML=allWeights.length
     ? svgDualLineChart(allWeights,{keyA:'am',keyB:'pm',labelA:'AM average',labelB:'PM average',suffix:' lb',minPad:2,maxPad:2})
     : '<p class="notice">Log morning weights to build your weight trend.</p>';
+  const weightTable=document.getElementById('weightDataTable');
+  if(weightTable){
+    weightTable.innerHTML=allWeights.length?`<div class="weight-data-table">
+      <div class="weight-data-row weight-data-head"><span>Week</span><span>AM avg</span><span>PM avg</span><span>PM − AM</span></div>
+      ${allWeights.map(x=>{const am=Number.isFinite(+x.am)?+x.am:NaN,pm=Number.isFinite(+x.pm)?+x.pm:NaN,diff=Number.isFinite(am)&&Number.isFinite(pm)?pm-am:NaN;return `<div class="weight-data-row"><span>${esc(x.label)}</span><span>${Number.isFinite(am)?am.toFixed(1)+' lb':'—'}</span><span>${Number.isFinite(pm)?pm.toFixed(1)+' lb':'—'}</span><span>${Number.isFinite(diff)?diff.toFixed(1)+' lb':'—'}</span></div>`}).join('')}
+    </div>`:'';
+  }
   const histNut=currentWeeklyNutrition();
   document.getElementById('calorieChart').innerHTML=histNut.length
     ? svgLineChart(histNut,{valueKey:'cal',minPad:150,maxPad:150})
@@ -1959,7 +2072,10 @@ function renderProgress(){
   }
 
   renderCardioSummary();
+  renderCardioDailyTable();
   renderZone3Chart();
+  renderRunLog();
+  renderWorkoutLog();
 
   const energy=currentWeeklyMacroEnergy().map(x=>({date:x.date,label:x.label,energy:Math.round(x.energy)}));
   document.getElementById('energyChart').innerHTML=energy.length?svgLineChart(energy,{valueKey:'energy',suffix:' kcal',minPad:150,maxPad:150}):'<p class="notice">Your energy graph will appear after you log nutrition.</p>';
@@ -1996,9 +2112,20 @@ function renderProgress(){
     exerciseCalories:weeks.reduce((s,x)=>s+(x.exerciseCalories||0),0)/weeks.length,
     energy:weeks.reduce((s,x)=>s+x.energy,0)/weeks.length
   }:null;
-  document.getElementById('weeklyAverageHistory').innerHTML=weeks.length?`<div class="weekly-table weekly-history-table history-exercise-table compact-macro-table">
+  document.getElementById('weeklyAverageHistory').innerHTML=weeks.length?`<div class="weekly-table weekly-history-table history-exercise-table compact-macro-table expandable-weekly-table">
     <div class="weekly-row weekly-head"><span>Week</span><span>Cal</span><span>P</span><span>C</span><span>F</span><span>Ex Cal</span><span>Energy</span></div>
-    ${weeks.map(x=>`<div class="weekly-row"><span><b>${x.label}</b><small>${x.range} · ${x.days}d</small></span><span>${Math.round(x.cal)}</span><span>${Math.round(x.p)}</span><span>${Math.round(x.c)}</span><span>${Math.round(x.f)}</span><span>${Math.round(x.exerciseCalories||0)}</span><span>${signedKcal(x.energy)}</span></div>`).join('')}
+    ${weeks.map((x,i)=>`<div class="weekly-expand-group" data-week="${i}">
+      <button class="weekly-row weekly-summary-row" type="button" onclick="toggleWeeklyAverageDetails(${i})" aria-expanded="false">
+        <span><b>${x.label} <i class="week-chevron">›</i></b><small>${x.range} · ${x.days}d</small></span>
+        <span>${Math.round(x.cal)}</span><span>${Math.round(x.p)}</span><span>${Math.round(x.c)}</span><span>${Math.round(x.f)}</span><span>${Math.round(x.exerciseCalories||0)}</span><span>${signedKcal(x.energy)}</span>
+      </button>
+      <div class="weekly-day-details" id="weeklyDays${i}">
+        ${x.dailyRows.map(d=>`<div class="weekly-row weekly-day-row">
+          <span><b>${new Date(d.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</b><small>${new Date(d.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</small></span>
+          <span>${Math.round(d.cal)}</span><span>${Math.round(d.p)}</span><span>${Math.round(d.c)}</span><span>${Math.round(d.f)}</span><span>${Math.round(d.exerciseCalories||0)}</span><span>${signedKcal(d.energy)}</span>
+        </div>`).join('')}
+      </div>
+    </div>`).join('')}
     <div class="weekly-row weekly-average"><span>All weeks avg</span><span>${Math.round(all.cal)}</span><span>${Math.round(all.p)}</span><span>${Math.round(all.c)}</span><span>${Math.round(all.f)}</span><span>${Math.round(all.exerciseCalories||0)}</span><span>${signedKcal(all.energy)}</span></div>
   </div>`:'<p class="notice">Weekly averages will appear after you log nutrition.</p>';
 
@@ -2023,6 +2150,15 @@ function renderProgress(){
   </div>`:'<p class="notice">Daily macro and energy history will appear after you log nutrition.</p>';
 
   document.getElementById('weightHistory').innerHTML=entries.length?entries.slice(-10).reverse().map(([d,v])=>`<div class="weight-line"><span>${new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><b>${v.am?`AM ${v.am}`:'—'}</b><b>${v.pm?`PM ${v.pm}`:(v.post?`Post ${v.post}`:'—')}</b></div>`).join(''):'<p class="notice">Start entering morning and evening weights to build your current trend.</p>';
+}
+
+
+function toggleWeeklyAverageDetails(index){
+  const group=document.querySelector(`.weekly-expand-group[data-week="${index}"]`);
+  if(!group)return;
+  const button=group.querySelector('.weekly-summary-row');
+  const open=group.classList.toggle('open');
+  if(button)button.setAttribute('aria-expanded',open?'true':'false');
 }
 
 function downloadBackup(){
