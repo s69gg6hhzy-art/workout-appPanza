@@ -1,5 +1,23 @@
 const upperWarmup=[['Bar Hang','As long as possible','Wrap thumbs around bar'],['Scapular Pushups','10 reps',''],['DB Pause Bench Press','Light set of 10','Maximize stretch; inhale maximally as you lower the dumbbells'],['Suspension I Delt Fly','5 reps',''],['Suspension Y Deltoid Fly','5 reps',''],['Suspension T Delt Fly','5 reps','']];
 const lowerWarmup=[['Cardio of Choice','5 min',''],['Bench Thoracic Mobility','30 sec',''],['Supine Piriformis Stretch','15 sec each leg',''],['Superband Good Morning','30 sec',''],['Dynamic Side Lunge Stretch','30 sec',''],['Deep Squat Mobility','At least 30 sec','As long as needed'],['Bodyweight Split Squat','10 per leg','Weak leg first']];
+
+const phase2PullWarmup=[
+  ['Bar Hang','As long as possible','Wrap thumbs around bar'],
+  ['Scapular Pushups','10 reps',''],
+  ['Suspension I Delt Fly','5 reps',''],
+  ['Suspension Y Deltoid Fly','5 reps',''],
+  ['Suspension T Delt Fly','5 reps','']
+];
+
+const phase3PushWarmup=[
+  ['Cardio of Choice','5 min',''],
+  ['Bench Thoracic Mobility','30 sec',''],
+  ['Scapular Pushups','10 reps',''],
+  ['Scapular Pull Up','10 reps',''],
+  ['Dumbbell Bench Press','20 reps','VERY VERY light weight · 2 sets'],
+  ['Cable Straight Arm Pulldown','20 reps','VERY VERY light weight · 2 sets'],
+  ['Cable Tricep Pushdowns','20 reps','VERY VERY light weight · 2 sets']
+];
 const total=program.reduce((s,p)=>s+p.workouts.length*p.rounds,0);
 const historicalWeight=[
   {date:'2025-01-08',label:'S1 W1',weight:188.6,session:'Session 1'},
@@ -39,7 +57,7 @@ const isoDate=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneO
 const todayISO=()=>isoDate(new Date());
 const defaultChecklistItems=[{"id":"am-brush-floss","text":"AM Brush & Floss"},{"id":"make-bed","text":"Make Bed"},{"id":"gum","text":"Gum"},{"id":"portuguese-1","text":"Portuguese #1"},{"id":"walk-dogs","text":"Walk Dogs"},{"id":"jog-run","text":"Jog/Run"},{"id":"pushups-1","text":"30 Push Ups #1"},{"id":"stretch","text":"Stretch"},{"id":"creatine-bcaas","text":"Creatine & BCAAs"},{"id":"coconut-oil-brush","text":"Gargle Coconut Oil & Brush"},{"id":"wash-face-guasha","text":"Wash Face & Guasha"},{"id":"fast-until-2","text":"Fast Until 2pm"},{"id":"portuguese-2","text":"Portuguese #2"},{"id":"pushups-2","text":"30 Push Ups #2"},{"id":"pm-brush-floss","text":"PM Brush & Floss"},{"id":"portuguese-3","text":"Portuguese #3"},{"id":"ab-roller","text":"10 Ab Roller"},{"id":"ab-twists","text":"30 Ab Twists"}];
 const old=JSON.parse(localStorage.getItem('mwState')||'null');
-const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},goalHistory:{},drafts:{},water:{},waterGoal:96,checklistItems:JSON.parse(JSON.stringify(defaultChecklistItems)),checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'User'},historicalEnabled:false,photoSettings:{weekly:false},photoCheckins:[],photoDays:{},kneeHistory:[]};
+const base={phase:0,round:0,workout:0,completed:0,history:[],workoutLogs:{},weights:{},nutrition:{},goals:{cal:2500,p:180,c:250,f:85},goalHistory:{},drafts:{},water:{},waterGoal:96,checklistItems:JSON.parse(JSON.stringify(defaultChecklistItems)),checklistDays:{},activities:{},bmr:1891,tdee:2741,restDays:{},scheduleDate:null,nextEventType:'workout',profile:{name:'User',age:''},historicalEnabled:false,photoSettings:{weekly:false},photoCheckins:[],photoDays:{},kneeHistory:[]};
 let state=JSON.parse(localStorage.getItem('mfState')||'null')||base;
 if(old&&!localStorage.getItem('mfState')){state={...base,...old,history:(old.history||[]).map(h=>({...h,sets:{},summary:{}}))};}
 state={...base,...state,goals:{...base.goals,...(state.goals||{})}};
@@ -232,7 +250,7 @@ function projectSchedule(startDate,endDate){
   return items;
 }
 
-function warmupHTML(type){const data=type==='lower'?lowerWarmup:upperWarmup;return `<div class="warmup"><div class="warmup-title">${type==='lower'?'Lower':'Upper'} Warm-up</div>${data.map(x=>`<div class="warm-row"><div class="warm-copy"><b>${x[0]}</b><small>${x[1]}${x[2]?` · ${x[2]}`:''}</small></div><button class="warm-check" type="button">✓</button></div>`).join('')}</div>`}
+function warmupHTML(type,workoutName=current()?.name,phaseIndex=state.phase){let data=type==='lower'?lowerWarmup:upperWarmup,title=type==='lower'?'Lower Warm-up':'Upper Warm-up';if(phaseIndex===1&&/^Pull [12]$/i.test(workoutName||'')){data=phase2PullWarmup;title='Pull Warm-up';}else if(phaseIndex===2&&/^Push [12]$/i.test(workoutName||'')){data=phase3PushWarmup;title='Push Warm-up';}return `<div class="warmup"><div class="warmup-title">${title}</div>${data.map(x=>`<div class="warm-row"><div class="warm-copy"><b>${x[0]}</b><small>${x[1]}${x[2]?` · ${x[2]}`:''}</small></div><button class="warm-check" type="button">✓</button></div>`).join('')}</div>`}
 function getDraftKey(){return `${state.phase}-${state.round}-${state.workout}`}
 function getDraft(){
   state.drafts=state.drafts||{};
@@ -1652,20 +1670,43 @@ function applyProgramStartingPoint(){
   alert(`Program starting point updated to ${label}.`);
 }
 
+function renderUserSettings(){
+  state.profile=state.profile&&typeof state.profile==='object'?state.profile:{name:'User'};
+  const g=goalsForDate(todayISO());
+  const values={userName:state.profile.name||'',userAge:state.profile.age||'',userGoalCal:g.cal??'',userGoalP:g.p??'',userGoalC:g.c??'',userGoalF:g.f??'',userBmr:state.bmr??''};
+  Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.value=value;});
+  const status=document.getElementById('userSettingsStatus');if(status)status.textContent='';
+}
+function saveUserSettings(){
+  state.profile=state.profile&&typeof state.profile==='object'?state.profile:{};
+  const name=document.getElementById('userName')?.value.trim()||'User';
+  const age=Math.max(0,Math.min(120,Math.round(+(document.getElementById('userAge')?.value||0))));
+  const goals={cal:Math.max(0,+(document.getElementById('userGoalCal')?.value||0)),p:Math.max(0,+(document.getElementById('userGoalP')?.value||0)),c:Math.max(0,+(document.getElementById('userGoalC')?.value||0)),f:Math.max(0,+(document.getElementById('userGoalF')?.value||0))};
+  state.profile.name=name;if(age)state.profile.age=age;else delete state.profile.age;
+  state.bmr=Math.max(0,+(document.getElementById('userBmr')?.value||0));
+  setGoalsFromDate(todayISO(),goals);save();renderTodayMacros();renderNutrition();renderProgress();renderUserSettings();
+  const status=document.getElementById('userSettingsStatus');if(status)status.textContent='Saved.';
+}
+
 function showMoreSection(section){
   const progress=document.getElementById('moreProgressSection');
   const cardio=document.getElementById('moreCardioSection');
   const workouts=document.getElementById('moreWorkoutsSection');
+  const user=document.getElementById('moreUserSection');
   const pTab=document.getElementById('moreProgressTab');
   const cTab=document.getElementById('moreCardioTab');
   const wTab=document.getElementById('moreWorkoutsTab');
+  const uTab=document.getElementById('moreUserTab');
   if(progress)progress.style.display=section==='progress'?'block':'none';
   if(cardio)cardio.style.display=section==='cardio'?'block':'none';
   if(workouts)workouts.style.display=section==='workouts'?'block':'none';
+  if(user)user.style.display=section==='user'?'block':'none';
   if(pTab)pTab.classList.toggle('on',section==='progress');
   if(cTab)cTab.classList.toggle('on',section==='cardio');
   if(wTab)wTab.classList.toggle('on',section==='workouts');
+  if(uTab)uTab.classList.toggle('on',section==='user');
   if(section==='workouts'){renderProgramStartControls();renderProgramWorkoutLibrary();renderWorkoutLog();}
+  if(section==='user')renderUserSettings();
 }
 
 function workoutExerciseList(workout){
@@ -1736,7 +1777,9 @@ function openProgramWorkoutPreview(phaseIndex,workoutIndex){
   document.getElementById('programWorkoutTitle').textContent=workout.name||`Workout ${workoutIndex+1}`;
   document.getElementById('programWorkoutMeta').textContent=`${phase?.name||`Phase ${phaseIndex+1}`} · ${(workout.ex||[]).length} exercises`;
 
-  const warm=workoutType(workout.name)==='lower'?lowerWarmup:upperWarmup;
+  let warm=workoutType(workout.name)==='lower'?lowerWarmup:upperWarmup;
+  if(phaseIndex===1&&/^Pull [12]$/i.test(workout.name||''))warm=phase2PullWarmup;
+  else if(phaseIndex===2&&/^Push [12]$/i.test(workout.name||''))warm=phase3PushWarmup;
   const warmRows=`<div class="program-preview-section">
     <div class="eyebrow">Warm-up</div>
     ${warm.map(x=>`<div class="program-warm-row"><b>${esc(x[0])}</b><small>${esc(x[1])}${x[2]?` · ${esc(x[2])}`:''}</small></div>`).join('')}

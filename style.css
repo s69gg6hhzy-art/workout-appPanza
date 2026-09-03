@@ -2293,3 +2293,17 @@ input[type="time"]{color-scheme:dark}
   .zone-range-btn b{font-size:10px}
   .zone-range-btn small{font-size:7.5px}
 }
+
+
+/* ===== V29 — More > User ===== */
+.more-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.more-tabs button{min-width:0!important;padding-left:6px!important;padding-right:6px!important}
+.user-profile-grid,.user-macro-grid{display:grid;gap:10px}
+.user-profile-grid{grid-template-columns:minmax(0,2fr) minmax(88px,1fr)}
+.user-macro-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.user-profile-card label,.user-goals-card label,.user-bmr-card label{display:block;color:var(--muted);font-size:12px}
+.user-profile-card input,.user-goals-card input,.user-bmr-card input{width:100%;min-width:0;box-sizing:border-box;margin-top:6px}
+.user-bmr-field{max-width:230px}
+.user-save-btn{margin-top:14px}
+#userSettingsStatus{min-height:16px;margin:7px 0 0}
+@media(max-width:430px){.more-tabs{gap:5px!important}.more-tabs button{font-size:11px!important;padding-left:4px!important;padding-right:4px!important}.user-macro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

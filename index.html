@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c0d10">
   <title>Matt Fitness</title>
-  <link rel="stylesheet" href="style.css?v=personal-28">
+  <link rel="stylesheet" href="style.css?v=user-29">
 </head>
 <body class="personal-version">
 <div class="app">
@@ -166,6 +166,7 @@
       <button class="secondary compact on" id="moreProgressTab" type="button" onclick="showMoreSection('progress')">Progress</button>
       <button class="secondary compact" id="moreCardioTab" type="button" onclick="showMoreSection('cardio')">Cardio</button>
       <button class="secondary compact" id="moreWorkoutsTab" type="button" onclick="showMoreSection('workouts')">Workouts</button>
+      <button class="secondary compact" id="moreUserTab" type="button" onclick="showMoreSection('user')">User</button>
     </div>
 
     <div id="moreProgressSection">
@@ -204,18 +205,6 @@
       <div class="eyebrow">Weight trend</div>
       <div class="metric-row"><div><strong id="latestWeight">—</strong><span>latest AM</span></div><div><strong id="avg7Weight">—</strong><span>7-day AM avg</span></div><div><strong id="dailySwing">—</strong><span>avg AM→PM</span></div></div>
       <div id="weightHistory" class="weight-history"></div>
-    </div>
-    <div class="card" id="historicalCheckpointCard">
-      <div class="eyebrow">Body composition checkpoints</div>
-      <div class="checkpoint"><div><b>Jan 17, 2025 · DEXA</b><small>191.1 lb · 21.9% body fat · 41.8 lb fat · 141.7 lb lean tissue</small></div><span class="badge measured">Measured</span></div>
-      <div class="checkpoint"><div><b>April 2025 · Lean checkpoint</b><small>~178 lb · progress photos</small></div><span class="badge approx">Approx.</span></div>
-      <div class="checkpoint"><div><b>Aug 2026 · Current</b><small>~185 lb · current visual checkpoint</small></div><span class="badge approx">Current</span></div>
-    </div>
-    <div class="card" id="historicalSessionsCard">
-      <div class="eyebrow">Historical tracking sessions</div>
-      <div class="history-session"><b>Session 1 · Jan–Apr 2025</b><span>~188.6 → ~178.7 lb weekly AM average</span></div>
-      <div class="history-session"><b>Session 2 · Sep–Nov 2025</b><span>191.6 → 182.4 lb weekly AM average</span></div>
-      <div class="history-session"><b>Brazil · May 4–Jul 12, 2026</b><span>10-week avg: 2,995 kcal · 179 P · 247 C · 100 F</span></div>
     </div>
     </div>
 
@@ -271,16 +260,51 @@
       <div id="programWorkoutLibrary"></div>
     </div>
 
-    <div class="section-title">App data</div>
-    <div class="card">
-      <div class="eyebrow">Profile & data</div>
-      <h3>New user / reset</h3>
-      <p class="muted">Start fresh on this device. This clears saved workouts, nutrition, weights, activities, checklist history, water, photo checkmarks, profile data, historical charts, body-composition checkpoints and historical tracking sessions.</p>
-      <div class="export-actions">
-        <button class="secondary compact" id="exportDailyCsvBtn" type="button" onclick="exportDailyCSV()">Export daily CSV</button>
-        <button class="secondary compact" id="exportFullBackupBtn" type="button" onclick="exportFullBackup()">Export full backup</button>
+    <div id="moreUserSection" style="display:none">
+      <div class="card user-profile-card">
+        <div class="eyebrow">Profile</div><h3>User settings</h3>
+        <div class="user-profile-grid">
+          <label>Name<input id="userName" type="text" autocomplete="name"></label>
+          <label>Age<input id="userAge" inputmode="numeric" type="number" min="1" max="120"></label>
+        </div>
       </div>
-      <button class="danger compact" id="newUserResetBtn" onclick="resetForNewUser()">Reset for new user</button>
+      <div class="card user-goals-card">
+        <div class="eyebrow">Nutrition</div><h3>Macro goals</h3>
+        <div class="user-macro-grid">
+          <label>Calories<input id="userGoalCal" inputmode="numeric" type="number" min="0"></label>
+          <label>Protein <span>g</span><input id="userGoalP" inputmode="numeric" type="number" min="0"></label>
+          <label>Carbs <span>g</span><input id="userGoalC" inputmode="numeric" type="number" min="0"></label>
+          <label>Fat <span>g</span><input id="userGoalF" inputmode="numeric" type="number" min="0"></label>
+        </div>
+      </div>
+      <div class="card user-bmr-card">
+        <div class="eyebrow">Energy</div><h3>BMR</h3>
+        <label class="user-bmr-field">Basal metabolic rate <span>kcal/day</span><input id="userBmr" inputmode="numeric" type="number" min="0"></label>
+        <button class="primary user-save-btn" id="saveUserSettingsBtn" type="button" onclick="saveUserSettings()">Save user settings</button>
+        <p class="tiny" id="userSettingsStatus"></p>
+      </div>
+      <div class="card" id="historicalCheckpointCard">
+        <div class="eyebrow">Body composition checkpoints</div>
+        <div class="checkpoint"><div><b>Jan 17, 2025 · DEXA</b><small>191.1 lb · 21.9% body fat · 41.8 lb fat · 141.7 lb lean tissue</small></div><span class="badge measured">Measured</span></div>
+        <div class="checkpoint"><div><b>April 2025 · Lean checkpoint</b><small>~178 lb · progress photos</small></div><span class="badge approx">Approx.</span></div>
+        <div class="checkpoint"><div><b>Aug 2026 · Current</b><small>~185 lb · current visual checkpoint</small></div><span class="badge approx">Current</span></div>
+      </div>
+      <div class="card" id="historicalSessionsCard">
+        <div class="eyebrow">Historical tracking sessions</div>
+        <div class="history-session"><b>Session 1 · Jan–Apr 2025</b><span>~188.6 → ~178.7 lb weekly AM average</span></div>
+        <div class="history-session"><b>Session 2 · Sep–Nov 2025</b><span>191.6 → 182.4 lb weekly AM average</span></div>
+        <div class="history-session"><b>Brazil · May 4–Jul 12, 2026</b><span>10-week avg: 2,995 kcal · 179 P · 247 C · 100 F</span></div>
+      </div>
+      <div class="section-title">App data</div>
+      <div class="card">
+        <div class="eyebrow">Profile & data</div><h3>Save data</h3>
+        <p class="muted">Export your daily CSV or a full backup of your saved app data.</p>
+        <div class="export-actions">
+          <button class="secondary compact" id="exportDailyCsvBtn" type="button" onclick="exportDailyCSV()">Export daily CSV</button>
+          <button class="secondary compact" id="exportFullBackupBtn" type="button" onclick="exportFullBackup()">Export full backup</button>
+        </div>
+        <button class="danger compact" id="newUserResetBtn" onclick="resetForNewUser()">Reset for new user</button>
+      </div>
     </div>
 </section>
 </div>
@@ -389,6 +413,6 @@
 </nav>
 
 <script src="data.js?v=70"></script>
-<script src="app.js?v=personal-28"></script>
+<script src="app.js?v=user-29"></script>
 </body>
 </html>
